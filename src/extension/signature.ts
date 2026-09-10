@@ -20,7 +20,11 @@
 import { Envelope } from "../base/envelope";
 import type { EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
-import { SIGNED as SIGNED_KV, NOTE as NOTE_KV } from "@blockchaincommons/known-values";
+import {
+  SIGNED as SIGNED_KV,
+  NOTE as NOTE_KV,
+  type KnownValue,
+} from "@blockchaincommons/known-values";
 
 /**
  * Re-export signing types from @blockchaincommons/components for type compatibility.
@@ -33,19 +37,24 @@ export {
   type Verifier,
   type SigningOptions,
 } from "@blockchaincommons/components";
-import { Signature, type Signer, type Verifier, type SigningOptions } from "@blockchaincommons/components";
+import {
+  Signature,
+  type Signer,
+  type Verifier,
+  type SigningOptions,
+} from "@blockchaincommons/components";
 
 /**
  * Known value for the 'signed' predicate.
  * This is the standard predicate used for signature assertions.
  */
-export const SIGNED = SIGNED_KV;
+export const SIGNED: KnownValue = SIGNED_KV;
 
 /**
  * Known value for the 'note' predicate.
  * Used for adding notes/comments to signatures.
  */
-export const NOTE = NOTE_KV;
+export const NOTE: KnownValue = NOTE_KV;
 
 /**
  * Metadata associated with a signature in a Gordian Envelope.

@@ -44,13 +44,16 @@ import {
   SealedMessage as ComponentsSealedMessage,
   isEncrypter,
 } from "@blockchaincommons/components";
-import { HAS_RECIPIENT as HAS_RECIPIENT_KV } from "@blockchaincommons/known-values";
+import {
+  HAS_RECIPIENT as HAS_RECIPIENT_KV,
+  type KnownValue,
+} from "@blockchaincommons/known-values";
 
 /**
  * Predicate constant for recipient assertions.
  * This is the known value 'hasRecipient' used to identify recipient assertions.
  */
-export const HAS_RECIPIENT = HAS_RECIPIENT_KV;
+export const HAS_RECIPIENT: KnownValue = HAS_RECIPIENT_KV;
 
 /**
  * Re-export the SealedMessage from @blockchaincommons/components for compatibility.

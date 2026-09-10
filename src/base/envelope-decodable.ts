@@ -5,7 +5,13 @@
  */
 
 import type { Cbor } from "@blockchaincommons/dcbor-compat";
-import { tryIntoText, tryIntoBool, tryIntoByteString, isNull, decodeCbor } from "@blockchaincommons/dcbor-compat";
+import {
+  tryIntoText,
+  tryIntoBool,
+  tryIntoByteString,
+  isNull,
+  decodeCbor,
+} from "@blockchaincommons/dcbor-compat";
 import { Envelope } from "./envelope";
 import type { EnvelopeEncodableValue } from "./envelope-encodable";
 import { EnvelopeError, ErrorCode } from "./error";

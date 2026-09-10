@@ -24,7 +24,15 @@
 import { Envelope } from "../base/envelope";
 import { type Digest } from "../base/digest";
 import { EnvelopeError } from "../base/error";
-import { EDGE, IS_A, IS_A_RAW, SOURCE, SOURCE_RAW, TARGET, TARGET_RAW } from "@blockchaincommons/known-values";
+import {
+  EDGE,
+  IS_A,
+  IS_A_RAW,
+  SOURCE,
+  SOURCE_RAW,
+  TARGET,
+  TARGET_RAW,
+} from "@blockchaincommons/known-values";
 
 // -------------------------------------------------------------------
 // Edges Container

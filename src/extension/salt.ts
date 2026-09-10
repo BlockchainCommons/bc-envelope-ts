@@ -13,7 +13,7 @@ import {
   rngNextInClosedRangeI32,
   type RandomNumberGenerator,
 } from "@blockchaincommons/rand";
-import { SALT as SALT_KV } from "@blockchaincommons/known-values";
+import { SALT as SALT_KV, type KnownValue } from "@blockchaincommons/known-values";
 import { Salt as SaltComponent } from "@blockchaincommons/components";
 
 /// Extension for adding salt to envelopes to prevent correlation.
@@ -47,7 +47,7 @@ import { Salt as SaltComponent } from "@blockchaincommons/components";
 // ============================================================================
 
 /// The standard predicate for salt assertions (KnownValue matching Rust)
-export const SALT = SALT_KV;
+export const SALT: KnownValue = SALT_KV;
 
 /// Minimum salt size in bytes (64 bits)
 const MIN_SALT_SIZE = 8;

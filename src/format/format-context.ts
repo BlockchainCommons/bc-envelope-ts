@@ -645,9 +645,9 @@ export const setEnvelopeFormatHook = (hook: EnvelopeFormatHook): void => {
 // ============================================================================
 
 /// Alias function for getGlobalFormatContext
-export const globalFormatContext = getGlobalFormatContext;
+export const globalFormatContext: () => FormatContext = getGlobalFormatContext;
 
 /// Object-style access to global format context
-export const GLOBAL_FORMAT_CONTEXT = {
+export const GLOBAL_FORMAT_CONTEXT: { get: () => FormatContext } = {
   get: getGlobalFormatContext,
 };

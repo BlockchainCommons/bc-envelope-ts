@@ -25,22 +25,23 @@ import {
   ATTACHMENT as ATTACHMENT_KV,
   VENDOR as VENDOR_KV,
   CONFORMS_TO as CONFORMS_TO_KV,
+  type KnownValue,
 } from "@blockchaincommons/known-values";
 
 /**
  * Known value for the 'attachment' predicate.
  */
-export const ATTACHMENT = ATTACHMENT_KV;
+export const ATTACHMENT: KnownValue = ATTACHMENT_KV;
 
 /**
  * Known value for the 'vendor' predicate.
  */
-export const VENDOR = VENDOR_KV;
+export const VENDOR: KnownValue = VENDOR_KV;
 
 /**
  * Known value for the 'conformsTo' predicate.
  */
-export const CONFORMS_TO = CONFORMS_TO_KV;
+export const CONFORMS_TO: KnownValue = CONFORMS_TO_KV;
 
 /**
  * A container for vendor-specific metadata attachments.

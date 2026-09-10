@@ -33,7 +33,12 @@ import {
   SYMMETRIC_NONCE_SIZE,
 } from "@blockchaincommons/crypto";
 import { SecureRandomNumberGenerator, rngRandomData } from "@blockchaincommons/rand";
-import { EncryptedMessage, Nonce, AuthenticationTag, SymmetricKey } from "@blockchaincommons/components";
+import {
+  EncryptedMessage,
+  Nonce,
+  AuthenticationTag,
+  SymmetricKey,
+} from "@blockchaincommons/components";
 
 /**
  * Re-export the canonical SymmetricKey and EncryptedMessage from

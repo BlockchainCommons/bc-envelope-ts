@@ -566,52 +566,52 @@ export class ParametersStore {
 //------------------------------------------------------------------------------
 
 /// Standard arithmetic and logical functions
-export const ADD = Function.newKnown(FUNCTION_IDS.ADD, "add");
-export const SUB = Function.newKnown(FUNCTION_IDS.SUB, "sub");
-export const MUL = Function.newKnown(FUNCTION_IDS.MUL, "mul");
-export const DIV = Function.newKnown(FUNCTION_IDS.DIV, "div");
-export const NEG = Function.newKnown(FUNCTION_IDS.NEG, "neg");
-export const LT = Function.newKnown(FUNCTION_IDS.LT, "lt");
-export const LE = Function.newKnown(FUNCTION_IDS.LE, "le");
-export const GT = Function.newKnown(FUNCTION_IDS.GT, "gt");
-export const GE = Function.newKnown(FUNCTION_IDS.GE, "ge");
-export const EQ = Function.newKnown(FUNCTION_IDS.EQ, "eq");
-export const NE = Function.newKnown(FUNCTION_IDS.NE, "ne");
-export const AND = Function.newKnown(FUNCTION_IDS.AND, "and");
-export const OR = Function.newKnown(FUNCTION_IDS.OR, "or");
-export const XOR = Function.newKnown(FUNCTION_IDS.XOR, "xor");
-export const NOT = Function.newKnown(FUNCTION_IDS.NOT, "not");
+export const ADD: Function = Function.newKnown(FUNCTION_IDS.ADD, "add");
+export const SUB: Function = Function.newKnown(FUNCTION_IDS.SUB, "sub");
+export const MUL: Function = Function.newKnown(FUNCTION_IDS.MUL, "mul");
+export const DIV: Function = Function.newKnown(FUNCTION_IDS.DIV, "div");
+export const NEG: Function = Function.newKnown(FUNCTION_IDS.NEG, "neg");
+export const LT: Function = Function.newKnown(FUNCTION_IDS.LT, "lt");
+export const LE: Function = Function.newKnown(FUNCTION_IDS.LE, "le");
+export const GT: Function = Function.newKnown(FUNCTION_IDS.GT, "gt");
+export const GE: Function = Function.newKnown(FUNCTION_IDS.GE, "ge");
+export const EQ: Function = Function.newKnown(FUNCTION_IDS.EQ, "eq");
+export const NE: Function = Function.newKnown(FUNCTION_IDS.NE, "ne");
+export const AND: Function = Function.newKnown(FUNCTION_IDS.AND, "and");
+export const OR: Function = Function.newKnown(FUNCTION_IDS.OR, "or");
+export const XOR: Function = Function.newKnown(FUNCTION_IDS.XOR, "xor");
+export const NOT: Function = Function.newKnown(FUNCTION_IDS.NOT, "not");
 
 /// Raw value constants (matching Rust's _VALUE suffix constants)
-export const ADD_VALUE = FUNCTION_IDS.ADD;
-export const SUB_VALUE = FUNCTION_IDS.SUB;
-export const MUL_VALUE = FUNCTION_IDS.MUL;
-export const DIV_VALUE = FUNCTION_IDS.DIV;
-export const NEG_VALUE = FUNCTION_IDS.NEG;
-export const LT_VALUE = FUNCTION_IDS.LT;
-export const LE_VALUE = FUNCTION_IDS.LE;
-export const GT_VALUE = FUNCTION_IDS.GT;
-export const GE_VALUE = FUNCTION_IDS.GE;
-export const EQ_VALUE = FUNCTION_IDS.EQ;
-export const NE_VALUE = FUNCTION_IDS.NE;
-export const AND_VALUE = FUNCTION_IDS.AND;
-export const OR_VALUE = FUNCTION_IDS.OR;
-export const XOR_VALUE = FUNCTION_IDS.XOR;
-export const NOT_VALUE = FUNCTION_IDS.NOT;
+export const ADD_VALUE: number = FUNCTION_IDS.ADD;
+export const SUB_VALUE: number = FUNCTION_IDS.SUB;
+export const MUL_VALUE: number = FUNCTION_IDS.MUL;
+export const DIV_VALUE: number = FUNCTION_IDS.DIV;
+export const NEG_VALUE: number = FUNCTION_IDS.NEG;
+export const LT_VALUE: number = FUNCTION_IDS.LT;
+export const LE_VALUE: number = FUNCTION_IDS.LE;
+export const GT_VALUE: number = FUNCTION_IDS.GT;
+export const GE_VALUE: number = FUNCTION_IDS.GE;
+export const EQ_VALUE: number = FUNCTION_IDS.EQ;
+export const NE_VALUE: number = FUNCTION_IDS.NE;
+export const AND_VALUE: number = FUNCTION_IDS.AND;
+export const OR_VALUE: number = FUNCTION_IDS.OR;
+export const XOR_VALUE: number = FUNCTION_IDS.XOR;
+export const NOT_VALUE: number = FUNCTION_IDS.NOT;
 
 //------------------------------------------------------------------------------
 // Well-known parameter constants (matching Rust's parameter_constant! macro)
 //------------------------------------------------------------------------------
 
 /// Standard parameters
-export const BLANK = Parameter.newKnown(PARAMETER_IDS.BLANK, "_");
-export const LHS = Parameter.newKnown(PARAMETER_IDS.LHS, "lhs");
-export const RHS = Parameter.newKnown(PARAMETER_IDS.RHS, "rhs");
+export const BLANK: Parameter = Parameter.newKnown(PARAMETER_IDS.BLANK, "_");
+export const LHS: Parameter = Parameter.newKnown(PARAMETER_IDS.LHS, "lhs");
+export const RHS: Parameter = Parameter.newKnown(PARAMETER_IDS.RHS, "rhs");
 
 /// Raw value constants
-export const BLANK_VALUE = PARAMETER_IDS.BLANK;
-export const LHS_VALUE = PARAMETER_IDS.LHS;
-export const RHS_VALUE = PARAMETER_IDS.RHS;
+export const BLANK_VALUE: number = PARAMETER_IDS.BLANK;
+export const LHS_VALUE: number = PARAMETER_IDS.LHS;
+export const RHS_VALUE: number = PARAMETER_IDS.RHS;
 
 //------------------------------------------------------------------------------
 // Global stores (matching Rust's GLOBAL_FUNCTIONS and GLOBAL_PARAMETERS)
@@ -633,12 +633,14 @@ export class LazyStore<T> {
 }
 
 /// The global shared store of known functions.
-export const GLOBAL_FUNCTIONS = new LazyStore(
+export const GLOBAL_FUNCTIONS: LazyStore<FunctionsStore> = new LazyStore(
   () => new FunctionsStore([ADD, SUB, MUL, DIV, NEG, LT, LE, GT, GE, EQ, NE, AND, OR, XOR, NOT]),
 );
 
 /// The global shared store of known parameters.
-export const GLOBAL_PARAMETERS = new LazyStore(() => new ParametersStore([BLANK, LHS, RHS]));
+export const GLOBAL_PARAMETERS: LazyStore<ParametersStore> = new LazyStore(
+  () => new ParametersStore([BLANK, LHS, RHS]),
+);
 
 //------------------------------------------------------------------------------
 // Expression class
