@@ -1101,7 +1101,7 @@ declare class Envelope implements DigestProvider {
      *
      * **TS↔Rust note**: Rust `Envelope::new_or_none` returns
      * `Option<Envelope>` — the `None` branch fires only on `None`. We
-     * follow the same convention as {@link Envelope.newOrNull} and treat
+     * follow the same convention as `Envelope.from(x ?? null)` and treat
      * JS `null` and `undefined` interchangeably as the absent case.
      *
      * @param subject - The optional subject value (`undefined` *or* `null`
@@ -1627,7 +1627,7 @@ declare class Envelope implements DigestProvider {
      * `1` for Elided, `2` for Compressed (matching the Rust order).
      * - Every node — obscured or not — appends its 32-byte digest bytes.
      *
-     * The full image is then SHA-256-hashed via {@link Digest.fromImage}.
+     * The full image is then SHA-256-hashed via `Digest.fromImage`.
      *
      * Unlike {@link Envelope.digest} (which captures *semantic* identity),
      * `structuralDigest` captures the envelope's structural form too, including
