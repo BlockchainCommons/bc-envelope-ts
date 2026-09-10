@@ -1156,7 +1156,7 @@ export declare class Envelope implements DigestProvider {
      * @param envelope - The envelope to wrap
      * @returns A new wrapped envelope
      */
-    static wrap(envelope: Envelope): Envelope;
+    static wrap(subject: EnvelopeInput): Envelope;
     /**
      * Returns the digest of this envelope.
      *
@@ -1706,10 +1706,6 @@ export declare class Envelope implements DigestProvider {
      * Add extractObjectsForPredicate method to Envelope prototype
      */
     expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
-    /**
-     * Add tryObjectsForPredicate method to Envelope prototype
-     */
-    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     encryptSubject(key: SymmetricKey): Envelope;
     /**
      * Implementation of decryptSubject()

@@ -4,9 +4,16 @@
 
 ### Changed
 
+- **API redesign.** The root entry is the core `Envelope` class; every extension is a subpath of envelope-first functions (`/signature`, `/recipient`, `/secret`, `/sskr`, `/proof`, `/attachment`, `/edge`, `/types`, `/expression`, `/seal`, `/format`), and `/all` installs them as methods. Constructors are `Envelope.from`/`leaf`/`wrap`/`assertion`/`node`/`knownValue`/`encrypted`/`compressed`/`elided` and the `NULL`/`TRUE`/`FALSE`/`UNIT` constants; `case` is a getter; throwing accessors are `expect*`; `elide(options)` replaces twelve variants; salt is a core member (`addSalt(options)`, `addAssertion(p, o, { salt })`); `toCbor`/`toUR`/`fromCbor`/`fromBytes`/`codec` are the codable surface; `ToEnvelope`/`EnvelopeInput` replace `EnvelopeEncodable`; `EnvelopeErrorCode` is a PascalCase string union. Format, signing, sskr, attachment and expression functions take options objects. See [MIGRATION.md](./MIGRATION.md).
+- The format context carries the functions and parameters stores and registers its tags in the store it hands to the formatters, so annotated hex names its tags, tag-1 dates are summarised and well-known expression functions print by name, all as the Rust reference does.
+- `Envelope.fromBytes` wraps CBOR decode failures in `EnvelopeError` (`Cbor`) with the `CborError` as `cause`.
 - Ported to the canonical `@blockchaincommons/dcbor` and the redesigned `components`, `known-values`, `rand`, `crypto`, `sskr` and `uniform-resources`; every wire byte and every format string unchanged, verified against a frozen baseline and against `bc-envelope-rust` 0.43.0 (`tests/rust-validation`, see `RUST_DIVERGENCES.md`).
 
-Extracted from the [`paritytech/bcts`](https://github.com/paritytech/bcts) monorepo, where this library was published as `@bcts/envelope`. The public API is unchanged; see [MIGRATION.md](./MIGRATION.md).
+### Removed
+
+- `pako` and `@blockchaincommons/dcbor-compat` dependencies; the `/salt` subpath (salt is in the core); `EnvelopeDecoder`, the `EnvelopeCBORTagged*` wrappers, `registerXxxExtension()`, `VERSION`, `Result<T>`.
+
+Extracted from the [`paritytech/bcts`](https://github.com/paritytech/bcts) monorepo, where this library was published as `@bcts/envelope`; see the appendix of [MIGRATION.md](./MIGRATION.md).
 
 ---
 

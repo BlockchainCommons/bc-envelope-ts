@@ -1186,7 +1186,7 @@ declare class Envelope implements DigestProvider {
      * @param envelope - The envelope to wrap
      * @returns A new wrapped envelope
      */
-    static wrap(envelope: Envelope): Envelope;
+    static wrap(subject: EnvelopeInput): Envelope;
     /**
      * Returns the digest of this envelope.
      *
@@ -1736,10 +1736,6 @@ declare class Envelope implements DigestProvider {
      * Add extractObjectsForPredicate method to Envelope prototype
      */
     expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
-    /**
-     * Add tryObjectsForPredicate method to Envelope prototype
-     */
-    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     encryptSubject(key: SymmetricKey): Envelope;
     /**
      * Implementation of decryptSubject()
@@ -1866,7 +1862,7 @@ export declare const EQ_VALUE: number;
  * const eventId = ARID.new();
  * const timestamp = new Date("2024-08-15T13:45:30Z");
  *
- * const statusEvent = Event.new("System online", eventId)
+ * const statusEvent = Event.from("System online", eventId)
  *   .withNote("Regular status update")
  *   .withDate(timestamp);
  *
@@ -1885,17 +1881,17 @@ declare class Event_2<T extends EnvelopeInput> implements EventBehavior<T>, ToEn
     /**
      * Creates a new event with the specified content and ID.
      */
-    static new<T extends EnvelopeInput>(content: T, id: ARID): Event_2<T>;
+    static from<T extends EnvelopeInput>(content: T, id: ARID): Event_2<T>;
     /**
      * Returns a human-readable summary of the event.
      */
     summary(): string;
     withNote(note: string): Event_2<T>;
     withDate(date: Date): Event_2<T>;
-    content(): T;
-    id(): ARID;
-    note(): string;
-    date(): Date | undefined;
+    get content(): T;
+    get id(): ARID;
+    get note(): string;
+    get date(): Date | undefined;
     /**
      * Converts the event to an envelope.
      *
@@ -1910,10 +1906,6 @@ declare class Event_2<T extends EnvelopeInput> implements EventBehavior<T>, ToEn
      * @typeParam T - The type to extract the content as
      */
     static fromEnvelope<T extends EnvelopeInput>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
-    /**
-     * Creates a string event from an envelope.
-     */
-    static stringFromEnvelope(envelope: Envelope): Event_2<string>;
     /**
      * Returns a string representation of the event.
      */
@@ -1940,19 +1932,19 @@ export declare interface EventBehavior<T extends EnvelopeInput> {
     /**
      * Returns the content of the event.
      */
-    content(): T;
+    readonly content: T;
     /**
      * Returns the unique identifier (ARID) of the event.
      */
-    id(): ARID;
+    readonly id: ARID;
     /**
      * Returns the note attached to the event, or an empty string if none exists.
      */
-    note(): string;
+    readonly note: string;
     /**
      * Returns the date attached to the event, if any.
      */
-    date(): Date | undefined;
+    readonly date: Date | undefined;
     /**
      * Converts the event to an envelope.
      */
@@ -1978,9 +1970,9 @@ export declare class Expression implements ToEnvelope {
     private _envelope;
     constructor(func: Function_2);
     /** Returns the function. */
-    function(): Function_2;
+    get function(): Function_2;
     /** Returns all parameters. */
-    parameters(): Parameter[];
+    get parameters(): Parameter[];
     /** Adds a parameter to the expression. */
     withParameter(param: ParameterID, value: EnvelopeInput): Expression;
     /** Adds multiple parameters at once. */
@@ -1993,7 +1985,7 @@ export declare class Expression implements ToEnvelope {
      * For multi-valued parameters (e.g. several `participant` assertions),
      * use {@link objectsForParameter} to retrieve all matching values.
      */
-    getParameter(param: ParameterID): Envelope | undefined;
+    parameter(param: ParameterID): Envelope | undefined;
     /**
      * Returns all parameter values matching the given ID.
      *
@@ -2003,9 +1995,8 @@ export declare class Expression implements ToEnvelope {
     /** Checks if a parameter exists. */
     hasParameter(param: ParameterID): boolean;
     /** Converts the expression to an envelope. */
-    envelope(): Envelope;
-    /** Converts this expression into an envelope (ToEnvelope implementation). */
     toEnvelope(): Envelope;
+    /** Converts this expression into an envelope (ToEnvelope implementation). */
     /**
      * Creates an expression from an envelope.
      *
@@ -2039,21 +2030,21 @@ declare class Function_2 implements ToEnvelope {
     private readonly _name;
     private constructor();
     /** Creates a new known function with a numeric ID and optional name. */
-    static newKnown(value: number, name?: string): Function_2;
+    /** A function by known id (number) or name (string). */
+    static from(id: FunctionID): Function_2;
+    static known(value: number, name?: string): Function_2;
     /** Creates a new named function identified by a string. */
-    static newNamed(name: string): Function_2;
+    static named(name: string): Function_2;
     /** Creates a function from a numeric ID (convenience method). */
-    static fromNumeric(id: number): Function_2;
     /** Creates a function from a string name (convenience method). */
-    static fromString(name: string): Function_2;
     /** Returns true if this is a known (numeric) function. */
     isKnown(): boolean;
     /** Returns true if this is a named (string) function. */
     isNamed(): boolean;
     /** Returns the numeric value for known functions. */
-    value(): number | undefined;
+    get value(): number | undefined;
     /** Returns the function identifier (number for known, string for named). */
-    id(): FunctionID;
+    get id(): FunctionID;
     /**
      * Returns the display name of the function.
      *
@@ -2061,15 +2052,13 @@ declare class Function_2 implements ToEnvelope {
      * For known functions without a name, returns the numeric ID as a string.
      * For named functions, returns the name enclosed in quotes.
      */
-    name(): string;
+    get name(): string;
     /** Returns the raw name for named functions, or undefined for known functions. */
-    namedName(): string | undefined;
+    get namedName(): string | undefined;
     /** Returns the assigned name if present (for known functions only). */
-    assignedName(): string | undefined;
+    get assignedName(): string | undefined;
     /** Returns true if this is a numeric function ID (legacy compatibility). */
-    isNumeric(): boolean;
     /** Returns true if this is a string function ID (legacy compatibility). */
-    isString(): boolean;
     /**
      * Creates an expression envelope with this function as the subject.
      *
@@ -2084,9 +2073,8 @@ declare class Function_2 implements ToEnvelope {
      * not tagged), so format() rendered the leaf as a quoted string
      * instead of `«"name"»`.
      */
-    envelope(): Envelope;
-    /** Converts this function into an envelope (ToEnvelope implementation). */
     toEnvelope(): Envelope;
+    /** Converts this function into an envelope (ToEnvelope implementation). */
     /** Creates an expression with a parameter. */
     withParameter(param: ParameterID, value: EnvelopeInput): Expression;
     /** Checks equality based on value (for known) or name (for named). */
@@ -2131,11 +2119,11 @@ export declare class FunctionsStore {
     /** Creates a new FunctionsStore with the given functions. */
     constructor(functions?: Iterable<Function_2>);
     /** Inserts a function into the store. */
-    insert(func: Function_2): void;
+    register(func: Function_2): void;
     /** Returns the assigned name for a function, if it exists in the store. */
-    assignedName(func: Function_2): string | undefined;
+    assignedNameOf(func: Function_2): string | undefined;
     /** Returns the name for a function, either from this store or from the function itself. */
-    name(func: Function_2): string;
+    nameOf(func: Function_2): string;
     /** Static method that returns the name of a function, using an optional store. */
     static nameForFunction(func: Function_2, store?: FunctionsStore): string;
 }
@@ -2278,19 +2266,20 @@ export declare class Parameter implements ToEnvelope {
     private readonly _paramValue;
     private constructor();
     /** Creates a new known parameter with a numeric ID and optional name. */
-    static newKnown(value: number, name?: string): Parameter;
+    static known(value: number, name?: string): Parameter;
     /** Creates a new named parameter identified by a string. */
-    static newNamed(name: string): Parameter;
+    static named(name: string): Parameter;
     /** Creates a parameter with a value envelope (internal use). */
-    static withValue(id: ParameterID, value: Envelope): Parameter;
+    /** A parameter by known id or name, carrying `value` when given. */
+    static from(id: ParameterID, value?: EnvelopeInput): Parameter;
     /** Returns true if this is a known (numeric) parameter. */
     isKnown(): boolean;
     /** Returns true if this is a named (string) parameter. */
     isNamed(): boolean;
     /** Returns the numeric value for known parameters. */
-    value(): number | undefined;
+    get value(): number | undefined;
     /** Returns the parameter identifier (number for known, string for named). */
-    id(): ParameterID;
+    get id(): ParameterID;
     /**
      * Returns the display name of the parameter.
      *
@@ -2298,26 +2287,23 @@ export declare class Parameter implements ToEnvelope {
      * For known parameters without a name, returns the numeric ID as a string.
      * For named parameters, returns the name enclosed in quotes.
      */
-    name(): string;
+    get name(): string;
     /** Returns the raw name for named parameters, or undefined for known parameters. */
-    namedName(): string | undefined;
+    get namedName(): string | undefined;
     /** Returns the assigned name if present (for known parameters only). */
-    assignedName(): string | undefined;
+    get assignedName(): string | undefined;
     /** Returns the parameter value as an envelope, if set. */
-    paramValue(): Envelope | undefined;
+    get paramValue(): Envelope | undefined;
     /** Returns true if this is a numeric parameter ID (legacy compatibility). */
-    isNumeric(): boolean;
     /** Returns true if this is a string parameter ID (legacy compatibility). */
-    isString(): boolean;
     /**
      * Creates a parameter envelope.
      *
      * Function above): the parameter is stored as `tag(40007, untagged)`
      * where untagged is `uint(N)` (Known) or `text(name)` (Named).
      */
-    envelope(): Envelope;
-    /** Converts this parameter into an envelope (ToEnvelope implementation). */
     toEnvelope(): Envelope;
+    /** Converts this parameter into an envelope (ToEnvelope implementation). */
     /** Checks equality based on value (for known) or name (for named). */
     equals(other: Parameter): boolean;
     /** Returns a hash code for this parameter. */
@@ -2350,11 +2336,11 @@ export declare class ParametersStore {
     /** Creates a new ParametersStore with the given parameters. */
     constructor(parameters?: Iterable<Parameter>);
     /** Inserts a parameter into the store. */
-    insert(param: Parameter): void;
+    register(param: Parameter): void;
     /** Returns the assigned name for a parameter, if it exists in the store. */
-    assignedName(param: Parameter): string | undefined;
+    assignedNameOf(param: Parameter): string | undefined;
     /** Returns the name for a parameter, either from this store or from the parameter itself. */
-    name(param: Parameter): string;
+    nameOf(param: Parameter): string;
     /** Static method that returns the name of a parameter, using an optional store. */
     static nameForParameter(param: Parameter, store?: ParametersStore): string;
 }
@@ -2370,7 +2356,7 @@ export declare class ParametersStore {
  * const requestId = ARID.new();
  *
  * // Create a request to execute a function with parameters
- * const request = Request.new("getBalance", requestId)
+ * const request = Request.from("getBalance", requestId)
  *   .withParameter("account", "alice")
  *   .withParameter("currency", "USD")
  *   .withNote("Monthly balance check");
@@ -2386,16 +2372,10 @@ declare class Request_2 implements RequestBehavior, ToEnvelope {
     private _date;
     private constructor();
     /**
-     * Creates a new request with the specified expression body and ID.
+     * A request for `func` (a `Function`, a known-function number, a name, or
+     * a ready `Expression`) identified by `id`.
      */
-    static newWithBody(body: Expression, id: ARID): Request_2;
-    /**
-     * Creates a new request with a function and ID.
-     *
-     * This is a convenience method that creates an expression from the
-     * function and then creates a request with that expression.
-     */
-    static new(func: Function_2 | string | number, id: ARID): Request_2;
+    static from(func: Function_2 | Expression | FunctionID, id: ARID): Request_2;
     /**
      * Returns a human-readable summary of the request.
      */
@@ -2403,12 +2383,12 @@ declare class Request_2 implements RequestBehavior, ToEnvelope {
     withParameter(param: ParameterID, value: EnvelopeInput): Request_2;
     withNote(note: string): Request_2;
     withDate(date: Date): Request_2;
-    body(): Expression;
-    id(): ARID;
-    note(): string;
-    date(): Date | undefined;
-    function(): Function_2;
-    expressionEnvelope(): Envelope;
+    get body(): Expression;
+    get id(): ARID;
+    get note(): string;
+    get date(): Date | undefined;
+    get function(): Function_2;
+    get expressionEnvelope(): Envelope;
     /**
      * Converts the request to an envelope.
      *
@@ -2453,27 +2433,27 @@ export declare interface RequestBehavior {
     /**
      * Returns the body of the request (the expression to be evaluated).
      */
-    body(): Expression;
+    readonly body: Expression;
     /**
      * Returns the unique identifier (ARID) of the request.
      */
-    id(): ARID;
+    readonly id: ARID;
     /**
      * Returns the note attached to the request, or an empty string if none exists.
      */
-    note(): string;
+    readonly note: string;
     /**
      * Returns the date attached to the request, if any.
      */
-    date(): Date | undefined;
+    readonly date: Date | undefined;
     /**
      * Returns the function of the request.
      */
-    function(): Function_2;
+    readonly function: Function_2;
     /**
      * Returns the expression envelope of the request.
      */
-    expressionEnvelope(): Envelope;
+    readonly expressionEnvelope: Envelope;
     /**
      * Converts the request to an envelope.
      */
@@ -2492,11 +2472,11 @@ export declare interface RequestBehavior {
  * const requestId = ARID.new();
  *
  * // Create a successful response
- * const successResponse = Response.newSuccess(requestId)
+ * const successResponse = Response.success(requestId)
  *   .withResult("Transaction completed");
  *
  * // Create an error response
- * const errorResponse = Response.newFailure(requestId)
+ * const errorResponse = Response.failure(requestId)
  *   .withError("Insufficient funds");
  *
  * // Convert to envelopes
@@ -2513,29 +2493,29 @@ declare class Response_2 implements ResponseBehavior, ToEnvelope {
      * By default, the result will be the 'OK' known value. Use `withResult`
      * to set a specific result value.
      */
-    static newSuccess(id: ARID): Response_2;
+    static success(id: ARID): Response_2;
     /**
      * Creates a new failure response with the specified request ID.
      *
      * By default, the error will be the 'Unknown' known value. Use
      * `withError` to set a specific error message.
      */
-    static newFailure(id: ARID): Response_2;
+    static failure(id: ARID): Response_2;
     /**
      * Creates a new early failure response without a request ID.
      *
      * An early failure occurs when the error happens before the request
      * has been fully processed, so the request ID is not known.
      */
-    static newEarlyFailure(): Response_2;
+    static earlyFailure(): Response_2;
     /**
      * Creates an envelope containing the 'Unknown' known value.
      */
-    static unknown(): Envelope;
+    static get UNKNOWN(): Envelope;
     /**
      * Creates an envelope containing the 'OK' known value.
      */
-    static ok(): Envelope;
+    static get OK(): Envelope;
     /**
      * Returns a human-readable summary of the response.
      */
@@ -2546,10 +2526,10 @@ declare class Response_2 implements ResponseBehavior, ToEnvelope {
     withOptionalError(error: EnvelopeInput | undefined): Response_2;
     isOk(): boolean;
     isErr(): boolean;
-    id(): ARID | undefined;
+    get id(): ARID | undefined;
     expectId(): ARID;
-    result(): Envelope;
-    error(): Envelope;
+    get result(): Envelope;
+    get error(): Envelope;
     /**
      * Extracts a typed result value from a successful response.
      */
@@ -2606,17 +2586,17 @@ export declare interface ResponseBehavior {
     /**
      * Returns the ID of the request this response corresponds to, if known.
      */
-    id(): ARID | undefined;
+    readonly id: ARID | undefined;
     /**
      * Returns the result envelope if this is a successful response.
      * @throws Error if this is a failure response.
      */
-    result(): Envelope;
+    readonly result: Envelope;
     /**
      * Returns the error envelope if this is a failure response.
      * @throws Error if this is a successful response.
      */
-    error(): Envelope;
+    readonly error: Envelope;
     /**
      * Converts the response to an envelope.
      */

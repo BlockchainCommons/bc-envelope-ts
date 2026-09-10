@@ -1357,7 +1357,7 @@ declare class Envelope implements DigestProvider {
      * @param envelope - The envelope to wrap
      * @returns A new wrapped envelope
      */
-    static wrap(envelope: Envelope): Envelope;
+    static wrap(subject: EnvelopeInput): Envelope;
     /**
      * Returns the digest of this envelope.
      *
@@ -1907,10 +1907,6 @@ declare class Envelope implements DigestProvider {
      * Add extractObjectsForPredicate method to Envelope prototype
      */
     expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
-    /**
-     * Add tryObjectsForPredicate method to Envelope prototype
-     */
-    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     encryptSubject(key: SymmetricKey): Envelope;
     /**
      * Implementation of decryptSubject()
@@ -2033,6 +2029,67 @@ export declare interface EnvelopeSummary {
 }
 
 /**
+ * Represents a complete expression with function and parameters.
+ *
+ * Parameters are stored as an *append-only array*, mirroring Rust
+ * `bc-envelope`'s `Expression` which adds each parameter as a fresh
+ * envelope assertion (multiple values per parameter ID are valid —
+ * e.g. GSTP DKG invites carry multiple `participant` parameters).
+ * Earlier the TS port used `Map<string, Parameter>`, which silently
+ * overwrote previous values with the same parameter ID. The
+ * resulting envelope had only the last `participant`, breaking
+ * `objectsForParameter("participant")` decoders downstream
+ * (`frost-hubert/group-invite.ts:383`).
+ */
+declare class Expression implements ToEnvelope {
+    private readonly _function;
+    private readonly _parameters;
+    private _envelope;
+    constructor(func: Function_2);
+    /** Returns the function. */
+    get function(): Function_2;
+    /** Returns all parameters. */
+    get parameters(): Parameter[];
+    /** Adds a parameter to the expression. */
+    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    /** Adds multiple parameters at once. */
+    withParameters(params: Record<string, EnvelopeInput>): Expression;
+    /** Returns true if the parameter ID matches the one stored on a Parameter. */
+    private static parameterIdMatches;
+    /**
+     * Gets the first parameter value with the given ID.
+     *
+     * For multi-valued parameters (e.g. several `participant` assertions),
+     * use {@link objectsForParameter} to retrieve all matching values.
+     */
+    parameter(param: ParameterID): Envelope | undefined;
+    /**
+     * Returns all parameter values matching the given ID.
+     *
+     * to `Envelope::objects_for_predicate` and returns a `Vec<Envelope>`.
+     */
+    objectsForParameter(param: ParameterID): Envelope[];
+    /** Checks if a parameter exists. */
+    hasParameter(param: ParameterID): boolean;
+    /** Converts the expression to an envelope. */
+    toEnvelope(): Envelope;
+    /** Converts this expression into an envelope (ToEnvelope implementation). */
+    /**
+     * Creates an expression from an envelope.
+     *
+     * The function and each parameter are read as **tagged CBOR**
+     * (tag 40006 / tag 40007). Earlier the TS port stored these as
+     * pre-formatted display strings (e.g. `«"test"»`, `❰"param1"❱`)
+     * and parsed them by string matching; that diverged from Rust
+     * (which stores tag-40006/40007 leaves) and prevented the
+     * TAG_FUNCTION / TAG_PARAMETER format summarizers from firing.
+     */
+    static fromEnvelope(envelope: Envelope): Expression;
+    /** Returns a string representation for display. */
+    toString(): string;
+}
+
+/**
  * Envelope notation: the subject followed by its assertions in brackets,
  * nested and indented (or on one line with `flat`).
  */
@@ -2048,10 +2105,18 @@ export declare function format(envelope: Envelope, options?: FormatOptions): str
 export declare class FormatContext implements ReadonlyTagsStore {
     private readonly _tags;
     private readonly _knownValues;
-    constructor({ tags, knownValues }?: {
+    private readonly _functions;
+    private readonly _parameters;
+    constructor({ tags, knownValues, functions, parameters }?: {
         tags?: TagsStore;
         knownValues?: KnownValuesStore;
+        functions?: FunctionsStore;
+        parameters?: ParametersStore;
     });
+    /** Names for well-known expression functions (`«add»`). */
+    get functions(): FunctionsStore;
+    /** Names for well-known expression parameters (`❰lhs❱`). */
+    get parameters(): ParametersStore;
     /** The CBOR tags registry (names and summarisers). */
     get tags(): TagsStore;
     /** The known values registry. */
@@ -2082,6 +2147,102 @@ export declare interface FormatOptions {
     flat?: boolean;
     /** Names for tags and known values; the global context by default. */
     context?: FormatContextOpt;
+}
+
+/**
+ * Represents a function identifier in an expression.
+ *
+ * In Gordian Envelope, a function appears as the subject of an expression
+ * envelope, with its parameters as assertions on that envelope.
+ *
+ * Functions can be identified in two ways:
+ * 1. By a numeric ID (for well-known functions) - Known variant
+ * 2. By a string name (for application-specific functions) - Named variant
+ *
+ * When encoded in CBOR, functions are tagged with #6.40006.
+ */
+declare class Function_2 implements ToEnvelope {
+    private readonly _variant;
+    private readonly _value;
+    private readonly _name;
+    private constructor();
+    /** Creates a new known function with a numeric ID and optional name. */
+    /** A function by known id (number) or name (string). */
+    static from(id: FunctionID): Function_2;
+    static known(value: number, name?: string): Function_2;
+    /** Creates a new named function identified by a string. */
+    static named(name: string): Function_2;
+    /** Creates a function from a numeric ID (convenience method). */
+    /** Creates a function from a string name (convenience method). */
+    /** Returns true if this is a known (numeric) function. */
+    isKnown(): boolean;
+    /** Returns true if this is a named (string) function. */
+    isNamed(): boolean;
+    /** Returns the numeric value for known functions. */
+    get value(): number | undefined;
+    /** Returns the function identifier (number for known, string for named). */
+    get id(): FunctionID;
+    /**
+     * Returns the display name of the function.
+     *
+     * For known functions with a name, returns the name.
+     * For known functions without a name, returns the numeric ID as a string.
+     * For named functions, returns the name enclosed in quotes.
+     */
+    get name(): string;
+    /** Returns the raw name for named functions, or undefined for known functions. */
+    get namedName(): string | undefined;
+    /** Returns the assigned name if present (for known functions only). */
+    get assignedName(): string | undefined;
+    /** Returns true if this is a numeric function ID (legacy compatibility). */
+    /** Returns true if this is a string function ID (legacy compatibility). */
+    /**
+     * Creates an expression envelope with this function as the subject.
+     *
+     * which calls `Envelope::new_leaf(self)` — that goes through
+     * `From<Function> for CBOR = self.tagged_cbor()` which produces
+     * `tag(40006, untagged)` where untagged is `uint(N)` for Known
+     * or `text(name)` for Named.
+     *
+     * The earlier TS port pre-formatted the display string into a
+     * text leaf (`Envelope.from("«\"name\"»")`), which breaks the
+     * TAG_FUNCTION summarizer (it never fires because the leaf is
+     * not tagged), so format() rendered the leaf as a quoted string
+     * instead of `«"name"»`.
+     */
+    toEnvelope(): Envelope;
+    /** Converts this function into an envelope (ToEnvelope implementation). */
+    /** Creates an expression with a parameter. */
+    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    /** Checks equality based on value (for known) or name (for named). */
+    equals(other: Function_2): boolean;
+    /** Returns a hash code for this function. */
+    hashCode(): number;
+    /** Returns a string representation for display. */
+    toString(): string;
+}
+
+/** Type for function identifier (number or string) */
+declare type FunctionID = number | string;
+
+/**
+ * A store that maps functions to their assigned names.
+ *
+ * FunctionsStore maintains a registry of functions and their human-readable
+ * names, which is useful for displaying and debugging expression functions.
+ */
+declare class FunctionsStore {
+    private readonly _dict;
+    /** Creates a new FunctionsStore with the given functions. */
+    constructor(functions?: Iterable<Function_2>);
+    /** Inserts a function into the store. */
+    register(func: Function_2): void;
+    /** Returns the assigned name for a function, if it exists in the store. */
+    assignedNameOf(func: Function_2): string | undefined;
+    /** Returns the name for a function, either from this store or from the function itself. */
+    nameOf(func: Function_2): string;
+    /** Static method that returns the name of a function, using an optional store. */
+    static nameForFunction(func: Function_2, store?: FunctionsStore): string;
 }
 
 /** Get the global format context instance, initializing it if necessary. */
@@ -2178,6 +2339,98 @@ declare const ObscureType: {
 };
 
 declare type ObscureType = (typeof ObscureType)[keyof typeof ObscureType];
+
+/**
+ * Represents a parameter identifier in an expression.
+ *
+ * In Gordian Envelope, a parameter appears as a predicate in an assertion on
+ * an expression envelope. The parameter identifies the name of the argument,
+ * and the object of the assertion is the argument value.
+ *
+ * Parameters can be identified in two ways:
+ * 1. By a numeric ID (for well-known parameters) - Known variant
+ * 2. By a string name (for application-specific parameters) - Named variant
+ *
+ * When encoded in CBOR, parameters are tagged with #6.40007.
+ */
+declare class Parameter implements ToEnvelope {
+    private readonly _variant;
+    private readonly _value;
+    private readonly _name;
+    private readonly _paramValue;
+    private constructor();
+    /** Creates a new known parameter with a numeric ID and optional name. */
+    static known(value: number, name?: string): Parameter;
+    /** Creates a new named parameter identified by a string. */
+    static named(name: string): Parameter;
+    /** Creates a parameter with a value envelope (internal use). */
+    /** A parameter by known id or name, carrying `value` when given. */
+    static from(id: ParameterID, value?: EnvelopeInput): Parameter;
+    /** Returns true if this is a known (numeric) parameter. */
+    isKnown(): boolean;
+    /** Returns true if this is a named (string) parameter. */
+    isNamed(): boolean;
+    /** Returns the numeric value for known parameters. */
+    get value(): number | undefined;
+    /** Returns the parameter identifier (number for known, string for named). */
+    get id(): ParameterID;
+    /**
+     * Returns the display name of the parameter.
+     *
+     * For known parameters with a name, returns the name.
+     * For known parameters without a name, returns the numeric ID as a string.
+     * For named parameters, returns the name enclosed in quotes.
+     */
+    get name(): string;
+    /** Returns the raw name for named parameters, or undefined for known parameters. */
+    get namedName(): string | undefined;
+    /** Returns the assigned name if present (for known parameters only). */
+    get assignedName(): string | undefined;
+    /** Returns the parameter value as an envelope, if set. */
+    get paramValue(): Envelope | undefined;
+    /** Returns true if this is a numeric parameter ID (legacy compatibility). */
+    /** Returns true if this is a string parameter ID (legacy compatibility). */
+    /**
+     * Creates a parameter envelope.
+     *
+     * Function above): the parameter is stored as `tag(40007, untagged)`
+     * where untagged is `uint(N)` (Known) or `text(name)` (Named).
+     */
+    toEnvelope(): Envelope;
+    /** Converts this parameter into an envelope (ToEnvelope implementation). */
+    /** Checks equality based on value (for known) or name (for named). */
+    equals(other: Parameter): boolean;
+    /** Returns a hash code for this parameter. */
+    hashCode(): number;
+    /** Returns a string representation for display. */
+    toString(): string;
+    static blank(value: EnvelopeInput): Parameter;
+    static lhs(value: EnvelopeInput): Parameter;
+    static rhs(value: EnvelopeInput): Parameter;
+}
+
+/** Type for parameter identifier (number or string) */
+declare type ParameterID = number | string;
+
+/**
+ * A store that maps parameters to their assigned names.
+ *
+ * ParametersStore maintains a registry of parameters and their human-readable
+ * names, which is useful for displaying and debugging expression parameters.
+ */
+declare class ParametersStore {
+    private readonly _dict;
+    /** Creates a new ParametersStore with the given parameters. */
+    constructor(parameters?: Iterable<Parameter>);
+    /** Inserts a parameter into the store. */
+    register(param: Parameter): void;
+    /** Returns the assigned name for a parameter, if it exists in the store. */
+    assignedNameOf(param: Parameter): string | undefined;
+    /** Returns the name for a parameter, either from this store or from the parameter itself. */
+    nameOf(param: Parameter): string;
+    /** Static method that returns the name of a parameter, using an optional store. */
+    static nameForParameter(param: Parameter, store?: ParametersStore): string;
+}
 
 /**
  * The read-only tags-store surface.
@@ -2410,6 +2663,9 @@ declare class TagsStore implements ReadonlyTagsStore {
      */
     private _valueKey;
 }
+
+/** The tags store a `FormatContextOpt` denotes; an empty store for `"none"`. */
+export declare function tagsStoreFor(opt?: FormatContextOpt): TagsStore;
 
 /**
  * Numeric tag value type alias.

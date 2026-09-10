@@ -22,7 +22,7 @@ import {
   type DiagFormatOpts,
 } from "@blockchaincommons/dcbor/diagnostic";
 
-import { type FormatContextOpt, resolveFormatContext } from "./format-context";
+import { type FormatContextOpt, tagsStoreFor } from "./format-context";
 
 // Note: Method declarations are in the base Envelope class.
 // This module provides the prototype implementations.
@@ -49,8 +49,6 @@ export function diagnostic(
   { annotate = false, context }: DiagnosticOptions = {},
 ): string {
   if (!annotate) return cborDiagnostic(envelope.toCbor());
-  const ctx = resolveFormatContext(context);
-  const opts: DiagFormatOpts = { annotate: true };
-  if (ctx !== undefined) opts.tags = ctx.tags;
+  const opts: DiagFormatOpts = { annotate: true, tags: tagsStoreFor(context) };
   return cborDiagnostic(envelope.toCbor(), opts);
 }

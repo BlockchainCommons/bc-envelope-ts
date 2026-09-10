@@ -25,7 +25,7 @@ import {
 import { diagnostic, type DiagFormatOpts } from "@blockchaincommons/dcbor/diagnostic";
 
 import { type Envelope } from "../base/envelope";
-import { type FormatContextOpt, resolveFormatContext } from "./format-context";
+import { type FormatContextOpt, resolveFormatContext, tagsStoreFor } from "./format-context";
 
 /** Types that render their own one-line summary. */
 export interface EnvelopeSummary {
@@ -89,8 +89,7 @@ export const cborEnvelopeSummary = (
   if (isArray(cbor) || isMap(cbor) || isTagged(cbor)) {
     const opts: DiagFormatOpts = { summarize: true };
 
-    const ctx = resolveFormatContext(context);
-    return diagnostic(cbor, ctx === undefined ? opts : { ...opts, tags: ctx.tags });
+    return diagnostic(cbor, { ...opts, tags: tagsStoreFor(context) });
   }
 
   // Fallback

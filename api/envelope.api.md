@@ -177,7 +177,6 @@ export class Envelope implements DigestProvider {
     objectForPredicate(predicate: EnvelopeInput): Envelope;
     objectForPredicateOr<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>, defaultValue: T): T;
     objectsForPredicate(predicate: EnvelopeInput): Envelope[];
-    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     optionalAssertionWithPredicate(predicate: EnvelopeInput): Envelope | undefined;
     optionalObjectForPredicate(predicate: EnvelopeInput): Envelope | undefined;
     optionalObjectForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T | undefined;
@@ -205,7 +204,7 @@ export class Envelope implements DigestProvider {
     walkDecrypt(keys: SymmetricKey[]): Envelope;
     walkReplace(target: Set<Digest>, replacement: Envelope): Envelope;
     walkUnelide(envelopes: Envelope[]): Envelope;
-    static wrap(envelope: Envelope): Envelope;
+    static wrap(subject: EnvelopeInput): Envelope;
     wrap(): Envelope;
 }
 

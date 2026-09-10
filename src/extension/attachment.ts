@@ -271,53 +271,23 @@ export interface AttachmentFilter {
   conformsTo?: string;
 }
 
-/** The envelope's attachments, optionally only those matching `filter`. */
+/**
+ * The envelope's `attachment` assertions, optionally only those matching
+ * `filter`; read each with `attachmentPayload`, `attachmentVendor` and
+ * `attachmentConformsTo`.
+ */
 export function attachments(envelope: Envelope, filter: AttachmentFilter = {}): Envelope[] {
-  const all = envelope.assertionsWithPredicate(ATTACHMENT).map((a) => {
-    const c = a.case;
-    if (c.type === "assertion") {
-      return c.assertion.object();
-    }
-    throw EnvelopeError.general("Invalid attachment assertion");
-  });
+  const all = envelope.assertionsWithPredicate(ATTACHMENT);
   if (filter.vendor === undefined && filter.conformsTo === undefined) return all;
-  return all.filter((attachment) => attachmentMatches(attachment, filter));
-}
-
-const attachmentMatches = (
-  attachment: Envelope,
-  { vendor, conformsTo }: AttachmentFilter,
-): boolean => {
-  {
+  return all.filter((a) => {
     try {
-      // The attachment is already a wrapped envelope with vendor/conformsTo assertions
-      // Check vendor if specified
-      if (vendor !== undefined) {
-        const vendorEnv = attachment.objectForPredicate(VENDOR);
-        const attachmentVendor = vendorEnv.asText();
-        if (attachmentVendor !== vendor) {
-          return false;
-        }
-      }
-
-      // Check conformsTo if specified
-      if (conformsTo !== undefined) {
-        const conformsToEnv = attachment.optionalObjectForPredicate(CONFORMS_TO);
-        if (conformsToEnv === undefined) {
-          return false;
-        }
-        const conformsToText = conformsToEnv.asText();
-        if (conformsToText !== conformsTo) {
-          return false;
-        }
-      }
-
-      return true;
+      if (filter.vendor !== undefined && attachmentVendor(a) !== filter.vendor) return false;
+      return filter.conformsTo === undefined || attachmentConformsTo(a) === filter.conformsTo;
     } catch {
       return false;
     }
-  }
-};
+  });
+}
 
 /**
  * Validates that this envelope is a valid attachment.

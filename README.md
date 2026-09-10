@@ -32,12 +32,33 @@ bun add @blockchaincommons/envelope
 
 ## Usage Instructions
 
+The root entry is the core `Envelope` class (construction, assertions,
+digests, CBOR/UR, elision, encryption, compression, salt). Each extension is
+a subpath of plain functions that take the envelope first; `/all` installs
+every extension as an `Envelope` method for the fluent style.
+
 ```typescript
-import {
-  registerSealExtension,
-  VERSION,
-} from "@blockchaincommons/envelope";
+import { Envelope } from "@blockchaincommons/envelope";
+import { sign, verifySignatureFrom } from "@blockchaincommons/envelope/signature";
+import { format } from "@blockchaincommons/envelope/format";
+import { PrivateKeys } from "@blockchaincommons/components";
+
+const alice = PrivateKeys.random();
+const doc = Envelope.from("Alice").addAssertion("knows", "Bob");
+const signed = sign(doc, alice);
+verifySignatureFrom(signed, alice.publicKeys());
+console.log(format(doc));
+// "Alice" [
+//     "knows": "Bob"
+// ]
+
+// The same, fluently, with the facade (the only entry with side effects):
+import "@blockchaincommons/envelope/all";
+doc.sign(alice).verifySignatureFrom(alice.publicKeys()).format();
 ```
+
+Subpaths: `/all`, `/format`, `/expression`, `/attachment`, `/edge`, `/proof`,
+`/recipient`, `/secret`, `/signature`, `/sskr`, `/types`, `/seal`.
 
 Runnable examples live in the [`examples/`](https://github.com/BlockchainCommons/bc-envelope-ts/tree/master/examples) directory.
 
@@ -56,7 +77,7 @@ Runnable examples live in the [`examples/`](https://github.com/BlockchainCommons
 
 ### Dependencies
 
-`@blockchaincommons/envelope` depends on `@blockchaincommons/components`, `@blockchaincommons/crypto`, `@blockchaincommons/dcbor-compat`, `@blockchaincommons/known-values`, `@blockchaincommons/rand`, `@blockchaincommons/sskr`, `@blockchaincommons/tags`, `@blockchaincommons/uniform-resources`, `pako` at runtime.
+`@blockchaincommons/envelope` depends on `@blockchaincommons/components`, `@blockchaincommons/crypto`, `@blockchaincommons/dcbor`, `@blockchaincommons/known-values`, `@blockchaincommons/rand`, `@blockchaincommons/sskr`, `@blockchaincommons/tags` and `@blockchaincommons/uniform-resources` at runtime.
 
 To build and work on this library, you'll need the following tools:
 

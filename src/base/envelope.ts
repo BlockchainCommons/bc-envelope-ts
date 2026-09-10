@@ -176,6 +176,8 @@ export type EnvelopeCase =
 // ```
 
 let ENVELOPE_CODEC: CborCodec<Envelope> | undefined;
+/** The shared `NULL`/`TRUE`/`FALSE`/`UNIT` envelopes, built on first use. */
+const CONSTANTS: { NULL?: Envelope; TRUE?: Envelope; FALSE?: Envelope; UNIT?: Envelope } = {};
 
 export class Envelope implements DigestProvider {
   private readonly _case: EnvelopeCase;
@@ -307,7 +309,7 @@ export class Envelope implements DigestProvider {
    * @returns A null envelope
    */
   static get NULL(): Envelope {
-    return Envelope.leaf(null);
+    return (CONSTANTS.NULL ??= Envelope.leaf(null));
   }
 
   //
@@ -481,7 +483,8 @@ export class Envelope implements DigestProvider {
    * @param envelope - The envelope to wrap
    * @returns A new wrapped envelope
    */
-  static wrap(envelope: Envelope): Envelope {
+  static wrap(subject: EnvelopeInput): Envelope {
+    const envelope = Envelope.from(subject);
     const digest = Digest.fromDigests([envelope.digest()]);
     return new Envelope({
       type: "wrapped",
@@ -946,14 +949,14 @@ export class Envelope implements DigestProvider {
    * Implementation of static false()
    */
   static get FALSE(): Envelope {
-    return Envelope.leaf(false);
+    return (CONSTANTS.FALSE ??= Envelope.leaf(false));
   }
 
   /**
    * Implementation of static true()
    */
   static get TRUE(): Envelope {
-    return Envelope.leaf(true);
+    return (CONSTANTS.TRUE ??= Envelope.leaf(true));
   }
 
   /**
@@ -965,7 +968,7 @@ export class Envelope implements DigestProvider {
    * the future.
    */
   static get UNIT(): Envelope {
-    return Envelope.from(UNIT);
+    return (CONSTANTS.UNIT ??= Envelope.from(UNIT));
   }
 
   /**
@@ -2281,13 +2284,6 @@ export class Envelope implements DigestProvider {
     return extractObjectsForPredicate(this, predicate, decoder);
   }
 
-  /**
-   * Add tryObjectsForPredicate method to Envelope prototype
-   */
-  objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[] {
-    return tryObjectsForPredicate(this, predicate, decoder);
-  }
-
   encryptSubject(key: SymmetricKey): Envelope {
     const c = this.case;
 
@@ -3130,31 +3126,6 @@ export function extractObjectsForPredicate<T>(
 ): T[] {
   const objects = envelope.objectsForPredicate(predicate);
   return objects.map((obj) => extractSubject(obj, decoder));
-}
-
-/**
- * Extracts all objects for a predicate as type T, returning empty array if none found.
- *
- * @param envelope - The envelope to query
- * @param predicate - The predicate to match
- * @param decoder - Function to decode CBOR to type T
- * @returns Array of decoded values of type T (empty if no matches)
- * @throws {EnvelopeError} If any decoding fails
- */
-export function tryObjectsForPredicate<T>(
-  envelope: Envelope,
-  predicate: EnvelopeInput,
-  decoder: CborDecoder<T>,
-): T[] {
-  try {
-    return extractObjectsForPredicate(envelope, predicate, decoder);
-  } catch (error) {
-    // If it's a nonexistent predicate error, return empty array
-    if (error instanceof EnvelopeError && error.code === "NonexistentPredicate") {
-      return [];
-    }
-    throw error;
-  }
 }
 
 /**

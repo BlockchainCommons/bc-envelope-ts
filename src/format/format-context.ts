@@ -109,6 +109,12 @@ import { diagnostic } from "@blockchaincommons/dcbor/diagnostic";
  */
 export type FormatContextOpt = FormatContext | "global" | "none";
 
+/** The tags store a `FormatContextOpt` denotes; an empty store for `"none"`. */
+export function tagsStoreFor(opt: FormatContextOpt = "global"): TagsStore {
+  return resolveFormatContext(opt)?.tags ?? (EMPTY_TAGS ??= new TagsStoreClass());
+}
+let EMPTY_TAGS: TagsStore | undefined;
+
 /** The context a `FormatContextOpt` denotes; `undefined` for `"none"`. */
 export function resolveFormatContext(opt: FormatContextOpt = "global"): FormatContext | undefined {
   if (opt === "none") return undefined;

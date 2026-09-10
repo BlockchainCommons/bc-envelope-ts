@@ -15,7 +15,7 @@
 import { type Envelope } from "../base/envelope";
 import { hexAnnotated } from "@blockchaincommons/dcbor/diagnostic";
 
-import { type FormatContextOpt, resolveFormatContext } from "./format-context";
+import { type FormatContextOpt, tagsStoreFor } from "./format-context";
 
 // Note: Method declarations are in the base Envelope class.
 // This module provides the prototype implementations.
@@ -35,6 +35,5 @@ export interface HexOptions {
 /** The envelope's CBOR as hex, annotated line by line unless `annotate` is false. */
 export function hex(envelope: Envelope, { annotate = true, context }: HexOptions = {}): string {
   if (!annotate) return envelope.toCbor().toHex();
-  const ctx = resolveFormatContext(context);
-  return hexAnnotated(envelope.toCbor(), ctx === undefined ? {} : { tagsStore: ctx.tags });
+  return hexAnnotated(envelope.toCbor(), { tagsStore: tagsStoreFor(context) });
 }
