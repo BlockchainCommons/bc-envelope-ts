@@ -4,8 +4,10 @@
  *
  */
 
-import type { CborTaggedEncodable } from "@blockchaincommons/dcbor-compat";
 import type { KnownValue } from "@blockchaincommons/known-values";
+import type { ToCbor } from "@blockchaincommons/dcbor";
+import type { CborTaggedEncodable } from "./cbor";
+
 import type { Envelope } from "./envelope";
 
 /// A trait for types that can be encoded as a Gordian Envelope.
@@ -78,4 +80,5 @@ export type EnvelopeEncodableValue =
   | undefined
   | Envelope
   | KnownValue
-  | CborTaggedEncodable;
+  | CborTaggedEncodable
+  | ToCbor;

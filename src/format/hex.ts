@@ -14,7 +14,9 @@
  */
 
 import { Envelope } from "../base/envelope";
-import { cborData, hexOpt, type HexFormatOpts } from "@blockchaincommons/dcbor-compat";
+import { encodeCbor } from "@blockchaincommons/dcbor";
+import { hexAnnotated } from "@blockchaincommons/dcbor/diagnostic";
+
 import { type FormatContext, getGlobalFormatContext } from "./format-context";
 
 // Note: Method declarations are in the base Envelope class.
@@ -28,10 +30,10 @@ import { type FormatContext, getGlobalFormatContext } from "./format-context";
 /// they ask for a debuggable hex view of an envelope.
 Envelope.prototype.hex = function (this: Envelope): string {
   const ctx = getGlobalFormatContext();
-  return hexOpt(this.taggedCbor(), { annotate: true, tagsStore: ctx.tags() });
+  return hexAnnotated(this.taggedCbor(), { tagsStore: ctx.tags() });
 };
 
-/// Implementation of hexOpt()
+/// Implementation of hexAnnotated()
 ///
 /// Mirrors Rust `Envelope::hex_opt(annotate, context)`. When `annotate` is
 /// `false` we emit a flat hex string (`hexOpt` short-circuits to plain
@@ -42,16 +44,13 @@ Envelope.prototype.hexOpt = function (
   annotate: boolean,
   context?: FormatContext,
 ): string {
-  const opts: HexFormatOpts = { annotate };
-  if (annotate) {
-    const ctx = context ?? getGlobalFormatContext();
-    opts.tagsStore = ctx.tags();
-  }
-  return hexOpt(this.taggedCbor(), opts);
+  if (!annotate) return this.taggedCbor().toHex();
+  const ctx = context ?? getGlobalFormatContext();
+  return hexAnnotated(this.taggedCbor(), { tagsStore: ctx.tags() });
 };
 
 /// Implementation of cborBytes()
 Envelope.prototype.cborBytes = function (this: Envelope): Uint8Array {
   const cbor = this.taggedCbor();
-  return cborData(cbor);
+  return encodeCbor(cbor);
 };

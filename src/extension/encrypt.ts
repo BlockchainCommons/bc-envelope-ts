@@ -26,13 +26,9 @@
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
 import type { Digest } from "../base/digest";
-import { cborData, decodeCbor } from "@blockchaincommons/dcbor-compat";
-import {
-  aeadChaCha20Poly1305EncryptWithAad,
-  aeadChaCha20Poly1305DecryptWithAad,
-  SYMMETRIC_NONCE_SIZE,
-} from "@blockchaincommons/crypto";
-import { SecureRandomNumberGenerator, rngRandomData } from "@blockchaincommons/rand";
+import { encodeCbor, decodeCbor } from "@blockchaincommons/dcbor";
+import { chacha20Poly1305, SYMMETRIC_NONCE_SIZE } from "@blockchaincommons/crypto";
+import { secureRng, randomBytes } from "@blockchaincommons/rand";
 import {
   EncryptedMessage,
   Nonce,
@@ -64,7 +60,7 @@ export { SymmetricKey, EncryptedMessage };
  * `digest.tagged_cbor().to_cbor_data()`.
  */
 function digestAadBytes(digest: Digest): Uint8Array {
-  return cborData(digest.taggedCbor());
+  return encodeCbor(digest.toCbor());
 }
 
 /**
@@ -78,21 +74,17 @@ function encryptWithDigest(
   plaintext: Uint8Array,
   digest: Digest,
 ): EncryptedMessage {
-  const rng = new SecureRandomNumberGenerator();
-  const nonceBytes = rngRandomData(rng, SYMMETRIC_NONCE_SIZE);
+  const rng = secureRng();
+  const nonceBytes = randomBytes(SYMMETRIC_NONCE_SIZE, { rng: rng });
   const aad = digestAadBytes(digest);
-  const [ciphertext, authTag] = aeadChaCha20Poly1305EncryptWithAad(
-    plaintext,
-    key.data(),
-    nonceBytes,
+  const sealed = chacha20Poly1305.encrypt(key.bytes, nonceBytes, plaintext, { aad });
+  const split = sealed.length - chacha20Poly1305.TAG_SIZE;
+  return EncryptedMessage.from({
+    ciphertext: sealed.subarray(0, split),
     aad,
-  );
-  return EncryptedMessage.new(
-    ciphertext,
-    aad,
-    Nonce.fromDataRef(nonceBytes),
-    AuthenticationTag.fromData(authTag),
-  );
+    nonce: Nonce.from(nonceBytes),
+    authTag: AuthenticationTag.from(sealed.subarray(split)),
+  });
 }
 
 /**
@@ -106,15 +98,14 @@ function decryptWithDigest(key: SymmetricKey, message: EncryptedMessage): Uint8A
   if (digest === null) {
     throw EnvelopeError.general("Missing digest in encrypted message");
   }
-  const aad = message.aad();
+  const aad = message.aad;
   try {
-    return aeadChaCha20Poly1305DecryptWithAad(
-      message.ciphertext(),
-      key.data(),
-      message.nonce().data(),
-      aad,
-      message.authenticationTag().data(),
-    );
+    const ct = message.ciphertext;
+    const tag = message.authenticationTag.bytes;
+    const sealed = new Uint8Array(ct.length + tag.length);
+    sealed.set(ct, 0);
+    sealed.set(tag, ct.length);
+    return chacha20Poly1305.decrypt(key.bytes, message.nonce.bytes, sealed, { aad });
   } catch (_error) {
     throw EnvelopeError.general("Decryption failed: invalid key or corrupted data");
   }
@@ -152,7 +143,7 @@ export function registerEncryptExtension(): void {
 
       // Get the subject's CBOR data
       const subjectCbor = c.subject.taggedCbor();
-      const encodedCbor = cborData(subjectCbor);
+      const encodedCbor = encodeCbor(subjectCbor);
       const subjectDigest = c.subject.digest();
 
       // Encrypt the subject
@@ -170,7 +161,7 @@ export function registerEncryptExtension(): void {
 
     // For other cases, encrypt the entire envelope
     const cbor = this.taggedCbor();
-    const encodedCbor = cborData(cbor);
+    const encodedCbor = encodeCbor(cbor);
     const digest = this.digest();
 
     const encryptedMessage = encryptWithDigest(key, encodedCbor, digest);
@@ -253,7 +244,7 @@ export function encryptWholeEnvelope(envelope: Envelope, key: SymmetricKey): Env
     throw EnvelopeError.general("Cannot encrypt elided envelope");
   }
   const cbor = envelope.taggedCbor();
-  const encodedCbor = cborData(cbor);
+  const encodedCbor = encodeCbor(cbor);
   const digest = envelope.digest();
   const encryptedMessage = encryptWithDigest(key, encodedCbor, digest);
   return Envelope.fromCase({ type: "encrypted", message: encryptedMessage });

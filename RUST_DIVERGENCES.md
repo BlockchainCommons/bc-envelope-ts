@@ -17,23 +17,63 @@ differs from the Rust reference. It has three kinds of entry:
 2. **JS-only input domain** - inputs that have no Rust analog, so there is nothing to diverge from.
 3. **Mapping equivalences** - JS-specific inputs that are validated through the bytes they produce.
 
+Every entry below is checked by `tests/rust-validation`, a Rust program that
+pins `bc-envelope = 0.43.0` and replays `tests/vectors/vectors.json` through
+the reference, building each recipe with the reference's own API. The
+current run: **149 vectors — 10 match, 139 expected divergences, 0
+mismatches.** (Almost every vector carries the annotated-hex output, which
+is the pending P1 below; everything else in those vectors matches.)
+
 ## 1. True behavioral divergences
 
-_None recorded yet for the extraction release. The port was byte-compatible with
-the Rust reference at the tracked version when it was extracted from the
-`paritytech/bcts` monorepo._
+### D1. Compressed bytes (2 vectors)
 
-> Any divergence found after extraction must be added here in the same commit
-> that introduces or discovers it, with the input, the Rust outcome, the
-> TypeScript outcome, and the reason the difference is intentional.
+Compression goes through components' `Compressed`, whose pako stream differs
+from the reference's miniz_oxide stream (components D3). The digest tree,
+`format`, `formatFlat`, `treeFormat`, `mermaidFormat` and `summary` match;
+`cbor`, `ur`, `diagnostic` and annotated `hex` differ in the compressed
+payload bytes. Both sides decompress each other's output.
+
+### D2. Registry names in format strings (1 vector)
+
+The TypeScript known-values registry names codepoints the reference's format
+context does not (the bundled JSON registries): `'Self'` for 706 where the
+reference prints `'706'`. Every codepoint both know prints identically.
+
+### D3. Summary truncation counts characters (1 vector)
+
+Leaf summaries (`summary`, `mermaidFormat` labels) and the diagnostic
+line-breaking threshold count **characters** in TypeScript and **bytes** in
+the reference, so a non-ASCII text leaf can be truncated or wrapped
+differently: `"unicode ✓ ☺ 日本"` is cut to `"unicode ✓ ☺ 日本…"` by the
+reference and shown whole here. ASCII text is identical.
+
+### P1. Annotated hex carries no tag names — **pending fix** (125 vectors)
+
+`hexOpt(true)` / `hex()` prints `# tag(200)` where the reference prints
+`# tag(200) envelope`: the tags store handed to the annotator has no names.
+Fixed in Phase 3 W7 (format context); the harness records it until then.
+
+### P2. Tag-1 dates are not summarised — **pending fix** (1 vector)
+
+A `date` assertion prints as `1(1657512000)` where the reference prints
+`2022-07-11T04:00:00Z`: the format context lacks dcbor's standard-tag
+summarisers. Fixed in Phase 3 W7.
 
 ## 2. JS-only input domain
 
-_To be documented as the surface is audited._
+_None. The recipe language only exercises what both sides implement._
 
 ## 3. Mapping equivalences
 
-_To be documented as the surface is audited._
+- **Error taxonomy (`E1`, 9 vectors).** Both sides reject malformed CBOR,
+  UR strings with bad checksums or the wrong type; the reference reports
+  dcbor/bc-ur errors, TypeScript a `CborError` or a `URError` code. The
+  harness requires both to reject.
+- **Randomised outputs.** Nonces (encryption), ephemeral keys (recipients),
+  KDF salts (locking) and Schnorr aux randomness make bytes or digests vary
+  per run; those recipes pin only the stable outputs (`digest` and the
+  format strings, or the format strings alone), on both sides.
 
 ## Maintenance
 

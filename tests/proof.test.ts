@@ -37,7 +37,7 @@ describe("Proofs (Inclusion Proofs)", () => {
 
       expect(proof).toBeDefined();
       if (proof) {
-        expect(proof.digest().hex()).toBe(aliceFriends.digest().hex());
+        expect(proof.digest().toHex()).toBe(aliceFriends.digest().toHex());
         expect(root.confirmContainsTarget(knowsBobAssertion, proof)).toBe(true);
       }
     });
@@ -150,8 +150,8 @@ describe("Proofs (Inclusion Proofs)", () => {
       const proof = aliceFriends.proofContainsTarget(knowsBob);
 
       if (proof) {
-        expect(aliceFriends.digest().hex()).toBe(proof.digest().hex());
-        expect(proof.digest().hex()).toBe(root.digest().hex());
+        expect(aliceFriends.digest().toHex()).toBe(proof.digest().toHex());
+        expect(proof.digest().toHex()).toBe(root.digest().toHex());
       }
     });
   });

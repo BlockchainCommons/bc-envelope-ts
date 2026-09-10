@@ -182,7 +182,7 @@ describe("Non-correlation Tests", () => {
         try {
           const pred = a.asPredicate();
           const kv = pred?.asKnownValue();
-          return kv !== undefined && kv.name() === "salt";
+          return kv !== undefined && kv.name === "salt";
         } catch {
           return false;
         }

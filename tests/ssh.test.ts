@@ -248,7 +248,7 @@ describe("SSH Signature Tests", () => {
       // ]);
       //
       // When implemented:
-      // import { PrivateKeyBase } from "@blockchaincommons/components";
+      // import { PrivateKeyBase, SigningOptions } from "@blockchaincommons/components";
       //
       // const alicePrivateKeyBase = PrivateKeyBase.fromData(ALICE_SEED);
       // const aliceSshPrivateKey = alicePrivateKeyBase
@@ -261,7 +261,7 @@ describe("SSH Signature Tests", () => {
 
     it.skip("should sign with SSH options (namespace and hash algorithm)", () => {
       // When implemented:
-      // import { SigningOptions } from "@blockchaincommons/components";
+      //
       //
       // const options: SigningOptions = {
       //   type: "Ssh",

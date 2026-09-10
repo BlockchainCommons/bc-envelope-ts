@@ -27,11 +27,9 @@ import { EnvelopeError } from "../base/error";
 import {
   EDGE,
   IS_A,
-  IS_A_RAW,
+  KNOWN_VALUE_CODEPOINTS,
   SOURCE,
-  SOURCE_RAW,
   TARGET,
-  TARGET_RAW,
 } from "@blockchaincommons/known-values";
 
 // -------------------------------------------------------------------
@@ -64,7 +62,7 @@ export class Edges {
    */
   add(edgeEnvelope: Envelope): void {
     const digest = edgeEnvelope.digest();
-    this._envelopes.set(digest.hex(), edgeEnvelope);
+    this._envelopes.set(digest.toHex(), edgeEnvelope);
   }
 
   /**
@@ -74,7 +72,7 @@ export class Edges {
    * @returns The edge envelope if found, or undefined
    */
   get(digest: Digest): Envelope | undefined {
-    return this._envelopes.get(digest.hex());
+    return this._envelopes.get(digest.toHex());
   }
 
   /**
@@ -84,7 +82,7 @@ export class Edges {
    * @returns The removed edge envelope if found, or undefined
    */
   remove(digest: Digest): Envelope | undefined {
-    const key = digest.hex();
+    const key = digest.toHex();
     const envelope = this._envelopes.get(key);
     this._envelopes.delete(key);
     return envelope;
@@ -155,7 +153,7 @@ export class Edges {
     const edgeEnvelopes = envelope.edges();
     const edges = new Edges();
     for (const edge of edgeEnvelopes) {
-      edges._envelopes.set(edge.digest().hex(), edge);
+      edges._envelopes.set(edge.digest().toHex(), edge);
     }
     return edges;
   }
@@ -240,21 +238,21 @@ Envelope.prototype.validateEdge = function (this: Envelope): void {
       // Rust: `try_known_value().map_err(|_| EdgeUnexpectedAssertion)`.
       throw EnvelopeError.edgeUnexpectedAssertion();
     }
-    const raw = kv.valueBigInt();
+    const raw = kv.value;
     switch (raw) {
-      case IS_A_RAW:
+      case KNOWN_VALUE_CODEPOINTS.IS_A:
         if (seenIsA) {
           throw EnvelopeError.edgeDuplicateIsA();
         }
         seenIsA = true;
         break;
-      case SOURCE_RAW:
+      case KNOWN_VALUE_CODEPOINTS.SOURCE:
         if (seenSource) {
           throw EnvelopeError.edgeDuplicateSource();
         }
         seenSource = true;
         break;
-      case TARGET_RAW:
+      case KNOWN_VALUE_CODEPOINTS.TARGET:
         if (seenTarget) {
           throw EnvelopeError.edgeDuplicateTarget();
         }

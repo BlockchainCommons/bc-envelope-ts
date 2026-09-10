@@ -7,12 +7,8 @@
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
 import type { EnvelopeEncodableValue } from "../base/envelope-encodable";
-import {
-  SecureRandomNumberGenerator,
-  rngRandomData,
-  rngNextInClosedRangeI32,
-  type RandomNumberGenerator,
-} from "@blockchaincommons/rand";
+import { secureRng, randomBytes, type RandomNumberGenerator } from "@blockchaincommons/rand";
+import { nextInClosedRangeI32 } from "@blockchaincommons/rand/samplers";
 import { SALT as SALT_KV, type KnownValue } from "@blockchaincommons/known-values";
 import { Salt as SaltComponent } from "@blockchaincommons/components";
 
@@ -52,15 +48,15 @@ export const SALT: KnownValue = SALT_KV;
 /// Minimum salt size in bytes (64 bits)
 const MIN_SALT_SIZE = 8;
 
-/// Creates a new SecureRandomNumberGenerator instance
+/// Creates a new SecureRng instance
 function createSecureRng(): RandomNumberGenerator {
-  return new SecureRandomNumberGenerator();
+  return secureRng();
 }
 
 /// Generates random bytes using the rand package
 function generateRandomBytes(length: number, rng?: RandomNumberGenerator): Uint8Array {
   const actualRng = rng ?? createSecureRng();
-  return rngRandomData(actualRng, length);
+  return randomBytes(length, { rng: actualRng });
 }
 
 /// Calculates salt size proportional to envelope size
@@ -70,7 +66,7 @@ function calculateProportionalSaltSize(envelopeSize: number, rng?: RandomNumberG
   const count = envelopeSize;
   const minSize = Math.max(8, Math.ceil(count * 0.05));
   const maxSize = Math.max(minSize + 8, Math.ceil(count * 0.25));
-  return rngNextInClosedRangeI32(actualRng, minSize, maxSize);
+  return nextInClosedRangeI32(actualRng, minSize, maxSize);
 }
 
 /// Implementation of addSalt()
@@ -81,7 +77,7 @@ if (Envelope?.prototype) {
     const envelopeSize = this.cborBytes().length;
     const saltSize = calculateProportionalSaltSize(envelopeSize, rng);
     const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Implementation of addSaltInstance() — mirrors Rust
@@ -101,7 +97,7 @@ if (Envelope?.prototype) {
       throw EnvelopeError.general(`Salt must be at least ${MIN_SALT_SIZE} bytes, got ${count}`);
     }
     const saltBytes = generateRandomBytes(count);
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Alias for addSaltWithLength (Rust API compatibility)
@@ -114,7 +110,7 @@ if (Envelope?.prototype) {
         `Salt must be at least ${MIN_SALT_SIZE} bytes, got ${saltBytes.length}`,
       );
     }
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Implementation of addSaltInRange()
@@ -134,9 +130,9 @@ if (Envelope?.prototype) {
       );
     }
     const rng = createSecureRng();
-    const saltSize = rngNextInClosedRangeI32(rng, min, max);
+    const saltSize = nextInClosedRangeI32(rng, min, max);
     const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Test-determinism overloads for the salt builders, mirroring Rust's
@@ -154,7 +150,7 @@ if (Envelope?.prototype) {
     const envelopeSize = this.cborBytes().length;
     const saltSize = calculateProportionalSaltSize(envelopeSize, rng);
     const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Implementation of addSaltWithLenUsing()
@@ -167,7 +163,7 @@ if (Envelope?.prototype) {
       throw EnvelopeError.general(`Salt must be at least ${MIN_SALT_SIZE} bytes, got ${count}`);
     }
     const saltBytes = generateRandomBytes(count, rng);
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Implementation of addSaltInRangeUsing()
@@ -187,9 +183,9 @@ if (Envelope?.prototype) {
         `Maximum salt size must be at least minimum, got min=${min} max=${max}`,
       );
     }
-    const saltSize = rngNextInClosedRangeI32(rng, min, max);
+    const saltSize = nextInClosedRangeI32(rng, min, max);
     const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.fromData(saltBytes));
+    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
   };
 
   /// Implementation of addAssertionSalted()

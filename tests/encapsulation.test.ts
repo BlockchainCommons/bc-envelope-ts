@@ -15,12 +15,8 @@
 
 import { describe, it, expect } from "vitest";
 import { Envelope, PrivateKeyBase } from "../src";
-import {
-  EncapsulationScheme,
-  createEncapsulationKeypair,
-  MLKEMLevel,
-  MLKEMPrivateKey,
-} from "@blockchaincommons/components";
+import { EncapsulationScheme, createEncapsulationKeypair } from "@blockchaincommons/components";
+import { MLKEMLevel, MLKEMPrivateKey } from "@blockchaincommons/components/pq";
 
 /**
  * Helper function to create a hello envelope (equivalent to Rust's hello_envelope())
@@ -48,7 +44,7 @@ function testX25519Scheme(): void {
   const decryptedEnvelope = encryptedEnvelope.decryptToRecipient(privateKey);
 
   // Verify structural digest matches
-  expect(envelope.digest().hex()).toEqual(decryptedEnvelope.digest().hex());
+  expect(envelope.digest().toHex()).toEqual(decryptedEnvelope.digest().toHex());
 }
 
 /**
@@ -69,7 +65,7 @@ function testEncapsulationScheme(scheme: EncapsulationScheme): void {
   const decapsulated = privateKey.decapsulateSharedSecret(ciphertext);
 
   // Verify shared secrets match
-  expect(sharedSecret.data()).toEqual(decapsulated.data());
+  expect(sharedSecret.bytes).toEqual(decapsulated.bytes);
 }
 
 /**
@@ -88,7 +84,7 @@ function testMLKEMLevel(level: MLKEMLevel): void {
   const decapsulated = privateKey.decapsulate(ciphertext);
 
   // Verify shared secrets match
-  expect(sharedSecret.data()).toEqual(decapsulated.data());
+  expect(sharedSecret.bytes).toEqual(decapsulated.bytes);
 }
 
 describe("Encapsulation", () => {
@@ -143,7 +139,7 @@ describe("Encapsulation", () => {
       const [senderSecret, ciphertext] = publicKey.encapsulateNewSharedSecret();
       const receiverSecret = privateKey.decapsulateSharedSecret(ciphertext);
 
-      expect(senderSecret.data()).toEqual(receiverSecret.data());
+      expect(senderSecret.bytes).toEqual(receiverSecret.bytes);
     });
   });
 
@@ -162,27 +158,27 @@ describe("Encapsulation", () => {
 
     it("should generate correct key sizes for MLKEM512", () => {
       const [privateKey, publicKey] = MLKEMPrivateKey.keypair(MLKEMLevel.MLKEM512);
-      expect(privateKey.data().length).toBe(1632);
-      expect(publicKey.data().length).toBe(800);
+      expect(privateKey.bytes.length).toBe(1632);
+      expect(publicKey.bytes.length).toBe(800);
     });
 
     it("should generate correct key sizes for MLKEM768", () => {
       const [privateKey, publicKey] = MLKEMPrivateKey.keypair(MLKEMLevel.MLKEM768);
-      expect(privateKey.data().length).toBe(2400);
-      expect(publicKey.data().length).toBe(1184);
+      expect(privateKey.bytes.length).toBe(2400);
+      expect(publicKey.bytes.length).toBe(1184);
     });
 
     it("should generate correct key sizes for MLKEM1024", () => {
       const [privateKey, publicKey] = MLKEMPrivateKey.keypair(MLKEMLevel.MLKEM1024);
-      expect(privateKey.data().length).toBe(3168);
-      expect(publicKey.data().length).toBe(1568);
+      expect(privateKey.bytes.length).toBe(3168);
+      expect(publicKey.bytes.length).toBe(1568);
     });
 
     it("should produce 32-byte shared secrets for all levels", () => {
       for (const level of [MLKEMLevel.MLKEM512, MLKEMLevel.MLKEM768, MLKEMLevel.MLKEM1024]) {
         const [, publicKey] = MLKEMPrivateKey.keypair(level);
         const { sharedSecret } = publicKey.encapsulate();
-        expect(sharedSecret.data().length).toBe(32);
+        expect(sharedSecret.bytes.length).toBe(32);
       }
     });
   });
@@ -239,7 +235,7 @@ describe("Encapsulation", () => {
       const bobDecapsulated = bobPrivate.decapsulate(ciphertext);
 
       // The secrets should NOT match (demonstrating authentication)
-      expect(aliceSecret.data()).not.toEqual(bobDecapsulated.data());
+      expect(aliceSecret.bytes).not.toEqual(bobDecapsulated.bytes);
     });
 
     it("should require at least one recipient", () => {

@@ -18,7 +18,8 @@
  */
 
 import { Envelope } from "../base/envelope";
-import { diagnostic, diagnosticOpt, type DiagFormatOpts } from "@blockchaincommons/dcbor-compat";
+import { diagnostic, type DiagFormatOpts } from "@blockchaincommons/dcbor/diagnostic";
+
 import { type FormatContext, getGlobalFormatContext } from "./format-context";
 
 // Note: Method declarations are in the base Envelope class.
@@ -51,5 +52,5 @@ Envelope.prototype.diagnosticAnnotated = function (
   const opts: DiagFormatOpts = { annotate: true };
   const ctx = context ?? getGlobalFormatContext();
   opts.tags = ctx.tags();
-  return diagnosticOpt(this.taggedCbor(), opts);
+  return diagnostic(this.taggedCbor(), opts);
 };

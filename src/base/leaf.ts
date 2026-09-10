@@ -4,10 +4,17 @@
  *
  */
 
-import type { Cbor } from "@blockchaincommons/dcbor-compat";
-import { isNumber, isNaN, asArray, asMap, asText } from "@blockchaincommons/dcbor-compat";
-import type { KnownValue } from "@blockchaincommons/known-values";
-import { UNIT } from "@blockchaincommons/known-values";
+import {
+  type Cbor,
+  isNumber,
+  asArray,
+  asMap,
+  asText,
+  asFloat,
+  isFloat,
+} from "@blockchaincommons/dcbor";
+import { type KnownValue, UNIT } from "@blockchaincommons/known-values";
+
 import { Envelope } from "./envelope";
 import { EnvelopeError } from "./error";
 
@@ -73,18 +80,14 @@ Envelope.prototype.isSubjectNumber = function (this: Envelope): boolean {
   return this.subject().isNumber();
 };
 
-/// Implementation of isNaN()
+/// Implementation of isCborNaN()
 Envelope.prototype.isNaN = function (this: Envelope): boolean {
   const leaf = this.asLeaf();
   if (leaf === undefined) {
     return false;
   }
 
-  // Check for NaN in CBOR simple types
-  if ("type" in leaf && leaf.type === 7) {
-    return isNaN(leaf as unknown as Parameters<typeof isNaN>[0]);
-  }
-  return false;
+  return isFloat(leaf) && Number.isNaN(asFloat(leaf));
 };
 
 /// Implementation of isSubjectNaN()
@@ -107,8 +110,8 @@ Envelope.prototype.tryByteString = function (this: Envelope): Uint8Array {
   return this.extractBytes();
 };
 
-/// Implementation of asByteString()
-Envelope.prototype.asByteString = function (this: Envelope): Uint8Array | undefined {
+/// Implementation of asBytes()
+Envelope.prototype.asBytes = function (this: Envelope): Uint8Array | undefined {
   try {
     return this.extractBytes();
   } catch {

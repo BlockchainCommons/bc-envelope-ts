@@ -111,7 +111,7 @@ describe("Mermaid Formatting", () => {
       const { SymmetricKey } = await import("@blockchaincommons/components");
       const env = Envelope.new("Alice")
         .addAssertion("knows", "Bob")
-        .encryptSubject(SymmetricKey.new());
+        .encryptSubject(SymmetricKey.random());
 
       const expected = [
         "%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%",
@@ -390,7 +390,7 @@ describe("E1a — format-context summarizer parity with Rust", () => {
   // parity since round-trip digest checks pass either way.
 
   it("renders TAG_JSON as JSON(<as_str>) (E1a-1)", async () => {
-    const { JSON: JSONTagged } = await import("@blockchaincommons/components");
+    const { CborJson: JSONTagged } = await import("@blockchaincommons/components");
     const json = JSONTagged.fromString('{"a":1}');
     const envelope = Envelope.new(json);
     expect(envelope.format()).toBe('JSON({"a":1})');
@@ -402,7 +402,7 @@ describe("E1a — format-context summarizer parity with Rust", () => {
     // ref is the first 8 hex chars of that data.
     const data = new Uint8Array(32);
     for (let i = 0; i < 32; i++) data[i] = i;
-    const ref = Reference.fromData(data);
+    const ref = Reference.from(data);
     const envelope = Envelope.new(ref);
     // Reference.toString() = `Reference(<refHexShort>)`. We assert the
     // shape rather than the exact short ref so the test stays valid
@@ -411,7 +411,8 @@ describe("E1a — format-context summarizer parity with Rust", () => {
   });
 
   it("renders TAG_SIGNATURE for non-default scheme using raw enum name, not human-friendly form (E1a-3)", async () => {
-    const { Signature, MLDSASignature, MLDSALevel } = await import("@blockchaincommons/components");
+    const { Signature } = await import("@blockchaincommons/components");
+    const { MLDSASignature, MLDSALevel } = await import("@blockchaincommons/components/pq");
     // Construct a stub Signature with the MLDSA44 scheme. The summarizer
     // path must render `Signature(MLDSA44)` (Rust enum-Debug shape),
     // NOT `Signature(MLDSA-44)` (TS `signatureType()` human form).
@@ -437,7 +438,7 @@ describe("E1f — SSH summarizer parity with Rust tags_registry.rs:196-238", () 
   // generated from seed 59f2293a5bce7d4de59e71b4207ac5d2).
 
   it("renders TAG_SSH_TEXT_PRIVATE_KEY as SSHPrivateKey(refHexShort) (E1f-1)", async () => {
-    const { cbor, toTaggedValue } = await import("@blockchaincommons/dcbor-compat");
+    const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { SSH_TEXT_PRIVATE_KEY } = await import("@blockchaincommons/tags");
     const text = `-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
@@ -447,41 +448,41 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
 2C6PTYV2whp2AsLTjM5tAAAADEtleSBjb21tZW50LgE=
 -----END OPENSSH PRIVATE KEY-----
 `;
-    const tagged = toTaggedValue(SSH_TEXT_PRIVATE_KEY.value, cbor(text));
+    const tagged = taggedValue(SSH_TEXT_PRIVATE_KEY.value, cbor(text));
     const envelope = Envelope.newLeaf(tagged);
     expect(envelope.format()).toMatch(/^SSHPrivateKey\([0-9a-f]{8}\)$/);
   });
 
   it("renders TAG_SSH_TEXT_PUBLIC_KEY as SSHPublicKey(refHexShort) (E1f-2)", async () => {
-    const { cbor, toTaggedValue } = await import("@blockchaincommons/dcbor-compat");
+    const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { SSH_TEXT_PUBLIC_KEY } = await import("@blockchaincommons/tags");
     const text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFR7gUMbIYiAd/vnJV0TiFiX2C6PTYV2whp2AsLTjM5t Key comment.";
-    const tagged = toTaggedValue(SSH_TEXT_PUBLIC_KEY.value, cbor(text));
+    const tagged = taggedValue(SSH_TEXT_PUBLIC_KEY.value, cbor(text));
     const envelope = Envelope.newLeaf(tagged);
     expect(envelope.format()).toMatch(/^SSHPublicKey\([0-9a-f]{8}\)$/);
   });
 
   it("renders TAG_SSH_TEXT_SIGNATURE as fixed 'SSHSignature' (E1f-3)", async () => {
-    const { cbor, toTaggedValue } = await import("@blockchaincommons/dcbor-compat");
+    const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { SSH_TEXT_SIGNATURE } = await import("@blockchaincommons/tags");
-    const { SSHPublicKey, SSHSignature } = await import("@blockchaincommons/components");
+    const { SSHPublicKey, SSHSignature } = await import("@blockchaincommons/components/ssh");
     const pub = SSHPublicKey.fromOpenssh(
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFR7gUMbIYiAd/vnJV0TiFiX2C6PTYV2whp2AsLTjM5t Key comment.",
     );
     const sigBytes = new Uint8Array(64);
     for (let i = 0; i < 64; i++) sigBytes[i] = i + 1;
     const sig = SSHSignature.fromParts(pub, "test", "sha256", sigBytes);
-    const tagged = toTaggedValue(SSH_TEXT_SIGNATURE.value, cbor(sig.toPem()));
+    const tagged = taggedValue(SSH_TEXT_SIGNATURE.value, cbor(sig.toPem()));
     const envelope = Envelope.newLeaf(tagged);
     expect(envelope.format()).toBe("SSHSignature");
   });
 
   it("renders TAG_SSH_TEXT_CERTIFICATE as fixed 'SSHCertificate' (E1f-4)", async () => {
-    const { cbor, toTaggedValue } = await import("@blockchaincommons/dcbor-compat");
+    const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { SSH_TEXT_CERTIFICATE } = await import("@blockchaincommons/tags");
     // Rust placeholder summarizer doesn't validate — any text payload works.
-    const tagged = toTaggedValue(
+    const tagged = taggedValue(
       SSH_TEXT_CERTIFICATE.value,
       cbor("ssh-ed25519-cert-v01@openssh.com AAAA= user@host"),
     );

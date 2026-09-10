@@ -76,7 +76,7 @@ if (Envelope?.prototype) {
 
   Envelope.prototype.confirmContainsSet = function (target: Set<Digest>, proof: Envelope): boolean {
     // Verify the proof has the same digest as this envelope
-    if (this.digest().hex() !== proof.digest().hex()) {
+    if (this.digest().toHex() !== proof.digest().toHex()) {
       return false;
     }
 
@@ -199,9 +199,9 @@ function removeAllFound(envelope: Envelope, target: Set<Digest>): void {
 
 /// Helper function to check if a set contains a digest (by hex comparison)
 function containsDigest(set: Set<Digest>, digest: Digest): boolean {
-  const hexToFind = digest.hex();
+  const hexToFind = digest.toHex();
   for (const d of set) {
-    if (d.hex() === hexToFind) {
+    if (d.toHex() === hexToFind) {
       return true;
     }
   }
@@ -210,9 +210,9 @@ function containsDigest(set: Set<Digest>, digest: Digest): boolean {
 
 /// Helper function to remove a digest from a set (by hex comparison)
 function removeDigest(set: Set<Digest>, digest: Digest): void {
-  const hexToFind = digest.hex();
+  const hexToFind = digest.toHex();
   for (const d of set) {
-    if (d.hex() === hexToFind) {
+    if (d.toHex() === hexToFind) {
       set.delete(d);
       return;
     }

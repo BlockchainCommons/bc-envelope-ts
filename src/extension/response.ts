@@ -20,8 +20,9 @@
 
 import { ARID } from "@blockchaincommons/components";
 import { RESPONSE as TAG_RESPONSE } from "@blockchaincommons/tags";
-import { toTaggedValue } from "@blockchaincommons/dcbor-compat";
+import { taggedValue, expectTaggedContent } from "@blockchaincommons/dcbor";
 import { RESULT, ERROR, OK_VALUE, UNKNOWN_VALUE } from "@blockchaincommons/known-values";
+
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
@@ -299,18 +300,18 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
       // Rust `CBOR::to_tagged_value(TAG_RESPONSE, response.id)` which
       // dispatches via `From<ARID> for CBOR` (the tagged form). See
       // request.ts for the same fix and rationale.
-      const taggedArid = toTaggedValue(TAG_RESPONSE, this._result.id.taggedCbor());
+      const taggedArid = taggedValue(TAG_RESPONSE, this._result.id.toCbor());
       return Envelope.newLeaf(taggedArid).addAssertion(RESULT, this._result.result);
     } else {
       let subject: Envelope;
       if (this._result.id !== undefined) {
-        const taggedArid = toTaggedValue(TAG_RESPONSE, this._result.id.taggedCbor());
+        const taggedArid = taggedValue(TAG_RESPONSE, this._result.id.toCbor());
         subject = Envelope.newLeaf(taggedArid);
       } else {
         // UNKNOWN_VALUE is a `KnownValue`; its tagged-CBOR form is
         // tag(40000, uint(N)). Mirror Rust's
         // `CBOR::to_tagged_value(TAG_RESPONSE, KnownValue::Unknown)`.
-        const taggedUnknown = toTaggedValue(TAG_RESPONSE, UNKNOWN_VALUE.taggedCbor());
+        const taggedUnknown = taggedValue(TAG_RESPONSE, UNKNOWN_VALUE.toCbor());
         subject = Envelope.newLeaf(taggedUnknown);
       }
       return subject.addAssertion(ERROR, this._result.error);
@@ -360,13 +361,13 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
     if (leaf === undefined) {
       throw EnvelopeError.general("Response envelope has invalid subject");
     }
-    const content = leaf.expectTag(TAG_RESPONSE);
+    const content = expectTaggedContent(leaf, TAG_RESPONSE.value);
 
     // Distinguish ARID (tag 40012) from UNKNOWN_VALUE (tag 40000)
     // by inspecting the tagged content.
     let id: ARID | undefined;
     try {
-      id = ARID.fromTaggedCbor(content);
+      id = ARID.fromCbor(content);
     } catch {
       // Content is not a tagged ARID — assumed to be the
       // UNKNOWN_VALUE known-value (tag 40000); leave id undefined.

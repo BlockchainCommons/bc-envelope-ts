@@ -2,6 +2,10 @@
 
 ## 1.0.0-beta.1
 
+### Changed
+
+- Ported to the canonical `@blockchaincommons/dcbor` and the redesigned `components`, `known-values`, `rand`, `crypto`, `sskr` and `uniform-resources`; every wire byte and every format string unchanged, verified against a frozen baseline and against `bc-envelope-rust` 0.43.0 (`tests/rust-validation`, see `RUST_DIVERGENCES.md`).
+
 Extracted from the [`paritytech/bcts`](https://github.com/paritytech/bcts) monorepo, where this library was published as `@bcts/envelope`. The public API is unchanged; see [MIGRATION.md](./MIGRATION.md).
 
 ---

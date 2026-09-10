@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Envelope, SymmetricKey, PrivateKeyBase, SigningPrivateKey } from "../src";
-import { KeyDerivationMethod, SSKRSpec, SSKRGroupSpec } from "@blockchaincommons/components";
+import { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
+import { Spec, GroupSpec } from "@blockchaincommons/sskr";
 
 /**
  * Multi-permit tests - TypeScript port of bc-envelope-rust/tests/multi_permit_tests.rs
@@ -66,7 +67,7 @@ describe("Multi-Permit", () => {
     // Note: We use encryptSubject() here as the TypeScript SSKR implementation
     // works with subject-level encryption. The assertions remain visible.
     //
-    const contentKey = SymmetricKey.new();
+    const contentKey = SymmetricKey.random();
     const encryptedEnvelope = signedEnvelope.encryptSubject(contentKey);
 
     // The envelope shows ENCRYPTED for the subject but assertions are preserved
@@ -123,8 +124,8 @@ describe("Multi-Permit", () => {
     // So Alice creates a 2-of-3 SSKR group and "shards" the envelope into three
     // envelopes, each containing a unique SSKR share.
     //
-    const sskrGroup = SSKRGroupSpec.new(2, 3);
-    const spec = SSKRSpec.new(1, [sskrGroup]);
+    const sskrGroup = GroupSpec.from({ memberThreshold: 2, memberCount: 3 });
+    const spec = Spec.from({ groupThreshold: 1, groups: [sskrGroup] });
     const shardedEnvelopes = lockedWithRecipients.sskrSplitFlattened(spec, contentKey);
 
     // Should have 3 sharded envelopes
@@ -201,7 +202,7 @@ describe("Multi-Permit", () => {
     let encryptedEnvelope: Envelope;
 
     beforeEach(() => {
-      contentKey = SymmetricKey.new();
+      contentKey = SymmetricKey.random();
       envelope = Envelope.new(testContent);
       // Use encryptSubject for subject-only encryption (compatible with SSKR)
       encryptedEnvelope = envelope.encryptSubject(contentKey);
@@ -259,7 +260,10 @@ describe("Multi-Permit", () => {
     });
 
     it("should unlock with SSKR shares (2-of-3)", () => {
-      const spec = SSKRSpec.new(1, [SSKRGroupSpec.new(2, 3)]);
+      const spec = Spec.from({
+        groupThreshold: 1,
+        groups: [GroupSpec.from({ memberThreshold: 2, memberCount: 3 })],
+      });
       const shares = encryptedEnvelope.sskrSplitFlattened(spec, contentKey);
 
       expect(shares.length).toBe(3);
@@ -277,7 +281,7 @@ describe("Multi-Permit", () => {
   describe("Multiple permits on same envelope", () => {
     it("should support multiple password-based secrets", () => {
       const envelope = Envelope.new("Multi-secret content");
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       // Use encryptSubject for subject-only encryption
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -298,7 +302,7 @@ describe("Multi-Permit", () => {
 
     it("should support multiple recipients", () => {
       const envelope = Envelope.new("Multi-recipient content");
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       // Use encryptSubject for subject-only encryption
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -328,14 +332,17 @@ describe("Multi-Permit", () => {
     it("should support mixed permit types", { timeout: 60000 }, () => {
       // For SSKR compatibility, use a simple envelope with encryptSubject
       const envelope = Envelope.new("Mixed permit content");
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       // Use encryptSubject for subject-only encryption (compatible with SSKR)
       const encrypted = envelope.encryptSubject(contentKey);
 
       const password = new TextEncoder().encode("backup-password");
       const alice = PrivateKeyBase.generate();
 
-      const sskrSpec = SSKRSpec.new(1, [SSKRGroupSpec.new(2, 3)]);
+      const sskrSpec = Spec.from({
+        groupThreshold: 1,
+        groups: [GroupSpec.from({ memberThreshold: 2, memberCount: 3 })],
+      });
 
       // Add password permit
       const withPassword = encrypted.addSecret(KeyDerivationMethod.Argon2id, password, contentKey);
@@ -369,7 +376,7 @@ describe("Multi-Permit", () => {
   describe("Error cases", () => {
     it("should fail with wrong password", () => {
       const envelope = Envelope.new("Secret");
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
       const correctPassword = new TextEncoder().encode("correct");
@@ -382,7 +389,7 @@ describe("Multi-Permit", () => {
 
     it("should fail with wrong recipient key", () => {
       const envelope = Envelope.new("Secret");
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
       const alice = PrivateKeyBase.generate();
@@ -395,10 +402,13 @@ describe("Multi-Permit", () => {
 
     it("should fail with insufficient SSKR shares", () => {
       const envelope = Envelope.new("Secret");
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
-      const spec = SSKRSpec.new(1, [SSKRGroupSpec.new(2, 3)]);
+      const spec = Spec.from({
+        groupThreshold: 1,
+        groups: [GroupSpec.from({ memberThreshold: 2, memberCount: 3 })],
+      });
       const shares = encrypted.sskrSplitFlattened(spec, contentKey);
 
       // Only 1 share is not enough for 2-of-3
@@ -418,7 +428,7 @@ describe("Multi-Permit", () => {
         .addAssertion("date", "2025-01-01")
         .addSignature(signingKey);
 
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       // Use encryptSubject to encrypt only the subject, preserving assertions
       const encrypted = document.encryptSubject(contentKey);
 
@@ -440,7 +450,7 @@ describe("Multi-Permit", () => {
         .addAssertion("created", "2025-01-01")
         .addAssertion("version", 1);
 
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       // Use encryptSubject to encrypt only the subject
       const encrypted = envelope.encryptSubject(contentKey);
       const decrypted = encrypted.decryptSubject(contentKey);

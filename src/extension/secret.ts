@@ -13,12 +13,10 @@
 /// The implementation uses `EncryptedKey` from bc-components for key
 /// derivation and encryption.
 
-import {
-  SymmetricKey as ComponentsSymmetricKey,
-  EncryptedKey,
-  type KeyDerivationMethod,
-} from "@blockchaincommons/components";
+import { SymmetricKey as ComponentsSymmetricKey } from "@blockchaincommons/components";
+import { EncryptedKey, type KeyDerivationMethod } from "@blockchaincommons/components/kdf";
 import { HAS_SECRET } from "@blockchaincommons/known-values";
+
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
 import { SymmetricKey } from "./encrypt";
@@ -34,10 +32,10 @@ Envelope.prototype.lockSubject = function (
   secret: Uint8Array,
 ): Envelope {
   // Generate a new content key using local SymmetricKey
-  const contentKey = SymmetricKey.new();
+  const contentKey = SymmetricKey.random();
 
   // Convert to components SymmetricKey for EncryptedKey.lock
-  const componentsKey = ComponentsSymmetricKey.fromData(contentKey.data());
+  const componentsKey = ComponentsSymmetricKey.from(contentKey.bytes);
 
   // Lock the content key using the specified derivation method
   const encryptedKey = EncryptedKey.lock(method, secret, componentsKey);
@@ -62,13 +60,13 @@ Envelope.prototype.unlockSubject = function (this: Envelope, secret: Uint8Array)
 
     try {
       // Try to extract the EncryptedKey
-      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromTaggedCbor(cbor));
+      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromCbor(cbor));
 
       // Try to unlock with the provided secret (returns ComponentsSymmetricKey)
       const componentsKey = encryptedKey.unlock(secret);
 
       // Convert to local SymmetricKey for decryptSubject
-      const contentKey = SymmetricKey.from(componentsKey.data());
+      const contentKey = SymmetricKey.from(componentsKey.bytes);
 
       // If successful, decrypt the subject
       return this.decryptSubject(contentKey);
@@ -91,7 +89,7 @@ Envelope.prototype.isLockedWithPassword = function (this: Envelope): boolean {
     if (obj === undefined) continue;
 
     try {
-      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromTaggedCbor(cbor));
+      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromCbor(cbor));
       if (encryptedKey.isPasswordBased()) {
         return true;
       }
@@ -112,7 +110,7 @@ Envelope.prototype.isLockedWithSshAgent = function (this: Envelope): boolean {
     if (obj === undefined) continue;
 
     try {
-      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromTaggedCbor(cbor));
+      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromCbor(cbor));
       if (encryptedKey.isSshAgent()) {
         return true;
       }
@@ -132,7 +130,7 @@ Envelope.prototype.addSecret = function (
   contentKey: SymmetricKey,
 ): Envelope {
   // Convert to components SymmetricKey for EncryptedKey.lock
-  const componentsKey = ComponentsSymmetricKey.fromData(contentKey.data());
+  const componentsKey = ComponentsSymmetricKey.from(contentKey.bytes);
 
   // Lock the content key using the specified derivation method
   const encryptedKey = EncryptedKey.lock(method, secret, componentsKey);

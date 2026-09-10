@@ -90,10 +90,10 @@ Envelope.prototype.shortId = function (
 ): string {
   const digest = this.digest();
   if (format === "full") {
-    return digest.hex();
+    return digest.toHex();
   }
   if (format === "ur") {
-    return digest.urString();
+    return digest.toUR().toString();
   }
   return digest.short();
 };

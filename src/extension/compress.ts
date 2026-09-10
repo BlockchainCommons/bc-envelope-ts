@@ -39,7 +39,7 @@
 
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
-import { cborData, decodeCbor } from "@blockchaincommons/dcbor-compat";
+import { encodeCbor, decodeCbor } from "@blockchaincommons/dcbor";
 import { Compressed } from "@blockchaincommons/components";
 
 /**
@@ -82,7 +82,7 @@ export function registerCompressExtension(): void {
     // Compress the entire envelope (matches Rust
     // `bc-envelope-rust/src/extension/compress.rs::compress`).
     const cbor = this.taggedCbor();
-    const decompressedData = cborData(cbor);
+    const decompressedData = encodeCbor(cbor);
     const compressed = Compressed.fromDecompressedData(decompressedData, this.digest());
     return Envelope.fromCase({ type: "compressed", value: compressed });
   };

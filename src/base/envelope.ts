@@ -9,20 +9,25 @@ import { Assertion } from "./assertion";
 import { EnvelopeError } from "./error";
 import type { EnvelopeEncodableValue } from "./envelope-encodable";
 import { KnownValue } from "@blockchaincommons/known-values";
-import type { Cbor, CborMap } from "@blockchaincommons/dcbor-compat";
 import {
+  type Cbor,
+  type CborMap,
   cbor,
-  cborData,
-  toTaggedValue,
-  TAG_ENCODED_CBOR,
+  encodeCbor,
+  taggedValue,
   MajorType,
-  asByteString,
-  asCborArray,
-  asCborMap,
+  asBytes,
+  asArray,
+  asMap,
   asTaggedValue,
-  tryExpectedTaggedValue,
-} from "@blockchaincommons/dcbor-compat";
-import { ENVELOPE, LEAF, ENCRYPTED, COMPRESSED } from "@blockchaincommons/components";
+  expectTaggedContent,
+} from "@blockchaincommons/dcbor";
+import { ENCODED_CBOR, ENVELOPE, LEAF, ENCRYPTED, COMPRESSED } from "@blockchaincommons/tags";
+import { type UR } from "@blockchaincommons/uniform-resources";
+import type { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
+import type { Encrypter, Decrypter, Nonce, Salt } from "@blockchaincommons/components";
+import type { Spec } from "@blockchaincommons/sskr";
+import type { RandomNumberGenerator } from "@blockchaincommons/rand";
 
 // Type imports for extension method declarations
 // These are imported as types only to avoid circular dependencies at runtime
@@ -37,20 +42,11 @@ import type {
   SignatureMetadata,
   SigningOptions,
 } from "../extension";
-import type { UR } from "@blockchaincommons/uniform-resources";
+
 import type { TreeFormatOptions } from "../format/tree";
 import type { EnvelopeFormatOpts } from "../format/notation";
 import type { MermaidFormatOpts } from "../format/mermaid";
 import type { FormatContext } from "../format/format-context";
-import type {
-  KeyDerivationMethod,
-  Encrypter,
-  Decrypter,
-  Nonce,
-  SSKRSpec,
-  Salt,
-} from "@blockchaincommons/components";
-import type { RandomNumberGenerator } from "@blockchaincommons/rand";
 
 /// Import tag values from the tags registry
 /// These match the Rust reference implementation in bc-tags-rust
@@ -345,8 +341,8 @@ export class Envelope implements DigestProvider {
 
     // Sort assertions by digest
     const sortedAssertions = [...uncheckedAssertions].sort((a, b) => {
-      const aHex = a.digest().hex();
-      const bHex = b.digest().hex();
+      const aHex = a.digest().toHex();
+      const bHex = b.digest().toHex();
       return aHex.localeCompare(bHex);
     });
 
@@ -399,7 +395,7 @@ export class Envelope implements DigestProvider {
   static newWithKnownValue(value: KnownValue | number | bigint): Envelope {
     const knownValue = value instanceof KnownValue ? value : new KnownValue(value);
     // Calculate digest from CBOR encoding of the known value
-    const digest = Digest.fromImage(knownValue.toCborData());
+    const digest = Digest.fromImage(knownValue.toCbor().toData());
     return new Envelope({
       type: "knownValue",
       value: knownValue,
@@ -585,9 +581,9 @@ export class Envelope implements DigestProvider {
   /// @param cbor - The CBOR value
   /// @returns Byte representation
   private static cborToBytes(cbor: Cbor): Uint8Array {
-    // Import cborData function at runtime to avoid circular dependencies
+    // Import encodeCbor function at runtime to avoid circular dependencies
 
-    return cborData(cbor);
+    return encodeCbor(cbor);
   }
 
   /// Returns the untagged CBOR representation of this envelope.
@@ -606,7 +602,7 @@ export class Envelope implements DigestProvider {
       }
       case "leaf":
         // Tagged with TAG_LEAF (204)
-        return toTaggedValue(TAG_LEAF, c.cbor);
+        return taggedValue(TAG_LEAF, c.cbor);
       case "wrapped":
         // Wrapped envelopes are tagged with TAG_ENVELOPE
         return c.envelope.taggedCbor();
@@ -615,7 +611,7 @@ export class Envelope implements DigestProvider {
         return c.assertion.toCbor();
       case "elided":
         // Elided is just the digest bytes
-        return Envelope.valueToCbor(c.digest.data());
+        return Envelope.valueToCbor(c.digest.bytes);
       case "knownValue":
         // Known values are encoded as untagged unsigned integers
         // This matches Rust: value.untagged_cbor()
@@ -627,14 +623,14 @@ export class Envelope implements DigestProvider {
         // The AAD bytes are the **CBOR-encoded tagged Digest** of the
         // plaintext, matching Rust
         // `bc-components/src/symmetric/symmetric_key.rs::encrypt_with_digest`.
-        return c.message.taggedCbor();
+        return c.message.toCbor();
       }
       case "compressed": {
         // Compressed envelopes serialize as the canonical
         // `@blockchaincommons/components::Compressed` tagged CBOR
         // (tag 40003, array `[checksum, decompressedSize, compressedData, ?digest]`).
         // Matches Rust `bc-components/src/compressed.rs::CBORTaggedEncodable`.
-        return c.value.taggedCbor();
+        return c.value.toCbor();
       }
     }
   }
@@ -645,7 +641,7 @@ export class Envelope implements DigestProvider {
   ///
   /// @returns The tagged CBOR
   taggedCbor(): Cbor {
-    return toTaggedValue(TAG_ENVELOPE, this.untaggedCbor());
+    return taggedValue(TAG_ENVELOPE, this.untaggedCbor());
   }
 
   /// Creates an envelope from untagged CBOR.
@@ -659,7 +655,7 @@ export class Envelope implements DigestProvider {
       const [tag, item] = tagged;
       switch (tag.value) {
         case TAG_LEAF:
-        case TAG_ENCODED_CBOR:
+        case ENCODED_CBOR.value:
           // Leaf envelope
           return Envelope.newLeaf(item);
         case TAG_ENVELOPE: {
@@ -672,7 +668,7 @@ export class Envelope implements DigestProvider {
           // decoder (`[checksum, decompressedSize, compressedData,
           // ?digest]`). Matches Rust
           // `bc-components/src/compressed.rs::from_untagged_cbor`.
-          const compressed = Compressed.fromTaggedCbor(cbor);
+          const compressed = Compressed.fromCbor(cbor);
           return Envelope.newWithCompressed(compressed);
         }
         case TAG_ENCRYPTED: {
@@ -681,7 +677,7 @@ export class Envelope implements DigestProvider {
           // being the CBOR-encoded tagged Digest of the plaintext).
           // Matches Rust
           // `bc-components/src/symmetric/encrypted_message.rs::from_untagged_cbor`.
-          const message = EncryptedMessage.fromTaggedCbor(cbor);
+          const message = EncryptedMessage.fromCbor(cbor);
           return Envelope.newWithEncrypted(message);
         }
         default:
@@ -690,28 +686,28 @@ export class Envelope implements DigestProvider {
     }
 
     // Check if it's a byte string (elided)
-    const bytes = asByteString(cbor);
+    const bytes = asBytes(cbor);
     if (bytes !== undefined) {
       if (bytes.length !== 32) {
         throw EnvelopeError.cbor("elided digest must be 32 bytes");
       }
-      return Envelope.newElided(Digest.fromData(bytes));
+      return Envelope.newElided(Digest.from(bytes));
     }
 
     // Check if it's an array (node)
-    const array = asCborArray(cbor);
+    const array = asArray(cbor);
     if (array !== undefined) {
       if (array.length < 2) {
         throw EnvelopeError.cbor("node must have at least two elements");
       }
-      const subjectCbor = array.get(0);
+      const subjectCbor = array[0];
       if (subjectCbor === undefined) {
         throw EnvelopeError.cbor("node subject is missing");
       }
       const subject = Envelope.fromUntaggedCbor(subjectCbor);
       const assertions: Envelope[] = [];
       for (let i = 1; i < array.length; i++) {
-        const assertionCbor = array.get(i);
+        const assertionCbor = array[i];
         if (assertionCbor === undefined) {
           throw EnvelopeError.cbor(`node assertion at index ${i} is missing`);
         }
@@ -721,7 +717,7 @@ export class Envelope implements DigestProvider {
     }
 
     // Check if it's a map (assertion)
-    const map = asCborMap(cbor);
+    const map = asMap(cbor);
     if (map !== undefined) {
       const assertion = Assertion.fromCborMap(map);
       return Envelope.newWithAssertion(assertion);
@@ -742,7 +738,7 @@ export class Envelope implements DigestProvider {
   /// @returns A new envelope
   static fromTaggedCbor(cbor: Cbor): Envelope {
     try {
-      const untagged = tryExpectedTaggedValue(cbor, TAG_ENVELOPE);
+      const untagged = expectTaggedContent(cbor, TAG_ENVELOPE);
       return Envelope.fromUntaggedCbor(untagged);
     } catch (error) {
       throw EnvelopeError.cbor(
@@ -988,7 +984,7 @@ export class Envelope implements DigestProvider {
   declare isSubjectNaN: () => boolean;
   declare isNull: () => boolean;
   declare tryByteString: () => Uint8Array;
-  declare asByteString: () => Uint8Array | undefined;
+  declare asBytes: () => Uint8Array | undefined;
   declare asArray: () => readonly Cbor[] | undefined;
   declare asMap: () => CborMap | undefined;
   declare asText: () => string | undefined;
@@ -1222,10 +1218,10 @@ export class Envelope implements DigestProvider {
   declare unlock: (secret: Uint8Array) => Envelope;
 
   // From extension/sskr.ts
-  declare sskrSplit: (spec: SSKRSpec, contentKey: SymmetricKey) => Envelope[][];
-  declare sskrSplitFlattened: (spec: SSKRSpec, contentKey: SymmetricKey) => Envelope[];
+  declare sskrSplit: (spec: Spec, contentKey: SymmetricKey) => Envelope[][];
+  declare sskrSplitFlattened: (spec: Spec, contentKey: SymmetricKey) => Envelope[];
   declare sskrSplitUsing: (
-    spec: SSKRSpec,
+    spec: Spec,
     contentKey: SymmetricKey,
     rng: RandomNumberGenerator,
   ) => Envelope[][];

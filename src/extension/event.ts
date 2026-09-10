@@ -25,8 +25,9 @@
 
 import { ARID } from "@blockchaincommons/components";
 import { EVENT as TAG_EVENT } from "@blockchaincommons/tags";
-import { toTaggedValue, CborDate } from "@blockchaincommons/dcbor-compat";
+import { taggedValue, CborDate, expectTaggedContent } from "@blockchaincommons/dcbor";
 import { CONTENT, NOTE, DATE } from "@blockchaincommons/known-values";
+
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
@@ -162,7 +163,7 @@ export class Event<T extends EnvelopeEncodableValue>
     // `CBOR::to_tagged_value(TAG_EVENT, event.id)` which dispatches
     // via `From<ARID> for CBOR` (the tagged form). See request.ts
     // for the same fix and rationale.
-    const taggedArid = toTaggedValue(TAG_EVENT, this._id.taggedCbor());
+    const taggedArid = taggedValue(TAG_EVENT, this._id.toCbor());
     const contentEnvelope = Envelope.new(this._content);
 
     let envelope = Envelope.newLeaf(taggedArid).addAssertion(CONTENT, contentEnvelope);
@@ -175,7 +176,7 @@ export class Event<T extends EnvelopeEncodableValue>
       // Pass a tagged-CBOR Date (tag 1); mirrors Rust
       // `Envelope::add_assertion(DATE, self.date)`. The earlier port
       // emitted an ISO 8601 string here.
-      envelope = envelope.addAssertion(DATE, CborDate.fromDatetime(this._date));
+      envelope = envelope.addAssertion(DATE, CborDate.fromDate(this._date));
     }
 
     return envelope;
@@ -214,8 +215,8 @@ export class Event<T extends EnvelopeEncodableValue>
 
     // The subject is TAG_EVENT(tag_40012(arid_bytes)) — see
     // `toEnvelope` above. Extract the inner tagged-ARID and decode.
-    const aridCbor = leaf.expectTag(TAG_EVENT);
-    const id = ARID.fromTaggedCbor(aridCbor);
+    const aridCbor = expectTaggedContent(leaf, TAG_EVENT.value);
+    const id = ARID.fromCbor(aridCbor);
 
     // Extract optional note
     let note = "";
@@ -236,7 +237,7 @@ export class Event<T extends EnvelopeEncodableValue>
       if (dateObj !== undefined) {
         const leaf = dateObj.asLeaf();
         if (leaf !== undefined) {
-          date = CborDate.fromTaggedCbor(leaf).datetime();
+          date = CborDate.fromTaggedCbor(leaf).toDate();
         } else {
           // Back-compat shim for legacy ISO-string producers.
           const dateStr = dateObj.asText();

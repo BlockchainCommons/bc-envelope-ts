@@ -48,6 +48,7 @@ import {
   HAS_RECIPIENT as HAS_RECIPIENT_KV,
   type KnownValue,
 } from "@blockchaincommons/known-values";
+import { decodeCbor } from "@blockchaincommons/dcbor";
 
 /**
  * Predicate constant for recipient assertions.
@@ -112,11 +113,10 @@ export class SealedMessage {
 
     // Use the SealedMessage.newOpt from components which properly handles
     // both X25519 and MLKEM encapsulation
-    const inner = ComponentsSealedMessage.newOpt(
-      contentKey.data(),
+    const inner = ComponentsSealedMessage.seal(
+      contentKey.bytes,
       encapsulationPublicKey,
-      new Uint8Array(0), // No AAD
-      testNonce,
+      testNonce === undefined ? {} : { nonce: testNonce },
     );
 
     return new SealedMessage(inner);
@@ -144,14 +144,14 @@ export class SealedMessage {
    * Returns the CBOR-encoded data of this sealed message.
    */
   data(): Uint8Array {
-    return this._inner.taggedCborData();
+    return this._inner.toCbor().toData();
   }
 
   /**
    * Creates a SealedMessage from CBOR-encoded data.
    */
   static fromData(data: Uint8Array): SealedMessage {
-    const inner = ComponentsSealedMessage.fromTaggedCborData(data);
+    const inner = ComponentsSealedMessage.fromCbor(decodeCbor(data));
     return new SealedMessage(inner);
   }
 }
@@ -208,7 +208,7 @@ if (Envelope?.prototype) {
     }
 
     // Generate a random content key
-    const contentKey = SymmetricKey.new();
+    const contentKey = SymmetricKey.random();
 
     // Encrypt the subject with the content key
     const encrypted = this.encryptSubject(contentKey);
@@ -232,7 +232,7 @@ if (Envelope?.prototype) {
     }
 
     // Generate a random content key
-    const contentKey = SymmetricKey.new();
+    const contentKey = SymmetricKey.random();
 
     // Encrypt the subject with the content key
     let result = this.encryptSubject(contentKey);
@@ -290,19 +290,19 @@ if (Envelope?.prototype) {
         const leafCbor = obj.asLeaf();
         if (leafCbor !== undefined) {
           // Convert the CBOR to bytes and decode as SealedMessage
-          const cborData = leafCbor.toData();
-          const inner = ComponentsSealedMessage.fromTaggedCborData(cborData);
+          const encodeCbor = leafCbor.toData();
+          const inner = ComponentsSealedMessage.fromCbor(decodeCbor(encodeCbor));
           return new SealedMessage(inner);
         }
 
         // Try extracting from the full envelope CBOR as fallback
-        const cborData = obj.taggedCborData();
-        const inner = ComponentsSealedMessage.fromTaggedCborData(cborData);
+        const encodeCbor = obj.taggedCborData();
+        const inner = ComponentsSealedMessage.fromCbor(decodeCbor(encodeCbor));
         return new SealedMessage(inner);
       } catch {
         // Try legacy format: raw bytes
         try {
-          const sealedData = obj.asByteString();
+          const sealedData = obj.asBytes();
           if (sealedData !== undefined) {
             return SealedMessage.fromData(sealedData);
           }

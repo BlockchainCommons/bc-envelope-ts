@@ -67,7 +67,7 @@ export class Attachments {
    */
   add(payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string): void {
     const attachment = Envelope.newAttachment(payload, vendor, conformsTo);
-    this._envelopes.set(attachment.digest().hex(), attachment);
+    this._envelopes.set(attachment.digest().toHex(), attachment);
   }
 
   /**
@@ -76,7 +76,7 @@ export class Attachments {
    * @param envelope - The attachment envelope to add
    */
   addEnvelope(envelope: Envelope): void {
-    this._envelopes.set(envelope.digest().hex(), envelope);
+    this._envelopes.set(envelope.digest().toHex(), envelope);
   }
 
   /**
@@ -86,7 +86,7 @@ export class Attachments {
    * @returns The envelope if found, or undefined
    */
   get(digest: Digest): Envelope | undefined {
-    return this._envelopes.get(digest.hex());
+    return this._envelopes.get(digest.toHex());
   }
 
   /**
@@ -96,8 +96,8 @@ export class Attachments {
    * @returns The removed envelope if found, or undefined
    */
   remove(digest: Digest): Envelope | undefined {
-    const envelope = this._envelopes.get(digest.hex());
-    this._envelopes.delete(digest.hex());
+    const envelope = this._envelopes.get(digest.toHex());
+    this._envelopes.delete(digest.toHex());
     return envelope;
   }
 
@@ -165,7 +165,7 @@ export class Attachments {
     const attachmentEnvelopes = envelope.attachments();
 
     for (const attachment of attachmentEnvelopes) {
-      attachments._envelopes.set(attachment.digest().hex(), attachment);
+      attachments._envelopes.set(attachment.digest().toHex(), attachment);
     }
 
     return attachments;

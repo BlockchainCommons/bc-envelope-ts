@@ -13,22 +13,27 @@
 
 import {
   type TagsStore,
-  type TagsStoreTrait,
+  type ReadonlyTagsStore,
   type Tag,
   type CborNumber,
   type CborSummarizer,
   TagsStore as TagsStoreClass,
   getGlobalTagsStore,
-  toTaggedValue,
-} from "@blockchaincommons/dcbor-compat";
+  taggedValue,
+  expectNumber,
+  expectText,
+  isNumber,
+  isText,
+  CborError,
+} from "@blockchaincommons/dcbor";
 import {
   type KnownValuesStore,
   KnownValuesStore as KnownValuesStoreClass,
   KnownValue,
-  KNOWN_VALUES,
-  TAG_KNOWN_VALUE,
+  getGlobalKnownValuesStore,
 } from "@blockchaincommons/known-values";
 import {
+  KNOWN_VALUE,
   registerTags as registerBcTags,
   DIGEST as TAG_DIGEST,
   ARID as TAG_ARID,
@@ -71,20 +76,19 @@ import {
   SignatureScheme,
   SealedMessage,
   EncapsulationScheme,
-  EncryptedKey,
   PrivateKeyBase,
   PrivateKeys,
   PublicKeys,
   SigningPrivateKey,
   SigningPublicKey,
-  SSHPrivateKey,
-  SSHPublicKey,
-  SSHSignature,
-  SSKRShareCbor,
   XID,
-  JSON as JSONTagged,
+  CborJson as JSONTagged,
   Reference,
 } from "@blockchaincommons/components";
+import { EncryptedKey } from "@blockchaincommons/components/kdf";
+import { SSHPrivateKey, SSHPublicKey, SSHSignature } from "@blockchaincommons/components/ssh";
+import { SskrShare } from "@blockchaincommons/components/sskr";
+import { diagnostic } from "@blockchaincommons/dcbor/diagnostic";
 
 // ============================================================================
 // FormatContextOpt - Option type for format context
@@ -115,7 +119,7 @@ export const formatContextCustom = (context: FormatContext): FormatContextOpt =>
 /// The FormatContext provides information about CBOR tags, known values,
 /// functions, and parameters that are used to annotate the output of envelope
 /// formatting functions.
-export class FormatContext implements TagsStoreTrait {
+export class FormatContext implements ReadonlyTagsStore {
   private readonly _tags: TagsStore;
   private readonly _knownValues: KnownValuesStore;
 
@@ -134,7 +138,7 @@ export class FormatContext implements TagsStoreTrait {
     return this._knownValues;
   }
 
-  // Implement TagsStoreTrait by delegating to internal tags store
+  // Implement ReadonlyTagsStore by delegating to internal tags store
   assignedNameForTag(tag: Tag): string | undefined {
     return this._tags.assignedNameForTag(tag);
   }
@@ -161,7 +165,7 @@ export class FormatContext implements TagsStoreTrait {
 
   /// Register a tag with a name
   registerTag(value: number | bigint, name: string): void {
-    this._tags.insert({ value: BigInt(value), name });
+    this._tags.register({ value: BigInt(value), name });
   }
 
   /// Create a clone of this context
@@ -188,7 +192,7 @@ export const getGlobalFormatContext = (): FormatContext => {
 
     // Get the global stores
     const tags = getGlobalTagsStore();
-    const knownValues = KNOWN_VALUES.get();
+    const knownValues = getGlobalKnownValuesStore();
 
     _globalFormatContextInstance = new FormatContext(tags, knownValues);
     isInitialized = true;
@@ -226,15 +230,15 @@ const setupKnownValueSummarizer = (context: FormatContext): void => {
   const summarizer: CborSummarizer = (cbor, _flat) => {
     try {
       // Try to extract the known value from the CBOR
-      const kv = KnownValue.fromUntaggedCbor(cbor);
-      const name = knownValues.name(kv);
+      const kv = KnownValue.fromCbor(cbor);
+      const name = knownValues.nameOf(kv);
       return { ok: true, value: `'${name}'` };
     } catch {
       return { ok: true, value: "'<unknown>'" };
     }
   };
 
-  tags.setSummarizer(BigInt(TAG_KNOWN_VALUE), summarizer);
+  tags.setSummarizer(BigInt(KNOWN_VALUE.value), summarizer);
 };
 
 /// Registers standard tags and summarizers in a format context.
@@ -261,9 +265,9 @@ export const registerTags = (): void => {
 // ============================================================================
 
 /// Helper to create an error result for summarizers
-const summarizerError = (e: unknown): { ok: false; error: { type: "Custom"; message: string } } => {
+const summarizerError = (e: unknown): { ok: false; error: CborError } => {
   const message = e instanceof Error ? e.message : String(e);
-  return { ok: false as const, error: { type: "Custom" as const, message } };
+  return { ok: false as const, error: CborError.custom(message) };
 };
 
 /// Set up component tag summarizers matching Rust bc-components-rust/src/tags_registry.rs
@@ -273,8 +277,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // Digest: "Digest(shortDesc)"
   tags.setSummarizer(TAG_DIGEST.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_DIGEST.value, cbor);
-      const digest = Digest.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_DIGEST.value, cbor);
+      const digest = Digest.fromCbor(tagged);
       return { ok: true, value: `Digest(${digest.shortDescription()})` };
     } catch (e) {
       return summarizerError(e);
@@ -284,8 +288,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // ARID: "ARID(shortDesc)"
   tags.setSummarizer(TAG_ARID.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_ARID.value, cbor);
-      const arid = ARID.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_ARID.value, cbor);
+      const arid = ARID.fromCbor(tagged);
       return { ok: true, value: `ARID(${arid.shortDescription()})` };
     } catch (e) {
       return summarizerError(e);
@@ -295,8 +299,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // URI: "URI(uri)"
   tags.setSummarizer(TAG_URI.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_URI.value, cbor);
-      const uri = URI.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_URI.value, cbor);
+      const uri = URI.fromCbor(tagged);
       return { ok: true, value: `URI(${uri.toString()})` };
     } catch (e) {
       return summarizerError(e);
@@ -306,8 +310,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // UUID: "UUID(uuid)"
   tags.setSummarizer(TAG_UUID.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_UUID.value, cbor);
-      const uuid = UUID.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_UUID.value, cbor);
+      const uuid = UUID.fromCbor(tagged);
       return { ok: true, value: `UUID(${uuid.toString()})` };
     } catch (e) {
       return summarizerError(e);
@@ -317,8 +321,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // Nonce: "Nonce"
   tags.setSummarizer(TAG_NONCE.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_NONCE.value, cbor);
-      Nonce.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_NONCE.value, cbor);
+      Nonce.fromCbor(tagged);
       return { ok: true, value: "Nonce" };
     } catch (e) {
       return summarizerError(e);
@@ -328,8 +332,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // Salt: "Salt"
   tags.setSummarizer(TAG_SALT.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SALT.value, cbor);
-      Salt.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_SALT.value, cbor);
+      Salt.fromCbor(tagged);
       return { ok: true, value: "Salt" };
     } catch (e) {
       return summarizerError(e);
@@ -339,8 +343,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // Seed: "Seed"
   tags.setSummarizer(TAG_SEED.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SEED.value, cbor);
-      Seed.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_SEED.value, cbor);
+      Seed.fromCbor(tagged);
       return { ok: true, value: "Seed" };
     } catch (e) {
       return summarizerError(e);
@@ -352,8 +356,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   //   `Ok(json.as_str().flanked_by("JSON(", ")"))`
   tags.setSummarizer(TAG_JSON.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_JSON.value, cbor);
-      const json = JSONTagged.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_JSON.value, cbor);
+      const json = JSONTagged.fromCbor(tagged);
       return { ok: true, value: `JSON(${json.asStr()})` };
     } catch (e) {
       return summarizerError(e);
@@ -367,8 +371,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // where `Display for Reference` is `Reference(<ref_hex_short>)`.
   tags.setSummarizer(TAG_REFERENCE.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_REFERENCE.value, cbor);
-      const ref = Reference.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_REFERENCE.value, cbor);
+      const ref = Reference.fromCbor(tagged);
       return { ok: true, value: ref.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -388,9 +392,9 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // an Ed25519 signature must render `Signature(Ed25519)`.)
   tags.setSummarizer(TAG_SIGNATURE.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SIGNATURE.value, cbor);
-      const sig = Signature.fromTaggedCbor(tagged);
-      const scheme = sig.scheme();
+      const tagged = taggedValue(TAG_SIGNATURE.value, cbor);
+      const sig = Signature.fromCbor(tagged);
+      const scheme = sig.scheme;
       if (scheme === SignatureScheme.Schnorr) {
         return { ok: true, value: "Signature" };
       }
@@ -411,9 +415,9 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // the rendered form to match Rust byte-for-byte.
   tags.setSummarizer(TAG_SEALED_MESSAGE.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SEALED_MESSAGE.value, cbor);
-      const msg = SealedMessage.fromTaggedCbor(tagged);
-      const scheme = msg.encapsulationScheme();
+      const tagged = taggedValue(TAG_SEALED_MESSAGE.value, cbor);
+      const msg = SealedMessage.fromCbor(tagged);
+      const scheme = msg.encapsulationScheme;
       if (scheme === EncapsulationScheme.X25519) {
         return { ok: true, value: "SealedMessage" };
       }
@@ -426,8 +430,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // EncryptedKey: toString()
   tags.setSummarizer(TAG_ENCRYPTED_KEY.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_ENCRYPTED_KEY.value, cbor);
-      const ek = EncryptedKey.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_ENCRYPTED_KEY.value, cbor);
+      const ek = EncryptedKey.fromCbor(tagged);
       return { ok: true, value: ek.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -437,8 +441,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // PrivateKeyBase: toString()
   tags.setSummarizer(TAG_PRIVATE_KEY_BASE.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_PRIVATE_KEY_BASE.value, cbor);
-      const pkb = PrivateKeyBase.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_PRIVATE_KEY_BASE.value, cbor);
+      const pkb = PrivateKeyBase.fromCbor(tagged);
       return { ok: true, value: pkb.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -448,8 +452,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // PrivateKeys: toString()
   tags.setSummarizer(TAG_PRIVATE_KEYS.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_PRIVATE_KEYS.value, cbor);
-      const pk = PrivateKeys.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_PRIVATE_KEYS.value, cbor);
+      const pk = PrivateKeys.fromCbor(tagged);
       return { ok: true, value: pk.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -459,8 +463,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // PublicKeys: toString()
   tags.setSummarizer(TAG_PUBLIC_KEYS.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_PUBLIC_KEYS.value, cbor);
-      const pk = PublicKeys.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_PUBLIC_KEYS.value, cbor);
+      const pk = PublicKeys.fromCbor(tagged);
       return { ok: true, value: pk.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -470,8 +474,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // SigningPrivateKey: toString()
   tags.setSummarizer(TAG_SIGNING_PRIVATE_KEY.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SIGNING_PRIVATE_KEY.value, cbor);
-      const spk = SigningPrivateKey.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_SIGNING_PRIVATE_KEY.value, cbor);
+      const spk = SigningPrivateKey.fromCbor(tagged);
       return { ok: true, value: spk.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -481,8 +485,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // SigningPublicKey: toString()
   tags.setSummarizer(TAG_SIGNING_PUBLIC_KEY.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SIGNING_PUBLIC_KEY.value, cbor);
-      const spk = SigningPublicKey.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_SIGNING_PUBLIC_KEY.value, cbor);
+      const spk = SigningPublicKey.fromCbor(tagged);
       return { ok: true, value: spk.toString() };
     } catch (e) {
       return summarizerError(e);
@@ -492,8 +496,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // SSKRShare: "SSKRShare"
   tags.setSummarizer(TAG_SSKR_SHARE.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_SSKR_SHARE.value, cbor);
-      SSKRShareCbor.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_SSKR_SHARE.value, cbor);
+      SskrShare.fromCbor(tagged);
       return { ok: true, value: "SSKRShare" };
     } catch (e) {
       return summarizerError(e);
@@ -507,7 +511,7 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // a fixed string (signature/certificate, exactly as Rust does).
   tags.setSummarizer(TAG_SSH_TEXT_PRIVATE_KEY.value, (cbor, _flat) => {
     try {
-      const text = cbor.toText();
+      const text = expectText(cbor);
       const key = SSHPrivateKey.fromOpenssh(text);
       return { ok: true, value: `SSHPrivateKey(${key.refHexShort()})` };
     } catch (e) {
@@ -517,7 +521,7 @@ const setupComponentSummarizers = (context: FormatContext): void => {
 
   tags.setSummarizer(TAG_SSH_TEXT_PUBLIC_KEY.value, (cbor, _flat) => {
     try {
-      const text = cbor.toText();
+      const text = expectText(cbor);
       const key = SSHPublicKey.fromOpenssh(text);
       return { ok: true, value: `SSHPublicKey(${key.refHexShort()})` };
     } catch (e) {
@@ -527,7 +531,7 @@ const setupComponentSummarizers = (context: FormatContext): void => {
 
   tags.setSummarizer(TAG_SSH_TEXT_SIGNATURE.value, (cbor, _flat) => {
     try {
-      const text = cbor.toText();
+      const text = expectText(cbor);
       // Validate by parsing — Rust does the same — but discard the
       // parsed value, returning the fixed summarizer string.
       SSHSignature.fromPem(text);
@@ -542,7 +546,7 @@ const setupComponentSummarizers = (context: FormatContext): void => {
       // Rust's SSHCertificate summarizer is fixed-string with no
       // validation (`// todo: validation`). We do the same: simply
       // assert the payload is text-shaped and emit the fixed label.
-      cbor.toText();
+      expectText(cbor);
       return { ok: true, value: "SSHCertificate" };
     } catch (e) {
       return summarizerError(e);
@@ -552,8 +556,8 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // XID: "XID(shortDesc)"
   tags.setSummarizer(TAG_XID.value, (cbor, _flat) => {
     try {
-      const tagged = toTaggedValue(TAG_XID.value, cbor);
-      const xid = XID.fromTaggedCbor(tagged);
+      const tagged = taggedValue(TAG_XID.value, cbor);
+      const xid = XID.fromCbor(tagged);
       return { ok: true, value: `XID(${xid.shortDescription()})` };
     } catch (e) {
       return summarizerError(e);
@@ -569,13 +573,13 @@ const setupComponentSummarizers = (context: FormatContext): void => {
       // FunctionsStore lookup here at this layer — rendering by id
       // is sufficient for parity with Rust's `name_for_function`
       // fallback.
-      if (cbor.isInteger()) {
-        return { ok: true, value: `«${cbor.toInteger()}»` };
+      if (isNumber(cbor)) {
+        return { ok: true, value: `«${expectNumber(cbor)}»` };
       }
-      if (cbor.isText()) {
-        return { ok: true, value: `«"${cbor.toText()}"»` };
+      if (isText(cbor)) {
+        return { ok: true, value: `«"${expectText(cbor)}"»` };
       }
-      return { ok: true, value: `«${cbor.toDiagnostic()}»` };
+      return { ok: true, value: `«${diagnostic(cbor)}»` };
     } catch (e) {
       return summarizerError(e);
     }
@@ -585,13 +589,13 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // `format_context.rs:379-389` (parameter summarizer).
   tags.setSummarizer(TAG_PARAMETER.value, (cbor, _flat) => {
     try {
-      if (cbor.isInteger()) {
-        return { ok: true, value: `❰${cbor.toInteger()}❱` };
+      if (isNumber(cbor)) {
+        return { ok: true, value: `❰${expectNumber(cbor)}❱` };
       }
-      if (cbor.isText()) {
-        return { ok: true, value: `❰"${cbor.toText()}"❱` };
+      if (isText(cbor)) {
+        return { ok: true, value: `❰"${expectText(cbor)}"❱` };
       }
-      return { ok: true, value: `❰${cbor.toDiagnostic()}❱` };
+      return { ok: true, value: `❰${diagnostic(cbor)}❱` };
     } catch (e) {
       return summarizerError(e);
     }
@@ -615,7 +619,7 @@ const setupComponentSummarizers = (context: FormatContext): void => {
         if (envelopeFormatHook === undefined) {
           // Hook not yet installed — fall back to the raw diag
           // representation so we still produce *some* output.
-          return { ok: true, value: `${keyword}(${cbor.toDiagnostic()})` };
+          return { ok: true, value: `${keyword}(${diagnostic(cbor)})` };
         }
         const innerFormat = envelopeFormatHook(cbor, flat);
         return { ok: true, value: `${keyword}(${innerFormat})` };

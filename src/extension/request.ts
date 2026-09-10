@@ -24,8 +24,9 @@
 
 import { ARID } from "@blockchaincommons/components";
 import { REQUEST as TAG_REQUEST } from "@blockchaincommons/tags";
-import { toTaggedValue, CborDate } from "@blockchaincommons/dcbor-compat";
+import { taggedValue, CborDate, expectTaggedContent } from "@blockchaincommons/dcbor";
 import { BODY, NOTE, DATE } from "@blockchaincommons/known-values";
+
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
@@ -207,7 +208,7 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
     // form. Earlier the TS port stored an untagged ARID byte string,
     // so format() rendered the request subject as `Bytes(32)` instead
     // of `ARID(<short>)` — observable in the GSTP byte-shape pins.
-    const taggedArid = toTaggedValue(TAG_REQUEST, this._id.taggedCbor());
+    const taggedArid = taggedValue(TAG_REQUEST, this._id.toCbor());
 
     let envelope = Envelope.newLeaf(taggedArid).addAssertion(BODY, this._body.envelope());
 
@@ -220,7 +221,7 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
       // `Envelope::add_assertion(DATE, self.date)` which dispatches via
       // `Date → CBOR` (tag 1). The earlier port stored the ISO 8601
       // string here, producing a different CBOR object and digest.
-      envelope = envelope.addAssertion(DATE, CborDate.fromDatetime(this._date));
+      envelope = envelope.addAssertion(DATE, CborDate.fromDate(this._date));
     }
 
     return envelope;
@@ -260,8 +261,8 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
 
     // The subject is TAG_REQUEST(tag_40012(arid_bytes)) — see
     // `toEnvelope` above. Extract the inner tagged-ARID, then decode.
-    const aridCbor = leaf.expectTag(TAG_REQUEST);
-    const id = ARID.fromTaggedCbor(aridCbor);
+    const aridCbor = expectTaggedContent(leaf, TAG_REQUEST.value);
+    const id = ARID.fromCbor(aridCbor);
 
     // Extract optional note
     let note = "";
@@ -282,7 +283,7 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
       if (dateObj !== undefined) {
         const leaf = dateObj.asLeaf();
         if (leaf !== undefined) {
-          date = CborDate.fromTaggedCbor(leaf).datetime();
+          date = CborDate.fromTaggedCbor(leaf).toDate();
         } else {
           // Back-compat shim: if a legacy producer wrote a plain ISO
           // 8601 string, accept it. New encoders emit tag 1 so this

@@ -21,9 +21,9 @@
 /// // Will output: "Alice" [ "knows": "Bob", "knows": "Carol" ]
 /// ```
 
-import type { Cbor } from "@blockchaincommons/dcbor-compat";
-import { isTagged, tagValue } from "@blockchaincommons/dcbor-compat";
+import { type Cbor, isTagged, tagValue } from "@blockchaincommons/dcbor";
 import { IS_A } from "@blockchaincommons/known-values";
+
 import { Envelope } from "../base/envelope";
 import type { Assertion } from "../base/assertion";
 import {
@@ -298,15 +298,15 @@ export const formatEnvelope = (
       let name: string;
       if (opts.context.type === "custom") {
         const knownValues = opts.context.context.knownValues();
-        const assignedName = knownValues.assignedName(c.value);
-        name = assignedName ?? c.value.name();
+        const assignedName = knownValues.assignedNameOf(c.value);
+        name = assignedName ?? c.value.name;
       } else if (opts.context.type === "global") {
         const ctx = getGlobalFormatContext();
         const knownValues = ctx.knownValues();
-        const assignedName = knownValues.assignedName(c.value);
-        name = assignedName ?? c.value.name();
+        const assignedName = knownValues.assignedNameOf(c.value);
+        name = assignedName ?? c.value.name;
       } else {
-        name = c.value.name();
+        name = c.value.name;
       }
       return formatItem(`'${name}'`);
     }

@@ -242,7 +242,7 @@ Envelope.prototype.nodesMatching = function (
 ): Set<Digest> {
   const dedup = new Map<string, Digest>();
   const insert = (d: Digest): void => {
-    const key = d.hex();
+    const key = d.toHex();
     if (!dedup.has(key)) dedup.set(key, d);
   };
 
@@ -252,14 +252,14 @@ Envelope.prototype.nodesMatching = function (
   if (targetDigests !== undefined) {
     targetHexes = new Set<string>();
     for (const d of targetDigests) {
-      targetHexes.add(d.hex());
+      targetHexes.add(d.toHex());
     }
   }
 
   const visitor = (envelope: Envelope): void => {
     // Check if this node matches the target digests
     const ownDigest = envelope.digest();
-    const digestMatches = targetHexes === undefined || targetHexes.has(ownDigest.hex());
+    const digestMatches = targetHexes === undefined || targetHexes.has(ownDigest.toHex());
 
     if (!digestMatches) {
       return;
@@ -320,7 +320,7 @@ Envelope.prototype.walkUnelide = function (this: Envelope, envelopes: Envelope[]
   // Build a lookup map of digest -> envelope
   const envelopeMap = new Map<string, Envelope>();
   for (const env of envelopes) {
-    envelopeMap.set(env.digest().hex(), env);
+    envelopeMap.set(env.digest().toHex(), env);
   }
 
   return walkUnelideWithMap(this, envelopeMap);
@@ -332,7 +332,7 @@ function walkUnelideWithMap(envelope: Envelope, envelopeMap: Map<string, Envelop
 
   if (c.type === "elided") {
     // Try to find a matching envelope to restore
-    const replacement = envelopeMap.get(envelope.digest().hex());
+    const replacement = envelopeMap.get(envelope.digest().toHex());
     return replacement ?? envelope;
   }
 

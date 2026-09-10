@@ -4,17 +4,27 @@
  *
  */
 
-import type { Cbor } from "@blockchaincommons/dcbor-compat";
 import {
+  type Cbor,
   type CborTagged,
-  type CborTaggedEncodable,
-  type CborTaggedDecodable,
   tagsForValues,
-  cborData,
+  encodeCbor,
   decodeCbor,
-} from "@blockchaincommons/dcbor-compat";
-import { ENVELOPE } from "@blockchaincommons/components";
+} from "@blockchaincommons/dcbor";
+import { ENVELOPE } from "@blockchaincommons/tags";
+
 import { Envelope } from "./envelope";
+
+/** The pre-redesign tagged-encodable shape (replaced by dcbor's ToCbor in Phase 3). */
+export interface CborTaggedEncodable extends CborTagged {
+  untaggedCbor(): Cbor;
+  taggedCbor(): Cbor;
+}
+/** The pre-redesign tagged-decodable shape (replaced by a codec in Phase 3). */
+export interface CborTaggedDecodable<T> extends CborTagged {
+  fromUntaggedCbor(cbor: Cbor): T;
+  fromTaggedCbor(cbor: Cbor): T;
+}
 
 const TAG_ENVELOPE = ENVELOPE.value;
 
@@ -25,7 +35,7 @@ const TAG_ENVELOPE = ENVELOPE.value;
 ///
 /// * `.node` contains a CBOR array, the first element of which is the subject,
 ///   followed by one or more assertions.
-/// * `.leaf` is tagged #6.24 (TAG_ENCODED_CBOR) or #6.204 (TAG_LEAF), which
+/// * `.leaf` is tagged #6.24 (ENCODED_CBOR.value) or #6.204 (TAG_LEAF), which
 ///   are the IANA tag for embedded CBOR.
 /// * `.wrapped` is tagged with the `envelope` tag.
 /// * `.assertion` is a single-element map `{predicate: object}`.
@@ -115,7 +125,7 @@ export function envelopeFromCbor(cbor: Cbor): Envelope {
 /// @param envelope - The envelope to encode
 /// @returns The CBOR bytes
 export function envelopeToBytes(envelope: Envelope): Uint8Array {
-  return cborData(envelope.taggedCbor());
+  return encodeCbor(envelope.taggedCbor());
 }
 
 /// Convenience function to decode an Envelope from CBOR bytes.

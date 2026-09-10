@@ -239,7 +239,7 @@ Envelope.prototype.digests = function (this: Envelope, levelLimit: number): Set<
   const dedup = new Map<string, Digest>();
 
   const insert = (d: Digest): void => {
-    const key = d.hex();
+    const key = d.toHex();
     if (!dedup.has(key)) dedup.set(key, d);
   };
 
@@ -306,7 +306,7 @@ Envelope.prototype.structuralDigest = function (this: Envelope): Digest {
       chunks.push(new Uint8Array([2]));
       totalLength += 1;
     }
-    const digestBytes = envelope.digest().data();
+    const digestBytes = envelope.digest().bytes;
     chunks.push(digestBytes);
     totalLength += digestBytes.length;
     return [undefined, false];

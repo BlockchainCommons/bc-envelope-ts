@@ -6,13 +6,6 @@
 
 import { ARID } from '@blockchaincommons/components';
 import { ATTACHMENT } from '@blockchaincommons/known-values';
-import { Cbor } from '@blockchaincommons/dcbor-compat';
-import { CborMap } from '@blockchaincommons/dcbor-compat';
-import { CborNumber } from '@blockchaincommons/dcbor-compat';
-import { CborSummarizer } from '@blockchaincommons/dcbor-compat';
-import { CborTagged } from '@blockchaincommons/dcbor-compat';
-import { CborTaggedDecodable } from '@blockchaincommons/dcbor-compat';
-import { CborTaggedEncodable } from '@blockchaincommons/dcbor-compat';
 import { SealedMessage as ComponentsSealedMessage } from '@blockchaincommons/components';
 import { Compressed } from '@blockchaincommons/components';
 import { CONFORMS_TO } from '@blockchaincommons/known-values';
@@ -22,7 +15,7 @@ import { EDGE } from '@blockchaincommons/known-values';
 import { EncryptedMessage } from '@blockchaincommons/components';
 import { Encrypter } from '@blockchaincommons/components';
 import { IS_A } from '@blockchaincommons/known-values';
-import { KeyDerivationMethod } from '@blockchaincommons/components';
+import { KeyDerivationMethod } from '@blockchaincommons/components/kdf';
 import { KnownValue } from '@blockchaincommons/known-values';
 import { KnownValuesStore } from '@blockchaincommons/known-values';
 import { Nonce } from '@blockchaincommons/components';
@@ -38,12 +31,8 @@ import { SigningOptions } from '@blockchaincommons/components';
 import { SigningPrivateKey } from '@blockchaincommons/components';
 import { SigningPublicKey } from '@blockchaincommons/components';
 import { SOURCE } from '@blockchaincommons/known-values';
-import { SSKRSpec } from '@blockchaincommons/components';
+import { Spec } from '@blockchaincommons/sskr';
 import { SymmetricKey } from '@blockchaincommons/components';
-import { Tag } from '@blockchaincommons/dcbor-compat';
-import { tagsForValues } from '@blockchaincommons/dcbor-compat';
-import { TagsStore } from '@blockchaincommons/dcbor-compat';
-import { TagsStoreTrait } from '@blockchaincommons/dcbor-compat';
 import { TARGET } from '@blockchaincommons/known-values';
 import { UR } from '@blockchaincommons/uniform-resources';
 import { VENDOR } from '@blockchaincommons/known-values';
@@ -78,12 +67,16 @@ export class Assertion implements DigestProvider {
     equals(other: Assertion): boolean;
     // (undocumented)
     static fromCbor(cbor: Cbor): Assertion;
+    // Warning: (ae-forgotten-export) The symbol "CborMap" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     static fromCborMap(map: CborMap): Assertion;
     // (undocumented)
     object(): Envelope;
     // (undocumented)
     predicate(): Envelope;
+    // Warning: (ae-forgotten-export) The symbol "Cbor" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     toCbor(): Cbor;
     // (undocumented)
@@ -304,7 +297,7 @@ export class Envelope implements DigestProvider {
     // (undocumented)
     asAssertion: () => Envelope | undefined;
     // (undocumented)
-    asByteString: () => Uint8Array | undefined;
+    asBytes: () => Uint8Array | undefined;
     // (undocumented)
     asKnownValue: () => KnownValue | undefined;
     // (undocumented)
@@ -636,11 +629,11 @@ export class Envelope implements DigestProvider {
     // (undocumented)
     static sskrJoin: (envelopes: Envelope[]) => Envelope;
     // (undocumented)
-    sskrSplit: (spec: SSKRSpec, contentKey: SymmetricKey) => Envelope[][];
+    sskrSplit: (spec: Spec, contentKey: SymmetricKey) => Envelope[][];
     // (undocumented)
-    sskrSplitFlattened: (spec: SSKRSpec, contentKey: SymmetricKey) => Envelope[];
+    sskrSplitFlattened: (spec: Spec, contentKey: SymmetricKey) => Envelope[];
     // (undocumented)
-    sskrSplitUsing: (spec: SSKRSpec, contentKey: SymmetricKey, rng: RandomNumberGenerator) => Envelope[][];
+    sskrSplitUsing: (spec: Spec, contentKey: SymmetricKey, rng: RandomNumberGenerator) => Envelope[][];
     // (undocumented)
     structuralDigest: () => Digest;
     // (undocumented)
@@ -766,14 +759,20 @@ export type EnvelopeCase = {
     value: Compressed;
 };
 
+// Warning: (ae-forgotten-export) The symbol "CborTagged" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
 export class EnvelopeCBORTagged implements CborTagged {
+    // Warning: (ae-forgotten-export) The symbol "tagsForValues" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     cborTags(): ReturnType<typeof tagsForValues>;
     // (undocumented)
     static cborTags(): number[];
 }
 
+// Warning: (ae-forgotten-export) The symbol "CborTaggedDecodable" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
 export class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDecodable<T> {
     // (undocumented)
@@ -788,6 +787,8 @@ export class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDeco
     fromUntaggedCbor(cbor: Cbor): T;
 }
 
+// Warning: (ae-forgotten-export) The symbol "CborTaggedEncodable" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
 export class EnvelopeCBORTaggedEncodable implements CborTaggedEncodable {
     constructor(envelope: Envelope);
@@ -813,8 +814,10 @@ export interface EnvelopeEncodable {
     intoEnvelope(): Envelope;
 }
 
+// Warning: (ae-forgotten-export) The symbol "ToCbor" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable;
+export type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
 
 // @public (undocumented)
 export class EnvelopeError extends Error {
@@ -1161,9 +1164,14 @@ export const formatBegin: (value: string) => EnvelopeFormatItem;
 // @public (undocumented)
 export const formatCbor: (cbor: Cbor, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
 
+// Warning: (ae-forgotten-export) The symbol "ReadonlyTagsStore" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export class FormatContext implements TagsStoreTrait {
+export class FormatContext implements ReadonlyTagsStore {
+    // Warning: (ae-forgotten-export) The symbol "TagsStore" needs to be exported by the entry point index.d.ts
     constructor(tags?: TagsStore, knownValues?: KnownValuesStore);
+    // Warning: (ae-forgotten-export) The symbol "Tag" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     assignedNameForTag(tag: Tag): string | undefined;
     // (undocumented)
@@ -1176,10 +1184,14 @@ export class FormatContext implements TagsStoreTrait {
     nameForValue(value: CborNumber): string;
     // (undocumented)
     registerTag(value: number | bigint, name: string): void;
+    // Warning: (ae-forgotten-export) The symbol "CborSummarizer" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     summarizer(tag: CborNumber): CborSummarizer | undefined;
     // (undocumented)
     tagForName(name: string): Tag | undefined;
+    // Warning: (ae-forgotten-export) The symbol "CborNumber" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
     tagForValue(value: CborNumber): Tag | undefined;
     // (undocumented)

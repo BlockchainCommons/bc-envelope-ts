@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from "vitest";
 import { Envelope, SymmetricKey, SigningPrivateKey, PrivateKeyBase } from "../src";
-import { KeyDerivationMethod } from "@blockchaincommons/components";
+import { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
 import { IS_A } from "@blockchaincommons/known-values";
 
 // ============================================================================
@@ -44,7 +44,7 @@ function alicePrivateKey(): SigningPrivateKey {
  * Encrypts the subject, checks equivalence, decrypts, and verifies identity.
  */
 function roundTripTest(envelope: Envelope): void {
-  const key = SymmetricKey.new();
+  const key = SymmetricKey.random();
   const plaintextSubject = envelope;
 
   // Encrypt the subject
@@ -91,7 +91,7 @@ describe("Crypto Tests", () => {
   describe("symmetric encryption", () => {
     it("should encrypt and decrypt with symmetric key", () => {
       // Alice and Bob have agreed to use this key.
-      const key = SymmetricKey.new();
+      const key = SymmetricKey.random();
 
       // Alice sends a message encrypted with the key to Bob.
       const envelope = helloEnvelope().encryptSubject(key);
@@ -114,7 +114,7 @@ describe("Crypto Tests", () => {
       expect(receivedEnvelope.asText()).toBeUndefined();
 
       // Can't read with incorrect key.
-      const wrongKey = SymmetricKey.new();
+      const wrongKey = SymmetricKey.random();
       expect(() => receivedEnvelope.decryptSubject(wrongKey)).toThrow();
     });
   });
@@ -154,7 +154,7 @@ describe("Crypto Tests", () => {
   describe("sign then encrypt", () => {
     it("should sign then encrypt message", () => {
       // Alice and Bob have agreed to use this key.
-      const key = SymmetricKey.new();
+      const key = SymmetricKey.random();
       const alicePriv = alicePrivateKey();
       const alicePub = alicePriv.publicKey();
 
@@ -184,7 +184,7 @@ describe("Crypto Tests", () => {
   describe("encrypt then sign", () => {
     it("should encrypt then sign message", () => {
       // Alice and Bob have agreed to use this key.
-      const key = SymmetricKey.new();
+      const key = SymmetricKey.random();
       const alicePriv = alicePrivateKey();
       const alicePub = alicePriv.publicKey();
 
@@ -226,7 +226,7 @@ describe("Crypto Tests", () => {
       const alice = PrivateKeyBase.generate();
 
       // Alice encrypts a message so that it can only be decrypted by Bob or Carol.
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       const envelope = helloEnvelope()
         .encryptSubject(contentKey)
         .addRecipient(bob.publicKeys(), contentKey)
@@ -265,7 +265,7 @@ describe("Crypto Tests", () => {
 
       // Alice signs a message, and then encrypts it so that it can only be
       // decrypted by Bob or Carol.
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       const envelope = helloEnvelope()
         .addSignature(alice)
         .encryptSubject(contentKey)
@@ -311,7 +311,7 @@ describe("Crypto Tests", () => {
       // encrypting it so that it can only be decrypted by Bob or Carol. This
       // hides Alice's signature, and requires recipients to decrypt the
       // subject before they are able to validate the signature.
-      const contentKey = SymmetricKey.new();
+      const contentKey = SymmetricKey.random();
       const envelope = helloEnvelope()
         .addSignature(alice)
         .wrap()
@@ -389,7 +389,7 @@ describe("Crypto Tests", () => {
         const wrongPassword = new TextEncoder().encode("wrong password");
 
         // Alice encrypts a message so that it can be decrypted by three specific passwords.
-        const contentKey = SymmetricKey.new();
+        const contentKey = SymmetricKey.random();
         const envelope = helloEnvelope()
           .encryptSubject(contentKey)
           .addSecret(KeyDerivationMethod.HKDF, bobPassword, contentKey)
@@ -428,7 +428,7 @@ describe("Crypto Tests", () => {
   describe("envelope equivalence and identity", () => {
     it("should maintain equivalence through encryption/decryption", () => {
       const envelope = Envelope.new("Alice").addAssertion("knows", "Bob");
-      const key = SymmetricKey.new();
+      const key = SymmetricKey.random();
 
       const encrypted = envelope.encryptSubject(key);
       const decrypted = encrypted.decryptSubject(key);
@@ -442,8 +442,8 @@ describe("Crypto Tests", () => {
 
     it("should fail verification with wrong key", () => {
       const envelope = helloEnvelope();
-      const key1 = SymmetricKey.new();
-      const key2 = SymmetricKey.new();
+      const key1 = SymmetricKey.random();
+      const key2 = SymmetricKey.random();
 
       const encrypted = envelope.encryptSubject(key1);
 

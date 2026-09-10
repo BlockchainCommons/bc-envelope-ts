@@ -25,8 +25,7 @@
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
-import { IS_A } from "@blockchaincommons/known-values";
-import type { KnownValue } from "@blockchaincommons/known-values";
+import { IS_A, type KnownValue } from "@blockchaincommons/known-values";
 
 // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 if (Envelope?.prototype) {

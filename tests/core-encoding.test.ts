@@ -35,7 +35,7 @@ describe("Core Encoding Tests", () => {
       const digest = Digest.fromImage(new TextEncoder().encode("Hello."));
 
       // Create an envelope with the digest data
-      const envelope = Envelope.new(digest.data());
+      const envelope = Envelope.new(digest.bytes);
 
       // Check round-trip encoding
       const result = checkEncoding(envelope);

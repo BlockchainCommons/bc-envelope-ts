@@ -9,8 +9,8 @@
 /// This module provides the EnvelopeSummary interface and implementations
 /// for generating concise text summaries of CBOR values and envelopes.
 
-import type { Cbor } from "@blockchaincommons/dcbor-compat";
 import {
+  type Cbor,
   isUnsigned,
   isNegative,
   isBytes,
@@ -20,9 +20,10 @@ import {
   isMap,
   isTagged,
   asText,
-  diagnosticOpt,
-  type DiagFormatOpts,
-} from "@blockchaincommons/dcbor-compat";
+  expectNumber,
+} from "@blockchaincommons/dcbor";
+import { diagnostic, type DiagFormatOpts } from "@blockchaincommons/dcbor/diagnostic";
+
 import { Envelope } from "../base/envelope";
 import {
   type FormatContext,
@@ -54,16 +55,9 @@ export const cborEnvelopeSummary = (
   maxLength: number,
   context: FormatContextOpt,
 ): string => {
-  // Handle unsigned integers
-  if (isUnsigned(cbor)) {
-    return String(cbor);
-  }
-
-  // Handle negative integers
-  if (isNegative(cbor)) {
-    // In CBOR, negative integers are stored as -(n+1), so we need to compute the actual value
-    const n = cbor.value;
-    return typeof n === "bigint" ? String(-1n - n) : String(-1 - n);
+  // Integers print as their value.
+  if (isUnsigned(cbor) || isNegative(cbor)) {
+    return String(expectNumber(cbor));
   }
 
   // Handle byte strings
@@ -96,7 +90,7 @@ export const cborEnvelopeSummary = (
       return String(value);
     }
     // Fallback for other simple values - use diagnostic notation
-    return diagnosticOpt(cbor, { summarize: true });
+    return diagnostic(cbor, { summarize: true });
   }
 
   // Handle arrays, maps, and tagged values - use diagnostic notation
@@ -105,17 +99,17 @@ export const cborEnvelopeSummary = (
 
     // Get appropriate tags store based on context
     if (context.type === "custom") {
-      return diagnosticOpt(cbor, { ...opts, tags: context.context.tags() });
+      return diagnostic(cbor, { ...opts, tags: context.context.tags() });
     } else if (context.type === "global") {
       const ctx = getGlobalFormatContext();
-      return diagnosticOpt(cbor, { ...opts, tags: ctx.tags() });
+      return diagnostic(cbor, { ...opts, tags: ctx.tags() });
     } else {
-      return diagnosticOpt(cbor, opts);
+      return diagnostic(cbor, opts);
     }
   }
 
   // Fallback
-  return String(cbor);
+  return diagnostic(cbor);
 };
 
 // ============================================================================
@@ -151,7 +145,7 @@ Envelope.prototype.summaryWithContext = function (
 
     case "knownValue": {
       const knownValues = context.knownValues();
-      const name = knownValues.name(c.value);
+      const name = knownValues.nameOf(c.value);
       return flankedBy(name, "'", "'");
     }
 

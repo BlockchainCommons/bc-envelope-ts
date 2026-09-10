@@ -25,6 +25,12 @@ import {
   NOTE as NOTE_KV,
   type KnownValue,
 } from "@blockchaincommons/known-values";
+import {
+  Signature,
+  type Signer,
+  type Verifier,
+  type SigningOptions,
+} from "@blockchaincommons/components";
 
 /**
  * Re-export signing types from @blockchaincommons/components for type compatibility.
@@ -33,12 +39,6 @@ export {
   Signature,
   SigningPrivateKey,
   SigningPublicKey,
-  type Signer,
-  type Verifier,
-  type SigningOptions,
-} from "@blockchaincommons/components";
-import {
-  Signature,
   type Signer,
   type Verifier,
   type SigningOptions,
@@ -129,7 +129,7 @@ Envelope.prototype.addSignatureOpt = function (
   metadata?: SignatureMetadata,
 ): Envelope {
   const digest = this.subject().digest();
-  let signatureEnvelope = Envelope.new(signer.signWithOptions(digest.data(), options));
+  let signatureEnvelope = Envelope.new(signer.signWithOptions(digest.bytes, options));
 
   if (metadata?.hasAssertions() === true) {
     // Add metadata assertions to the signature envelope
@@ -145,7 +145,7 @@ Envelope.prototype.addSignatureOpt = function (
 
     // Sign the wrapped structure with the same key
     const outerSignature = Envelope.new(
-      signer.signWithOptions(signatureEnvelope.digest().data(), options),
+      signer.signWithOptions(signatureEnvelope.digest().bytes, options),
     );
 
     // Add the outer signature assertion
@@ -228,7 +228,7 @@ Envelope.prototype.isVerifiedSignature = function (
   signature: Signature,
   verifier: Verifier,
 ): boolean {
-  return verifier.verify(signature, this.subject().digest().data());
+  return verifier.verify(signature, this.subject().digest().bytes);
 };
 
 /// Checks whether the given signature is valid for the given public key.
@@ -239,7 +239,7 @@ Envelope.prototype.verifySignature = function (
   signature: Signature,
   verifier: Verifier,
 ): Envelope {
-  if (!verifier.verify(signature, this.subject().digest().data())) {
+  if (!verifier.verify(signature, this.subject().digest().bytes)) {
     throw EnvelopeError.unverifiedSignature();
   }
   return this;
@@ -280,9 +280,9 @@ Envelope.prototype.hasSignatureFromReturningMetadata = function (
         const outerSignatureObject = signatureObject.objectForPredicate(SIGNED);
         outerSigFound = true;
         const outerSignature = outerSignatureObject.extractSubject((cbor) =>
-          Signature.fromTaggedCbor(cbor),
+          Signature.fromCbor(cbor),
         );
-        if (!verifier.verify(outerSignature, signatureObjectSubject.digest().data())) {
+        if (!verifier.verify(outerSignature, signatureObjectSubject.digest().bytes)) {
           continue; // Outer signature doesn't match key, try next
         }
       } catch (_e) {
@@ -298,9 +298,9 @@ Envelope.prototype.hasSignatureFromReturningMetadata = function (
       const signatureMetadataEnvelope = signatureObjectSubject.tryUnwrap();
       try {
         const innerSignature = signatureMetadataEnvelope.extractSubject((cbor) =>
-          Signature.fromTaggedCbor(cbor),
+          Signature.fromCbor(cbor),
         );
-        if (!verifier.verify(innerSignature, this.subject().digest().data())) {
+        if (!verifier.verify(innerSignature, this.subject().digest().bytes)) {
           throw EnvelopeError.unverifiedInnerSignature();
         }
         return signatureMetadataEnvelope;
@@ -311,8 +311,8 @@ Envelope.prototype.hasSignatureFromReturningMetadata = function (
     } else {
       // Simple case: no metadata
       try {
-        const signature = signatureObject.extractSubject((cbor) => Signature.fromTaggedCbor(cbor));
-        if (verifier.verify(signature, this.subject().digest().data())) {
+        const signature = signatureObject.extractSubject((cbor) => Signature.fromCbor(cbor));
+        if (verifier.verify(signature, this.subject().digest().bytes)) {
           return signatureObject;
         }
       } catch {

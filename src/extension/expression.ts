@@ -4,7 +4,17 @@
  *
  */
 
-import { type Cbor, cbor as toCbor, toTaggedValue } from "@blockchaincommons/dcbor-compat";
+import {
+  type Cbor,
+  cbor as toCbor,
+  taggedValue,
+  asTaggedValue,
+  expectInteger,
+  isInteger,
+  expectText,
+  isText,
+} from "@blockchaincommons/dcbor";
+
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
@@ -208,7 +218,7 @@ export class Function implements EnvelopeEncodable {
   /// instead of `«"name"»`.
   envelope(): Envelope {
     const untagged: Cbor = this._variant === "known" ? toCbor(this._value) : toCbor(this._name);
-    return Envelope.newLeaf(toTaggedValue(40006, untagged));
+    return Envelope.newLeaf(taggedValue(40006, untagged));
   }
 
   /// Converts this function into an envelope (EnvelopeEncodable implementation).
@@ -441,7 +451,7 @@ export class Parameter implements EnvelopeEncodable {
   /// where untagged is `uint(N)` (Known) or `text(name)` (Named).
   envelope(): Envelope {
     const untagged: Cbor = this._variant === "known" ? toCbor(this._value) : toCbor(this._name);
-    const paramLeaf = Envelope.newLeaf(toTaggedValue(40007, untagged));
+    const paramLeaf = Envelope.newLeaf(taggedValue(40007, untagged));
     if (this._paramValue !== undefined) {
       return Envelope.newAssertion(paramLeaf, this._paramValue);
     }
@@ -819,16 +829,16 @@ function readFunctionFromLeaf(envelope: Envelope): Function {
   if (leaf.type !== "leaf") {
     throw EnvelopeError.general("Function envelope subject must be a leaf");
   }
-  const tagged = leaf.cbor.asTagged?.();
+  const tagged = asTaggedValue(leaf.cbor);
   if (tagged === undefined || Number(tagged[0].value) !== CBOR_TAG_FUNCTION) {
     throw EnvelopeError.general("Function envelope subject must be tag 40006");
   }
   const inner = tagged[1];
-  if (inner.isInteger()) {
-    return Function.newKnown(Number(inner.toInteger()));
+  if (isInteger(inner)) {
+    return Function.newKnown(Number(expectInteger(inner)));
   }
-  if (inner.isText()) {
-    return Function.newNamed(inner.toText());
+  if (isText(inner)) {
+    return Function.newNamed(expectText(inner));
   }
   throw EnvelopeError.general("Function tag content must be uint or text");
 }
@@ -841,13 +851,13 @@ function readFunctionFromLeaf(envelope: Envelope): Function {
 function tryReadParameterIdFromLeaf(envelope: Envelope): ParameterID | undefined {
   const c = envelope.case();
   if (c.type !== "leaf") return undefined;
-  const tagged = c.cbor.asTagged?.();
+  const tagged = asTaggedValue(c.cbor);
   if (tagged === undefined || Number(tagged[0].value) !== CBOR_TAG_PARAMETER) {
     return undefined;
   }
   const inner = tagged[1];
-  if (inner.isInteger()) return Number(inner.toInteger());
-  if (inner.isText()) return inner.toText();
+  if (isInteger(inner)) return Number(expectInteger(inner));
+  if (isText(inner)) return expectText(inner);
   return undefined;
 }
 

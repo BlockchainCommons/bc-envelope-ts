@@ -108,10 +108,10 @@ describe("Keypair Signing Tests", () => {
       const key2 = SigningPrivateKey.random();
 
       // Keys should be different - compare via taggedCborData()
-      const key1Hex = Array.from(key1.taggedCborData())
+      const key1Hex = Array.from(key1.toCbor().toData())
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
-      const key2Hex = Array.from(key2.taggedCborData())
+      const key2Hex = Array.from(key2.toCbor().toData())
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 
@@ -124,10 +124,10 @@ describe("Keypair Signing Tests", () => {
       const publicKey2 = privateKey.publicKey();
 
       // SigningPublicKey doesn't have toHex() directly - use taggedCborData()
-      const hex1 = Array.from(publicKey1.taggedCborData())
+      const hex1 = Array.from(publicKey1.toCbor().toData())
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
-      const hex2 = Array.from(publicKey2.taggedCborData())
+      const hex2 = Array.from(publicKey2.toCbor().toData())
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
       expect(hex1).toBe(hex2);
@@ -211,7 +211,7 @@ describe("Keypair Signing Tests", () => {
       // SigningPrivateKey doesn't expose toData() directly
       // Use taggedCborData() to verify serialization works
       const key1 = SigningPrivateKey.random();
-      const key1Data = key1.taggedCborData();
+      const key1Data = key1.toCbor().toData();
 
       // Should produce non-empty data
       expect(key1Data.length).toBeGreaterThan(0);

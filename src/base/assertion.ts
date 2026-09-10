@@ -8,7 +8,7 @@ import { Digest, type DigestProvider } from "./digest";
 import { Envelope } from "./envelope";
 import { type EnvelopeEncodable } from "./envelope-encodable";
 import { EnvelopeError } from "./error";
-import { type Cbor, cbor as toCborValue, CborMap } from "@blockchaincommons/dcbor-compat";
+import { type Cbor, cbor as toCborValue, CborMap } from "@blockchaincommons/dcbor";
 
 /// A predicate-object relationship representing an assertion about a subject.
 ///

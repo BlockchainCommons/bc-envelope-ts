@@ -10,6 +10,7 @@
 /// enabling serialization to and from UR format as specified in BCR-2020-005.
 
 import { UR } from "@blockchaincommons/uniform-resources";
+
 import { Envelope } from "./envelope";
 
 // ============================================================================
@@ -19,14 +20,14 @@ import { Envelope } from "./envelope";
 /// Implementation of urString
 Envelope.prototype.urString = function (this: Envelope): string {
   // Use untaggedCbor() per Rust implementation - the UR type "envelope" implies the tag
-  const ur = UR.new("envelope", this.untaggedCbor());
-  return ur.string();
+  const ur = UR.from("envelope", this.untaggedCbor());
+  return ur.toString();
 };
 
 /// Implementation of ur
 Envelope.prototype.ur = function (this: Envelope): UR {
   // Use untaggedCbor() per Rust implementation - the UR type "envelope" implies the tag
-  return UR.new("envelope", this.untaggedCbor());
+  return UR.from("envelope", this.untaggedCbor());
 };
 
 /// Implementation of taggedCborData (alias for cborBytes)
@@ -36,7 +37,7 @@ Envelope.prototype.taggedCborData = function (this: Envelope): Uint8Array {
 
 /// Implementation of fromUrString
 Envelope.fromUrString = function (urString: string): Envelope {
-  const ur = UR.fromURString(urString);
+  const ur = UR.parse(urString);
   return Envelope.fromUR(ur);
 };
 
@@ -45,7 +46,7 @@ Envelope.fromURString = Envelope.fromUrString;
 
 /// Implementation of fromUR
 Envelope.fromUR = function (ur: UR): Envelope {
-  ur.checkType("envelope");
+  ur.expectType("envelope");
   // Use fromUntaggedCbor() per Rust implementation - the UR type "envelope" implies the tag
-  return Envelope.fromUntaggedCbor(ur.cbor());
+  return Envelope.fromUntaggedCbor(ur.cbor);
 };

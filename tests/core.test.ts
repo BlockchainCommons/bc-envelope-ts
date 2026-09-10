@@ -70,7 +70,7 @@ describe("Core Envelope Tests", () => {
 
       expect(e.format()).toBe("42");
       expect(e.extractNumber()).toBe(42);
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "7f83f7bda2d63959d34767689f06d47576683d378d9eb8d09386c9a020395c53",
       );
     });
@@ -92,7 +92,7 @@ describe("Core Envelope Tests", () => {
 
       expect(e.format()).toBe('"Hello."');
       expect(e.extractString()).toBe(PLAINTEXT_HELLO);
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "8cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59",
       );
     });
@@ -107,7 +107,7 @@ describe("Core Envelope Tests", () => {
       const extracted = e.subject().asKnownValue();
       expect(extracted).toBeDefined();
       expect(extracted?.equals(NOTE)).toBe(true);
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "0fcd6a39d6ed37f2e2efa6a96214596f1b28a5cd42a5a27afc32162aaf821191",
       );
     });
@@ -125,22 +125,22 @@ describe("Core Envelope Tests", () => {
       // Check predicate digest
       const predicate = e.asPredicate();
       expect(predicate).toBeDefined();
-      expect(predicate?.digest().hex()).toBe(
+      expect(predicate?.digest().toHex()).toBe(
         "db7dd21c5169b4848d2a1bcb0a651c9617cdd90bae29156baaefbb2a8abef5ba",
       );
 
       // Check object digest
       const object = e.asObject();
       expect(object).toBeDefined();
-      expect(object?.digest().hex()).toBe(
+      expect(object?.digest().toHex()).toBe(
         "13b741949c37b8e09cc3daa3194c58e4fd6b2f14d4b1d0f035a46d6d5a1d3f11",
       );
 
       // Check subject and envelope digest match
-      expect(e.subject().digest().hex()).toBe(
+      expect(e.subject().digest().toHex()).toBe(
         "78d666eb8f4c0977a0425ab6aa21ea16934a6bc97c6f0c3abaefac951c1714a2",
       );
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "78d666eb8f4c0977a0425ab6aa21ea16934a6bc97c6f0c3abaefac951c1714a2",
       );
 
@@ -156,7 +156,7 @@ describe("Core Envelope Tests", () => {
     it("should create envelope with subject and single assertion", () => {
       const e = checkEncoding(singleAssertionEnvelope());
 
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "8955db5e016affb133df56c11fe6c5c82fa3036263d651286d134c7e56c0e9f2",
       );
 
@@ -173,7 +173,7 @@ describe("Core Envelope Tests", () => {
     it("should create envelope with subject and two assertions", () => {
       const e = checkEncoding(doubleAssertionEnvelope());
 
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "b8d857f6e06a836fbc68ca0ce43e55ceb98eefd949119dab344e11c4ba5a0471",
       );
 
@@ -193,7 +193,7 @@ describe("Core Envelope Tests", () => {
     it("should create wrapped envelope", () => {
       const e = checkEncoding(wrappedEnvelope());
 
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "172a5e51431062e7b13525cbceb8ad8475977444cf28423e21c0d1dcbdfcaf47",
       );
 
@@ -208,7 +208,7 @@ describe("Core Envelope Tests", () => {
     it("should create double wrapped envelope", () => {
       const e = checkEncoding(doubleWrappedEnvelope());
 
-      expect(e.digest().hex()).toBe(
+      expect(e.digest().toHex()).toBe(
         "8b14f3bcd7c05aac8f2162e7047d7ef5d5eab7d82ee3f9dc4846c70bae4d200b",
       );
 
@@ -437,9 +437,9 @@ describe("Core Envelope Tests", () => {
       expect(extracted).toEqual(bytes);
     });
 
-    it("should return undefined for non-byte string via asByteString", () => {
+    it("should return undefined for non-byte string via asBytes", () => {
       const e = Envelope.new("not bytes");
-      expect(e.asByteString()).toBeUndefined();
+      expect(e.asBytes()).toBeUndefined();
     });
   });
 

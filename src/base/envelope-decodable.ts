@@ -4,14 +4,15 @@
  *
  */
 
-import type { Cbor } from "@blockchaincommons/dcbor-compat";
 import {
-  tryIntoText,
-  tryIntoBool,
-  tryIntoByteString,
+  type Cbor,
+  expectText,
+  expectBoolean,
+  expectBytes,
   isNull,
   decodeCbor,
-} from "@blockchaincommons/dcbor-compat";
+} from "@blockchaincommons/dcbor";
+
 import { Envelope } from "./envelope";
 import type { EnvelopeEncodableValue } from "./envelope-encodable";
 import { EnvelopeError, ErrorCode } from "./error";
@@ -33,7 +34,7 @@ import { EnvelopeError, ErrorCode } from "./error";
 export function extractString(envelope: Envelope): string {
   const cbor = envelope.tryLeaf();
   try {
-    return tryIntoText(cbor);
+    return expectText(cbor);
   } catch (error) {
     throw EnvelopeError.cbor(
       "envelope does not contain a string",
@@ -92,7 +93,7 @@ export function extractNumber(envelope: Envelope): number {
 export function extractBoolean(envelope: Envelope): boolean {
   const cbor = envelope.tryLeaf();
   try {
-    return tryIntoBool(cbor);
+    return expectBoolean(cbor);
   } catch (error) {
     throw EnvelopeError.cbor(
       "envelope does not contain a boolean",
@@ -109,7 +110,7 @@ export function extractBoolean(envelope: Envelope): boolean {
 export function extractBytes(envelope: Envelope): Uint8Array {
   const cbor = envelope.tryLeaf();
   try {
-    return tryIntoByteString(cbor);
+    return expectBytes(cbor);
   } catch (error) {
     throw EnvelopeError.cbor(
       "envelope does not contain bytes",
@@ -242,7 +243,7 @@ export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): 
       }
     case "knownValue":
       try {
-        return decoder(c.value.taggedCbor());
+        return decoder(c.value.toCbor());
       } catch (error) {
         throw EnvelopeError.cbor(
           "failed to decode subject",
@@ -261,7 +262,7 @@ export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): 
       }
     case "elided":
       try {
-        return decoder(c.digest.taggedCbor());
+        return decoder(c.digest.toCbor());
       } catch {
         throw EnvelopeError.invalidFormat();
       }

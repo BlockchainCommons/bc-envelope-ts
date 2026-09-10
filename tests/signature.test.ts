@@ -133,7 +133,7 @@ describe("Signature Extension", () => {
       // SigningPrivateKey doesn't expose toData() directly
       // Use taggedCborData() to verify serialization works
       const key1 = SigningPrivateKey.random();
-      const key1Data = key1.taggedCborData();
+      const key1Data = key1.toCbor().toData();
 
       // Should produce non-empty data
       expect(key1Data.length).toBeGreaterThan(0);

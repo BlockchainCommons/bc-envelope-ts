@@ -16,44 +16,38 @@
 /// to distribute shares to trusted individuals or storage locations, with a
 /// specified threshold required to reconstruct the original envelope.
 
-import {
-  SSKRShareCbor,
-  SSKRSecret,
-  SSKRSpec,
-  SSKRGroupSpec,
-  sskrGenerateShares,
-  sskrCombineShares,
-  sskrGenerateUsing,
-} from "@blockchaincommons/components";
+import { SskrShare } from "@blockchaincommons/components/sskr";
+import { Secret, Spec, GroupSpec } from "@blockchaincommons/sskr";
 import type { RandomNumberGenerator } from "@blockchaincommons/rand";
 import { SSKR_SHARE } from "@blockchaincommons/known-values";
+
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
 import { SymmetricKey } from "./encrypt";
 
 // Re-export useful types
-export { SSKRSpec, SSKRGroupSpec, SSKRShareCbor, SSKRSecret };
+export { Spec, GroupSpec, SskrShare, Secret };
 
 // ============================================================================
 // Envelope Prototype Extensions for SSKR
 // ============================================================================
 
 /// Helper function to add an SSKR share assertion to the envelope
-const addSskrShare = (envelope: Envelope, share: SSKRShareCbor): Envelope => {
+const addSskrShare = (envelope: Envelope, share: SskrShare): Envelope => {
   return envelope.addAssertion(SSKR_SHARE, share);
 };
 
 /// Implementation of sskrSplit
 Envelope.prototype.sskrSplit = function (
   this: Envelope,
-  spec: SSKRSpec,
+  spec: Spec,
   contentKey: SymmetricKey,
 ): Envelope[][] {
   // Convert symmetric key to SSKR secret
-  const masterSecret = SSKRSecret.new(contentKey.data());
+  const masterSecret = Secret.from(contentKey.bytes);
 
   // Generate SSKR shares with CBOR wrappers
-  const shareGroups: SSKRShareCbor[][] = sskrGenerateShares(spec, masterSecret);
+  const shareGroups: SskrShare[][] = SskrShare.generate(spec, masterSecret);
 
   // Create envelope copies with SSKR share assertions
   const result: Envelope[][] = [];
@@ -72,7 +66,7 @@ Envelope.prototype.sskrSplit = function (
 /// Implementation of sskrSplitFlattened
 Envelope.prototype.sskrSplitFlattened = function (
   this: Envelope,
-  spec: SSKRSpec,
+  spec: Spec,
   contentKey: SymmetricKey,
 ): Envelope[] {
   return this.sskrSplit(spec, contentKey).flat();
@@ -81,22 +75,21 @@ Envelope.prototype.sskrSplitFlattened = function (
 /// Implementation of sskrSplitUsing (with custom RNG)
 Envelope.prototype.sskrSplitUsing = function (
   this: Envelope,
-  spec: SSKRSpec,
+  spec: Spec,
   contentKey: SymmetricKey,
   rng: RandomNumberGenerator,
 ): Envelope[][] {
   // Convert symmetric key to SSKR secret
-  const masterSecret = SSKRSecret.new(contentKey.data());
+  const masterSecret = Secret.from(contentKey.bytes);
 
   // Generate SSKR shares using custom RNG
-  const shareGroups = sskrGenerateUsing(spec, masterSecret, rng);
+  const shareGroups = SskrShare.generate(spec, masterSecret, { rng });
 
-  // Convert raw bytes to SSKRShareCbor and create envelope copies
+  // Convert raw bytes to SskrShare and create envelope copies
   const result: Envelope[][] = [];
   for (const group of shareGroups) {
     const groupResult: Envelope[] = [];
-    for (const shareData of group) {
-      const share = SSKRShareCbor.fromData(shareData);
+    for (const share of group) {
       const shareEnvelope = addSskrShare(this, share);
       groupResult.push(shareEnvelope);
     }
@@ -107,8 +100,8 @@ Envelope.prototype.sskrSplitUsing = function (
 };
 
 /// Helper function to extract SSKR shares from envelopes, grouped by identifier
-const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SSKRShareCbor[]> => {
-  const result = new Map<number, SSKRShareCbor[]>();
+const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[]> => {
+  const result = new Map<number, SskrShare[]>();
 
   for (const envelope of envelopes) {
     const assertions = envelope.assertionsWithPredicate(SSKR_SHARE);
@@ -121,9 +114,9 @@ const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SSKRShareC
       if (obj.isObscured()) continue;
 
       try {
-        // Try to extract the SSKRShareCbor
-        const share = obj.extractSubject((cbor) => SSKRShareCbor.fromTaggedCbor(cbor));
-        const identifier = share.identifier();
+        // Try to extract the SskrShare
+        const share = obj.extractSubject((cbor) => SskrShare.fromCbor(cbor));
+        const identifier = share.identifier;
 
         const existing = result.get(identifier);
         if (existing !== undefined) {
@@ -156,10 +149,10 @@ const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SSKRShareC
   for (const shares of groupedShares.values()) {
     try {
       // Try to combine the shares
-      const secret: SSKRSecret = sskrCombineShares(shares);
+      const secret: Secret = SskrShare.combine(shares);
 
       // Convert secret back to symmetric key (local SymmetricKey uses `from`)
-      const contentKey = SymmetricKey.from(secret.getData());
+      const contentKey = SymmetricKey.from(secret.bytes);
 
       // Try to decrypt the envelope subject
       const decrypted = envelopes[0].decryptSubject(contentKey);

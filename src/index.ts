@@ -28,6 +28,7 @@ import { registerSecretExtension } from "./extension/secret";
 import { registerSskrExtension } from "./extension/sskr";
 import { registerObscureEncryptHandler } from "./base/elide";
 import type { SymmetricKey } from "@blockchaincommons/components";
+
 registerEncryptExtension();
 registerCompressExtension();
 registerProofExtension();
