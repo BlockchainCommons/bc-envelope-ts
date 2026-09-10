@@ -1,0 +1,89 @@
+/**
+ * Copyright © 2023-2026 Blockchain Commons, LLC
+ * Copyright © 2025-2026 Parity Technologies
+ *
+ *
+ * Re-export Digest from @blockchaincommons/components for type compatibility.
+ *
+ * The @blockchaincommons/components Digest class is the canonical implementation with:
+ * - Full CBOR support (tagged/untagged)
+ * - UR support
+ * - Complete factory methods and instance methods
+ *
+ * This re-export ensures type compatibility between @blockchaincommons/envelope
+ * and @blockchaincommons/components when used together.
+ */
+export { Digest } from "@blockchaincommons/components";
+import { Digest } from "@blockchaincommons/components";
+
+/// Trait for types that can provide a digest.
+///
+/// This is equivalent to Rust's `DigestProvider` trait. Types that
+/// implement this interface can be used in contexts where a digest
+/// is needed for identity or integrity verification.
+export interface DigestProvider {
+  /// Returns the digest of this object.
+  ///
+  /// The digest uniquely identifies the semantic content of the object,
+  /// regardless of whether parts of it are elided, encrypted, or compressed.
+  digest(): Digest;
+}
+
+/// Helper function to create a digest from a string.
+///
+/// This is a convenience function for creating digests from text strings,
+/// which are encoded as UTF-8 before hashing.
+///
+/// @param text - The text to hash
+/// @returns A new Digest instance
+///
+/// @example
+/// ```typescript
+/// const digest = digestFromString("Hello, world!");
+/// ```
+export function digestFromString(text: string): Digest {
+  const encoder = new TextEncoder();
+  return Digest.fromImage(encoder.encode(text));
+}
+
+/// Helper function to create a digest from a number.
+///
+/// The number is converted to a big-endian byte representation before hashing.
+///
+/// @param num - The number to hash
+/// @returns A new Digest instance
+///
+/// @example
+/// ```typescript
+/// const digest = digestFromNumber(42);
+/// ```
+export function digestFromNumber(num: number): Digest {
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setFloat64(0, num, false); // big-endian
+  return Digest.fromImage(new Uint8Array(buffer));
+}
+
+// Extend Digest with short() method for compatibility with bc-envelope-rust.
+//
+// Mirrors Rust `Digest::short_description`
+// (`bc-components-rust/src/digest.rs:133`):
+//
+//     pub fn short_description(&self) -> String { hex::encode(&self.0[0..4]) }
+//
+// — hex-encoded first **4 bytes**, i.e. **8 hex characters**. Earlier
+// revisions of this port returned 7 hex chars, which broke tree-format
+// fixture parity against Rust output.
+declare module "@blockchaincommons/components" {
+  interface Digest {
+    /// Returns the hex-encoded first 4 bytes of the digest (8 chars),
+    /// matching Rust `Digest::short_description`.
+    short(): string;
+  }
+}
+
+// Add short() method to Digest prototype.
+Digest.prototype.short = function (this: Digest): string {
+  // First 4 bytes → 8 hex chars; matches Rust `short_description`.
+  return this.shortDescription();
+};
