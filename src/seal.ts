@@ -12,7 +12,6 @@
  * ## Sealing
  *
  * Sealing an envelope (mirroring Rust `seal()` /
- * `bc-envelope-rust/src/seal.rs:65-71`):
  *
  * 1. **`sign(sender)`** — wraps the envelope with `wrap()` and adds the
  *    sender's signature to the wrapped form. The wrap is critical: it
@@ -55,19 +54,17 @@ import { sign, type SignOptions, verify } from "./extension/signature.js";
 // Envelope Prototype Extensions for Sealing
 // ============================================================================
 
-/// Implementation of encryptToRecipient
 export function encryptToRecipient(envelope: Envelope, recipient: Encrypter): Envelope {
   return encryptSubjectToRecipient(envelope.wrap(), recipient);
 }
 
-/// Implementation of seal
-///
-/// Mirrors Rust `seal()` (`bc-envelope-rust/src/seal.rs:65-71`).
-/// `sign(sender)` already wraps the envelope before signing, so the seal
-/// pipeline is `wrap → addSignature → wrap → encryptToRecipient`. Earlier
-/// revisions of this port called `addSignature(sender)` directly (no inner
-/// wrap), which produced sealed envelopes one wrap layer shallower than
-/// Rust's and broke cross-impl unseal.
+/**
+ * `sign(sender)` already wraps the envelope before signing, so the seal
+ * pipeline is `wrap → addSignature → wrap → encryptToRecipient`. Earlier
+ * revisions of this port called `addSignature(sender)` directly (no inner
+ * wrap), which produced sealed envelopes one wrap layer shallower than
+ * Rust's and broke cross-impl unseal.
+ */
 export function seal(
   envelope: Envelope,
   sender: Signer,
@@ -77,12 +74,11 @@ export function seal(
   return encryptToRecipient(sign(envelope, sender, options), recipient);
 }
 
-/// Implementation of unseal
-///
-/// Mirrors Rust `unseal()` (`bc-envelope-rust/src/seal.rs:172-178`):
-/// `decrypt_to_recipient(recipient)?.verify(sender)`. The `verify` step
-/// performs `verifySignatureFrom(sender)` *and then* `tryUnwrap()` — the
-/// extra unwrap undoes the inner wrap that `sign()` added during seal.
+/**
+ * `decrypt_to_recipient(recipient)?.verify(sender)`. The `verify` step
+ * performs `verifySignatureFrom(sender)` *and then* `tryUnwrap()` — the
+ * extra unwrap undoes the inner wrap that `sign()` added during seal.
+ */
 export function unseal(
   envelope: Envelope,
   senderPublicKey: Verifier,
@@ -94,8 +90,3 @@ export function unseal(
 // ============================================================================
 // Module Registration
 // ============================================================================
-
-/// Register the seal extension
-export const registerSealExtension = (): void => {
-  // Extension methods are already added to prototype above
-};

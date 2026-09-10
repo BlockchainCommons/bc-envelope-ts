@@ -53,10 +53,10 @@ describe("Attachment Extension", () => {
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
 
-      const exampleAttachments = envelope.attachmentsWithVendorAndConformsTo("com.example");
+      const exampleAttachments = envelope.attachments({ vendor: "com.example" });
       expect(exampleAttachments.length).toBe(2);
 
-      const otherAttachments = envelope.attachmentsWithVendorAndConformsTo("com.other");
+      const otherAttachments = envelope.attachments({ vendor: "com.other" });
       expect(otherAttachments.length).toBe(1);
     });
 
@@ -66,10 +66,7 @@ describe("Attachment Extension", () => {
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
 
-      const v1Attachments = envelope.attachmentsWithVendorAndConformsTo(
-        undefined,
-        "https://example.com/v1",
-      );
+      const v1Attachments = envelope.attachments({ conformsTo: "https://example.com/v1" });
       expect(v1Attachments.length).toBe(1);
     });
 
@@ -79,10 +76,10 @@ describe("Attachment Extension", () => {
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
 
-      const specificAttachments = envelope.attachmentsWithVendorAndConformsTo(
-        "com.example",
-        "https://example.com/v2",
-      );
+      const specificAttachments = envelope.attachments({
+        vendor: "com.example",
+        conformsTo: "https://example.com/v2",
+      });
       expect(specificAttachments.length).toBe(1);
     });
   });

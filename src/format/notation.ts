@@ -4,22 +4,22 @@
  *
  */
 
-/// Envelope notation formatting.
-///
-/// This module provides functionality for formatting envelopes in human-readable
-/// envelope notation, which shows the semantic structure of an envelope.
-///
-/// # Examples
-///
-/// ```typescript
-/// const envelope = Envelope.from("Alice")
-///     .addAssertion("knows", "Bob")
-///     .addAssertion("knows", "Carol");
-///
-/// // Format the envelope as human-readable envelope notation
-/// const formatted = format(envelope);
-/// // Will output: "Alice" [ "knows": "Bob", "knows": "Carol" ]
-/// ```
+// Envelope notation formatting.
+//
+// This module provides functionality for formatting envelopes in human-readable
+// envelope notation, which shows the semantic structure of an envelope.
+//
+// # Examples
+//
+// ```typescript
+// const envelope = Envelope.from("Alice")
+//     .addAssertion("knows", "Bob")
+//     .addAssertion("knows", "Carol");
+//
+// // Format the envelope as human-readable envelope notation
+// const formatted = format(envelope);
+// // Will output: "Alice" [ "knows": "Bob", "knows": "Carol" ]
+// ```
 
 import { type Cbor, isTagged, tagValue } from "@blockchaincommons/dcbor";
 import { IS_A } from "@blockchaincommons/known-values";
@@ -37,7 +37,7 @@ import { cborEnvelopeSummary } from "./envelope-summary";
 // EnvelopeFormatOpts - Options for envelope formatting
 // ============================================================================
 
-/// Options for envelope notation formatting.
+/** Options for envelope notation formatting. */
 export interface FormatOptions {
   /** Format as a single line without indentation. */
   flat?: boolean;
@@ -55,37 +55,37 @@ interface EnvelopeFormatOpts {
 // EnvelopeFormatItem - Format item types
 // ============================================================================
 
-/// Type returned by EnvelopeFormat implementations.
-export type EnvelopeFormatItem =
+/** Type returned by EnvelopeFormat implementations. */
+type EnvelopeFormatItem =
   | { type: "begin"; value: string }
   | { type: "end"; value: string }
   | { type: "item"; value: string }
   | { type: "separator" }
   | { type: "list"; items: EnvelopeFormatItem[] };
 
-/// Create a Begin item
-export const formatBegin = (value: string): EnvelopeFormatItem => ({
+/** Create a Begin item */
+const formatBegin = (value: string): EnvelopeFormatItem => ({
   type: "begin",
   value,
 });
 
-/// Create an End item
-export const formatEnd = (value: string): EnvelopeFormatItem => ({
+/** Create an End item */
+const formatEnd = (value: string): EnvelopeFormatItem => ({
   type: "end",
   value,
 });
 
-/// Create an Item
-export const formatItem = (value: string): EnvelopeFormatItem => ({
+/** Create an Item */
+const formatItem = (value: string): EnvelopeFormatItem => ({
   type: "item",
   value,
 });
 
-/// Create a Separator
-export const formatSeparator = (): EnvelopeFormatItem => ({ type: "separator" });
+/** Create a Separator */
+const formatSeparator = (): EnvelopeFormatItem => ({ type: "separator" });
 
-/// Create a List
-export const formatList = (items: EnvelopeFormatItem[]): EnvelopeFormatItem => ({
+/** Create a List */
+const formatList = (items: EnvelopeFormatItem[]): EnvelopeFormatItem => ({
   type: "list",
   items,
 });
@@ -94,7 +94,7 @@ export const formatList = (items: EnvelopeFormatItem[]): EnvelopeFormatItem => (
 // EnvelopeFormatItem Utilities
 // ============================================================================
 
-/// Flatten a format item into a flat array
+/** Flatten a format item into a flat array */
 const flatten = (item: EnvelopeFormatItem): EnvelopeFormatItem[] => {
   if (item.type === "list") {
     return item.items.flatMap(flatten);
@@ -102,7 +102,7 @@ const flatten = (item: EnvelopeFormatItem): EnvelopeFormatItem[] => {
   return [item];
 };
 
-/// Nicen the format items by combining adjacent End/Begin pairs
+/** Nicen the format items by combining adjacent End/Begin pairs */
 const nicen = (items: EnvelopeFormatItem[]): EnvelopeFormatItem[] => {
   const input = [...items];
   const result: EnvelopeFormatItem[] = [];
@@ -129,17 +129,17 @@ const nicen = (items: EnvelopeFormatItem[]): EnvelopeFormatItem[] => {
   return result;
 };
 
-/// Create indentation string
+/** Create indentation string */
 const indent = (level: number): string => " ".repeat(level * 4);
 
-/// Add space at end if needed
+/** Add space at end if needed */
 const addSpaceAtEndIfNeeded = (s: string): string => {
   if (s.length === 0) return " ";
   if (s.endsWith(" ")) return s;
   return `${s} `;
 };
 
-/// Format items in flat mode (single line)
+/** Format items in flat mode (single line) */
 const formatItemFlat = (item: EnvelopeFormatItem): string => {
   let line = "";
   const items = flatten(item);
@@ -171,7 +171,7 @@ const formatItemFlat = (item: EnvelopeFormatItem): string => {
   return line;
 };
 
-/// Format items in hierarchical mode (with indentation)
+/** Format items in hierarchical mode (with indentation) */
 const formatHierarchical = (item: EnvelopeFormatItem): string => {
   const lines: string[] = [];
   let level = 0;
@@ -225,7 +225,7 @@ const formatHierarchical = (item: EnvelopeFormatItem): string => {
   return lines.join("");
 };
 
-/// Format a format item according to options
+/** Format a format item according to options */
 const formatFormatItem = (item: EnvelopeFormatItem, opts: EnvelopeFormatOpts): string => {
   if (opts.flat) {
     return formatItemFlat(item);
@@ -237,8 +237,8 @@ const formatFormatItem = (item: EnvelopeFormatItem, opts: EnvelopeFormatOpts): s
 // EnvelopeFormat Interface and Implementations
 // ============================================================================
 
-/// Format a CBOR value as an envelope format item
-export const formatCbor = (cbor: Cbor, opts: EnvelopeFormatOpts): EnvelopeFormatItem => {
+/** Format a CBOR value as an envelope format item */
+const formatCbor = (cbor: Cbor, opts: EnvelopeFormatOpts): EnvelopeFormatItem => {
   // Check if this is a tagged envelope
   if (isTagged(cbor)) {
     const tag = tagValue(cbor);
@@ -258,11 +258,8 @@ export const formatCbor = (cbor: Cbor, opts: EnvelopeFormatOpts): EnvelopeFormat
   return formatItem(summary);
 };
 
-/// Format an Assertion as an envelope format item
-export const formatAssertion = (
-  assertion: Assertion,
-  opts: EnvelopeFormatOpts,
-): EnvelopeFormatItem => {
+/** Format an Assertion as an envelope format item */
+const formatAssertion = (assertion: Assertion, opts: EnvelopeFormatOpts): EnvelopeFormatItem => {
   return formatList([
     formatEnvelope(assertion.predicate(), opts),
     formatItem(": "),
@@ -270,11 +267,8 @@ export const formatAssertion = (
   ]);
 };
 
-/// Format an Envelope as an envelope format item
-export const formatEnvelope = (
-  envelope: Envelope,
-  opts: EnvelopeFormatOpts,
-): EnvelopeFormatItem => {
+/** Format an Envelope as an envelope format item */
+const formatEnvelope = (envelope: Envelope, opts: EnvelopeFormatOpts): EnvelopeFormatItem => {
   const c = envelope.case;
 
   switch (c.type) {
@@ -352,7 +346,6 @@ export const formatEnvelope = (
 
       // Sort assertion items
       //
-      // Mirrors Rust `impl Ord for Vec<EnvelopeFormatItem>` —
       // lexicographic comparison over the **entire** items array,
       // not just the first element. With `compareFormatItems` returning
       // bytewise (UTF-8) differences for `item`/`begin`/`end`, two
@@ -414,23 +407,26 @@ export const formatEnvelope = (
   }
 };
 
-/// Compare two strings bytewise (UTF-8 code-unit comparison), matching
-/// Rust `String::cmp` (which compares the UTF-8 byte slices). JavaScript's
-/// default `<`/`>` on strings is also a code-unit comparison, so we use
-/// that directly instead of `localeCompare` (locale-dependent).
+/**
+ * Compare two strings bytewise (UTF-8 code-unit comparison), matching
+ * Rust `String::cmp` (which compares the UTF-8 byte slices). JavaScript's
+ * default `<`/`>` on strings is also a code-unit comparison, so we use
+ * that directly instead of `localeCompare` (locale-dependent).
+ */
 const compareStringsBytewise = (a: string, b: string): number => {
   if (a < b) return -1;
   if (a > b) return 1;
   return 0;
 };
 
-/// Compare format items for sorting.
-///
-/// Mirrors the `Ord` derivation Rust gets on `EnvelopeFormatItem`:
-/// variants are ordered by their declaration order, and `item`/`begin`/
-/// `end` carrying string payloads are compared bytewise. The TS
-/// declaration order is `begin → end → item → separator → list`, which
-/// matches the Rust source order.
+/**
+ * Compare format items for sorting.
+ *
+ * Mirrors the `Ord` derivation Rust gets on `EnvelopeFormatItem`:
+ * variants are ordered by their declaration order, and `item`/`begin`/
+ * `end` carrying string payloads are compared bytewise. The TS
+ * declaration order is `begin → end → item → separator → list`, which
+ */
 const compareFormatItems = (a: EnvelopeFormatItem, b: EnvelopeFormatItem): number => {
   const getIndex = (item: EnvelopeFormatItem): number => {
     switch (item.type) {
@@ -471,10 +467,12 @@ const compareFormatItems = (a: EnvelopeFormatItem, b: EnvelopeFormatItem): numbe
   return 0;
 };
 
-/// Lexicographic comparison over arrays of {@link EnvelopeFormatItem},
-/// matching Rust's `Vec<EnvelopeFormatItem>` `Ord` impl: walk the two
-/// arrays in lockstep, return on the first non-equal element. If one is a
-/// prefix of the other, the shorter array sorts first.
+/**
+ * Lexicographic comparison over arrays of {@link EnvelopeFormatItem},
+ * matching Rust's `Vec<EnvelopeFormatItem>` `Ord` impl: walk the two
+ * arrays in lockstep, return on the first non-equal element. If one is a
+ * prefix of the other, the shorter array sorts first.
+ */
 const compareFormatItemArrays = (
   a: readonly EnvelopeFormatItem[],
   b: readonly EnvelopeFormatItem[],

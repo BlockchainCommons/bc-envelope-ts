@@ -4,14 +4,14 @@
  *
  */
 
-/// Mermaid diagram formatting for Gordian Envelopes.
-///
-/// This module provides functionality for creating Mermaid flowchart diagrams
-/// of envelopes, which is useful for visualizing the hierarchical structure
-/// of complex envelopes in documentation and debugging.
-///
-/// The Mermaid format displays each component of an envelope as nodes in a
-/// flowchart graph, with edges showing relationships between components.
+// Mermaid diagram formatting for Gordian Envelopes.
+//
+// This module provides functionality for creating Mermaid flowchart diagrams
+// of envelopes, which is useful for visualizing the hierarchical structure
+// of complex envelopes in documentation and debugging.
+//
+// The Mermaid format displays each component of an envelope as nodes in a
+// flowchart graph, with edges showing relationships between components.
 
 import { type Envelope } from "../base/envelope";
 import { EdgeType, edgeLabel } from "../base/envelope";
@@ -22,7 +22,7 @@ import { summary } from "./envelope-summary.js";
 // Mermaid Types
 // ============================================================================
 
-/// The orientation of the Mermaid flowchart.
+/** The orientation of the Mermaid flowchart. */
 export const MermaidOrientation = {
   LeftToRight: "LR",
   TopToBottom: "TB",
@@ -32,7 +32,7 @@ export const MermaidOrientation = {
 /** One of the `MermaidOrientation` values. */
 export type MermaidOrientation = (typeof MermaidOrientation)[keyof typeof MermaidOrientation];
 
-/// The theme for the Mermaid flowchart.
+/** The theme for the Mermaid flowchart. */
 export const MermaidTheme = {
   Default: "default",
   Neutral: "neutral",
@@ -43,17 +43,17 @@ export const MermaidTheme = {
 /** One of the `MermaidTheme` values. */
 export type MermaidTheme = (typeof MermaidTheme)[keyof typeof MermaidTheme];
 
-/// Options for Mermaid diagram formatting.
+/** Options for Mermaid diagram formatting. */
 export interface MermaidFormatOptions {
-  /// Whether to hide NODE identifiers in the diagram (default: false)
+  /** Whether to hide NODE identifiers in the diagram (default: false) */
   hideNodes?: boolean;
-  /// Whether to use monochrome colors (default: false)
+  /** Whether to use monochrome colors (default: false) */
   monochrome?: boolean;
-  /// The theme for the diagram (default: Default)
+  /** The theme for the diagram (default: Default) */
   theme?: MermaidTheme;
-  /// The orientation of the diagram (default: LeftToRight)
+  /** The orientation of the diagram (default: LeftToRight) */
   orientation?: MermaidOrientation;
-  /// Set of digests to highlight in the diagram
+  /** Set of digests to highlight in the diagram */
   highlightingTarget?: Set<Digest>;
 }
 
@@ -61,7 +61,7 @@ export interface MermaidFormatOptions {
 // Internal Types
 // ============================================================================
 
-/// Represents an element in the Mermaid diagram
+/** Represents an element in the Mermaid diagram */
 interface MermaidElement {
   id: number;
   level: number;
@@ -201,7 +201,7 @@ export function mermaidFormat(envelope: Envelope, opts: MermaidFormatOptions = {
 // Helper Functions
 // ============================================================================
 
-/// Check if a set of Digests contains a specific digest
+/** Check if a set of Digests contains a specific digest */
 const containsDigest = (set: Set<Digest>, digest: Digest): boolean => {
   for (const d of set) {
     if (d.equals(digest)) {
@@ -211,7 +211,7 @@ const containsDigest = (set: Set<Digest>, digest: Digest): boolean => {
   return false;
 };
 
-/// Format a node element
+/** Format a node element */
 const formatNode = (element: MermaidElement, formattedIds: Set<number>): string => {
   if (!formattedIds.has(element.id)) {
     formattedIds.add(element.id);
@@ -235,7 +235,7 @@ const formatNode = (element: MermaidElement, formattedIds: Set<number>): string 
   }
 };
 
-/// Format an edge element
+/** Format an edge element */
 const formatEdge = (element: MermaidElement, formattedIds: Set<number>): string => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Parent is always defined for edge elements
   const parent = element.parent!;
@@ -245,7 +245,7 @@ const formatEdge = (element: MermaidElement, formattedIds: Set<number>): string 
   return `${formatNode(parent, formattedIds)} ${arrow} ${formatNode(element, formattedIds)}`;
 };
 
-/// Get the Mermaid frame characters for an envelope type
+/** Get the Mermaid frame characters for an envelope type */
 const mermaidFrame = (envelope: Envelope): [string, string] => {
   const c = envelope.case;
 
@@ -271,7 +271,7 @@ const mermaidFrame = (envelope: Envelope): [string, string] => {
   }
 };
 
-/// Get the node color for an envelope type
+/** Get the node color for an envelope type */
 const nodeColor = (envelope: Envelope): string => {
   const c = envelope.case;
 
@@ -297,7 +297,7 @@ const nodeColor = (envelope: Envelope): string => {
   }
 };
 
-/// Get the link stroke color for an edge type
+/** Get the link stroke color for an edge type */
 const linkStrokeColor = (edgeType: EdgeType): string | undefined => {
   switch (edgeType) {
     case EdgeType.Subject:
@@ -317,8 +317,3 @@ const linkStrokeColor = (edgeType: EdgeType): string | undefined => {
 // ============================================================================
 // Module Registration
 // ============================================================================
-
-/// Register the mermaid format extension
-export const registerMermaidExtension = (): void => {
-  // Extension methods are already added to prototype above
-};

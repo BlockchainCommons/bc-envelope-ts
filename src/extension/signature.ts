@@ -14,7 +14,6 @@
  * - Verification of signatures, both with and without metadata
  * - Support for multiple signatures on a single envelope
  *
- * Ported from bc-envelope-rust/src/extension/signature/
  */
 
 import { Envelope } from "../base/envelope";
@@ -65,7 +64,6 @@ export const NOTE: KnownValue = NOTE_KV;
  * included in a structured way that is also signed, ensuring the metadata
  * cannot be tampered with without invalidating the signature.
  *
- * Ported from bc-envelope-rust/src/extension/signature/signature_metadata.rs
  */
 export class SignatureMetadata {
   private readonly _assertions: [EnvelopeInput, unknown][] = [];
@@ -118,10 +116,10 @@ export class SignatureMetadata {
 // Envelope Extension Methods for Signatures
 // ============================================================================
 
-/// Creates a signature for the envelope's subject and returns a new
-/// envelope with a `'signed': Signature` assertion.
-///
-/// Matches Rust: add_signature_opt()
+/**
+ * Creates a signature for the envelope's subject and returns a new
+ * envelope with a `'signed': Signature` assertion.
+ */
 /** Options for `sign` and `addSignature`. */
 export interface SignOptions {
   /** Scheme-specific signing options (Schnorr `rng`, SSH namespace and hash). */
@@ -177,9 +175,7 @@ export function addSignatures(
   );
 }
 
-/// Convenience constructor for a `'signed': Signature` assertion envelope.
-///
-/// Matches Rust: make_signed_assertion()
+/** Convenience constructor for a `'signed': Signature` assertion envelope. */
 export function makeSignedAssertion(
   _envelope: Envelope,
   signature: Signature,
@@ -192,9 +188,7 @@ export function makeSignedAssertion(
   return assertion;
 }
 
-/// Returns whether the given signature is valid.
-///
-/// Matches Rust: is_verified_signature()
+/** Returns whether the given signature is valid. */
 export function isVerifiedSignature(
   envelope: Envelope,
   signature: Signature,
@@ -203,9 +197,7 @@ export function isVerifiedSignature(
   return verifier.verify(signature, envelope.subject().digest().bytes);
 }
 
-/// Checks whether the given signature is valid for the given public key.
-///
-/// Matches Rust: verify_signature()
+/** Checks whether the given signature is valid for the given public key. */
 export function verifySignature(
   envelope: Envelope,
   signature: Signature,
@@ -221,13 +213,13 @@ export function verifySignature(
 // Internal: Core signature verification with metadata support
 // ============================================================================
 
-/// Returns the signature metadata envelope if the given verifier has signed
-/// this envelope, or undefined if no matching signature is found.
-///
-/// Handles both simple signatures and wrapped (double-signed) signatures
-/// with metadata.
-///
-/// Matches Rust: has_some_signature_from_key_returning_metadata()
+/**
+ * Returns the signature metadata envelope if the given verifier has signed
+ * this envelope, or undefined if no matching signature is found.
+ *
+ * Handles both simple signatures and wrapped (double-signed) signatures
+ * with metadata.
+ */
 export function hasSignatureFromReturningMetadata(
   envelope: Envelope,
   verifier: Verifier,
@@ -296,25 +288,23 @@ export function hasSignatureFromReturningMetadata(
   return undefined;
 }
 
-/// Returns whether the envelope's subject has a valid signature from the
-/// given public key.
-///
-/// Matches Rust: has_signature_from()
+/**
+ * Returns whether the envelope's subject has a valid signature from the
+ * given public key.
+ */
 export function hasSignatureFrom(envelope: Envelope, verifier: Verifier): boolean {
   return hasSignatureFromReturningMetadata(envelope, verifier) !== undefined;
 }
 
-/// Returns whether the envelope's subject has a valid signature from all
-/// the given public keys.
-///
-/// Matches Rust: has_signatures_from()
+/**
+ * Returns whether the envelope's subject has a valid signature from all
+ * the given public keys.
+ */
 export function hasSignaturesFrom(envelope: Envelope, verifiers: Verifier[]): boolean {
   return verifiers.every((verifier) => hasSignatureFrom(envelope, verifier));
 }
 
-/// Returns whether the envelope's subject has some threshold of signatures.
-///
-/// Matches Rust: has_signatures_from_threshold()
+/** Returns whether the envelope's subject has some threshold of signatures. */
 export function hasSignaturesFromThreshold(
   envelope: Envelope,
   verifiers: Verifier[],
@@ -333,10 +323,10 @@ export function hasSignaturesFromThreshold(
   return false;
 }
 
-/// Checks whether the envelope's subject has a valid signature from the
-/// given public key.
-///
-/// Matches Rust: verify_signature_from()
+/**
+ * Checks whether the envelope's subject has a valid signature from the
+ * given public key.
+ */
 export function verifySignatureFrom(envelope: Envelope, verifier: Verifier): Envelope {
   if (!hasSignatureFrom(envelope, verifier)) {
     throw EnvelopeError.unverifiedSignature();
@@ -344,9 +334,7 @@ export function verifySignatureFrom(envelope: Envelope, verifier: Verifier): Env
   return envelope;
 }
 
-/// Verifies signature and returns the metadata envelope.
-///
-/// Matches Rust: verify_signature_from_returning_metadata()
+/** Verifies signature and returns the metadata envelope. */
 export function verifySignatureFromReturningMetadata(
   envelope: Envelope,
   verifier: Verifier,
@@ -358,9 +346,7 @@ export function verifySignatureFromReturningMetadata(
   return metadata;
 }
 
-/// Checks whether the envelope's subject has a set of signatures.
-///
-/// Matches Rust: verify_signatures_from()
+/** Checks whether the envelope's subject has a set of signatures. */
 export function verifySignaturesFrom(envelope: Envelope, verifiers: Verifier[]): Envelope {
   if (!hasSignaturesFrom(envelope, verifiers)) {
     throw EnvelopeError.unverifiedSignature();
@@ -368,9 +354,7 @@ export function verifySignaturesFrom(envelope: Envelope, verifiers: Verifier[]):
   return envelope;
 }
 
-/// Checks whether the envelope's subject has some threshold of signatures.
-///
-/// Matches Rust: verify_signatures_from_threshold()
+/** Checks whether the envelope's subject has some threshold of signatures. */
 export function verifySignaturesFromThreshold(
   envelope: Envelope,
   verifiers: Verifier[],
@@ -383,9 +367,7 @@ export function verifySignaturesFromThreshold(
   return envelope;
 }
 
-/// Returns all signature assertion objects.
-///
-/// Matches Rust: objects_for_predicate(SIGNED) via signatures()
+/** Returns all signature assertion objects. */
 export function signatures(envelope: Envelope): Envelope[] {
   return envelope.objectsForPredicate(SIGNED);
 }
@@ -402,18 +384,18 @@ export function sign(envelope: Envelope, signer: Signer, options: SignOptions = 
   return addSignature(envelope.wrap(), signer, options);
 }
 
-/// Verifies that the envelope has a valid signature from the specified
-/// verifier, and unwraps it.
-///
-/// Matches Rust: verify()
+/**
+ * Verifies that the envelope has a valid signature from the specified
+ * verifier, and unwraps it.
+ */
 export function verify(envelope: Envelope, verifier: Verifier): Envelope {
   return verifySignatureFrom(envelope, verifier).unwrap();
 }
 
-/// Verifies the envelope's signature and returns both the unwrapped
-/// envelope and signature metadata.
-///
-/// Matches Rust: verify_returning_metadata()
+/**
+ * Verifies the envelope's signature and returns both the unwrapped
+ * envelope and signature metadata.
+ */
 export function verifyReturningMetadata(
   envelope: Envelope,
   verifier: Verifier,

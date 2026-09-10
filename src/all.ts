@@ -51,15 +51,12 @@ declare module "./base/envelope.js" {
     attachmentVendor(
       ...args: Tail<Parameters<typeof xattachment.attachmentVendor>>
     ): ReturnType<typeof xattachment.attachmentVendor>;
-    attachmentWithVendorAndConformsTo(
-      ...args: Tail<Parameters<typeof xattachment.attachmentWithVendorAndConformsTo>>
-    ): ReturnType<typeof xattachment.attachmentWithVendorAndConformsTo>;
+    expectAttachment(
+      ...args: Tail<Parameters<typeof xattachment.expectAttachment>>
+    ): ReturnType<typeof xattachment.expectAttachment>;
     attachments(
       ...args: Tail<Parameters<typeof xattachment.attachments>>
     ): ReturnType<typeof xattachment.attachments>;
-    attachmentsWithVendorAndConformsTo(
-      ...args: Tail<Parameters<typeof xattachment.attachmentsWithVendorAndConformsTo>>
-    ): ReturnType<typeof xattachment.attachmentsWithVendorAndConformsTo>;
     validateAttachment(
       ...args: Tail<Parameters<typeof xattachment.validateAttachment>>
     ): ReturnType<typeof xattachment.validateAttachment>;
@@ -173,19 +170,13 @@ declare module "./base/envelope.js" {
     sskrSplit(
       ...args: Tail<Parameters<typeof xsskr.sskrSplit>>
     ): ReturnType<typeof xsskr.sskrSplit>;
-    sskrSplitFlattened(
-      ...args: Tail<Parameters<typeof xsskr.sskrSplitFlattened>>
-    ): ReturnType<typeof xsskr.sskrSplitFlattened>;
-    sskrSplitUsing(
-      ...args: Tail<Parameters<typeof xsskr.sskrSplitUsing>>
-    ): ReturnType<typeof xsskr.sskrSplitUsing>;
     addType(...args: Tail<Parameters<typeof xtypes.addType>>): ReturnType<typeof xtypes.addType>;
-    checkType(
-      ...args: Tail<Parameters<typeof xtypes.checkType>>
-    ): ReturnType<typeof xtypes.checkType>;
-    checkTypeValue(
-      ...args: Tail<Parameters<typeof xtypes.checkTypeValue>>
-    ): ReturnType<typeof xtypes.checkTypeValue>;
+    expectType(
+      ...args: Tail<Parameters<typeof xtypes.expectType>>
+    ): ReturnType<typeof xtypes.expectType>;
+    expectTypeValue(
+      ...args: Tail<Parameters<typeof xtypes.expectTypeValue>>
+    ): ReturnType<typeof xtypes.expectTypeValue>;
     getType(...args: Tail<Parameters<typeof xtypes.getType>>): ReturnType<typeof xtypes.getType>;
     hasType(...args: Tail<Parameters<typeof xtypes.hasType>>): ReturnType<typeof xtypes.hasType>;
     hasTypeValue(
@@ -241,9 +232,8 @@ install("addAttachment", xattachment.addAttachment);
 install("attachmentConformsTo", xattachment.attachmentConformsTo);
 install("attachmentPayload", xattachment.attachmentPayload);
 install("attachmentVendor", xattachment.attachmentVendor);
-install("attachmentWithVendorAndConformsTo", xattachment.attachmentWithVendorAndConformsTo);
+install("expectAttachment", xattachment.expectAttachment);
 install("attachments", xattachment.attachments);
-install("attachmentsWithVendorAndConformsTo", xattachment.attachmentsWithVendorAndConformsTo);
 statics["attachment"] ??= xattachment.attachment;
 install("validateAttachment", xattachment.validateAttachment);
 install("addEdgeEnvelope", xedge.addEdgeEnvelope);
@@ -287,11 +277,9 @@ install("verifySignaturesFrom", xsignature.verifySignaturesFrom);
 install("verifySignaturesFromThreshold", xsignature.verifySignaturesFromThreshold);
 statics["sskrJoin"] ??= xsskr.sskrJoin;
 install("sskrSplit", xsskr.sskrSplit);
-install("sskrSplitFlattened", xsskr.sskrSplitFlattened);
-install("sskrSplitUsing", xsskr.sskrSplitUsing);
 install("addType", xtypes.addType);
-install("checkType", xtypes.checkType);
-install("checkTypeValue", xtypes.checkTypeValue);
+install("expectType", xtypes.expectType);
+install("expectTypeValue", xtypes.expectTypeValue);
 install("getType", xtypes.getType);
 install("hasType", xtypes.hasType);
 install("hasTypeValue", xtypes.hasTypeValue);

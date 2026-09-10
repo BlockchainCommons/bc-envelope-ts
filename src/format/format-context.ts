@@ -4,12 +4,12 @@
  *
  */
 
-/// Format context for Gordian Envelopes with annotations.
-///
-/// The FormatContext provides information about CBOR tags, known values,
-/// functions, and parameters that are used to annotate the output of envelope
-/// formatting functions. This context enables human-readable output when
-/// converting envelopes to string representations like diagnostic notation.
+// Format context for Gordian Envelopes with annotations.
+//
+// The FormatContext provides information about CBOR tags, known values,
+// functions, and parameters that are used to annotate the output of envelope
+// formatting functions. This context enables human-readable output when
+// converting envelopes to string representations like diagnostic notation.
 
 import {
   type TagsStore,
@@ -112,11 +112,13 @@ export function resolveFormatContext(opt: FormatContextOpt = "global"): FormatCo
 // FormatContext - Main formatting context class
 // ============================================================================
 
-/// Context object for formatting Gordian Envelopes with annotations.
-///
-/// The FormatContext provides information about CBOR tags, known values,
-/// functions, and parameters that are used to annotate the output of envelope
-/// formatting functions.
+/**
+ * Context object for formatting Gordian Envelopes with annotations.
+ *
+ * The FormatContext provides information about CBOR tags, known values,
+ * functions, and parameters that are used to annotate the output of envelope
+ * formatting functions.
+ */
 export class FormatContext implements ReadonlyTagsStore {
   private readonly _tags: TagsStore;
   private readonly _knownValues: KnownValuesStore;
@@ -164,7 +166,7 @@ export class FormatContext implements ReadonlyTagsStore {
     return this._tags.summarizer(tag);
   }
 
-  /// Create a clone of this context
+  /** Create a clone of this context */
   clone(): FormatContext {
     // Note: This creates a shallow copy - tags and knownValues are shared
     // For a full deep copy, we would need to clone the stores
@@ -176,11 +178,11 @@ export class FormatContext implements ReadonlyTagsStore {
 // Global Format Context
 // ============================================================================
 
-/// Global singleton instance of FormatContext for application-wide use.
+/** Global singleton instance of FormatContext for application-wide use. */
 let _globalFormatContextInstance: FormatContext | undefined;
 let isInitialized = false;
 
-/// Get the global format context instance, initializing it if necessary.
+/** Get the global format context instance, initializing it if necessary. */
 export const getGlobalFormatContext = (): FormatContext => {
   if (!isInitialized) {
     // Register dcbor's standard tags and every BC tag in *this* dcbor's
@@ -204,7 +206,7 @@ export const getGlobalFormatContext = (): FormatContext => {
   return _globalFormatContextInstance!;
 };
 
-/// Execute a function with access to the global format context.
+/** Execute a function with access to the global format context. */
 export const withFormatContext = <T>(action: (context: FormatContext) => T): T => {
   return action(getGlobalFormatContext());
 };
@@ -213,7 +215,7 @@ export const withFormatContext = <T>(action: (context: FormatContext) => T): T =
 // Tag Registration
 // ============================================================================
 
-/// Set up the known value summarizer in a format context
+/** Set up the known value summarizer in a format context */
 const setupKnownValueSummarizer = (context: FormatContext): void => {
   const knownValues = context.knownValues;
   const tags = context.tags;
@@ -252,13 +254,13 @@ export const registerTagsIn = (context: FormatContext): void => {
 // Component Tag Summarizers
 // ============================================================================
 
-/// Helper to create an error result for summarizers
+/** Helper to create an error result for summarizers */
 const summarizerError = (e: unknown): { ok: false; error: CborError } => {
   const message = e instanceof Error ? e.message : String(e);
   return { ok: false as const, error: CborError.custom(message) };
 };
 
-/// Set up component tag summarizers matching Rust bc-components-rust/src/tags_registry.rs
+/** Summarisers for the components tags, matching the reference registry byte for byte. */
 const setupComponentSummarizers = (context: FormatContext): void => {
   const tags = context.tags;
 
@@ -340,7 +342,6 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   });
 
   // JSON: "JSON(<as_str>)"
-  // Mirrors Rust `bc-components-rust/src/tags_registry.rs:80-86`:
   //   `Ok(json.as_str().flanked_by("JSON(", ")"))`
   tags.setSummarizer(TAG_JSON.value, (cbor, _flat) => {
     try {
@@ -353,7 +354,6 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   });
 
   // Reference: "Reference(<short>)"
-  // Mirrors Rust `bc-components-rust/src/tags_registry.rs` REFERENCE
   // summarizer:
   //   `Ok(Reference::from_untagged_cbor(...).to_string())`
   // where `Display for Reference` is `Reference(<ref_hex_short>)`.
@@ -370,7 +370,6 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // Signature: bare "Signature" only for the *default* scheme (Schnorr),
   // "Signature(scheme)" for every other scheme (Ed25519, MLDSA44, …).
   //
-  // Mirrors Rust `bc-components-rust/src/tags_registry.rs:152-166`, which
   // compares against `SignatureScheme::default()` (Schnorr, with the
   // `secp256k1` feature) and only then emits bare "Signature"; otherwise
   // `format!("Signature({scheme:?})")`. Rust's `Debug` for the enum emits the
@@ -395,7 +394,6 @@ const setupComponentSummarizers = (context: FormatContext): void => {
   // SealedMessage: "SealedMessage" for X25519 (default),
   // "SealedMessage(<SCHEME>)" otherwise.
   //
-  // Mirrors Rust `bc-components-rust/src/tags_registry.rs:172-186`:
   //   format!("SealedMessage({encapsulation_scheme:?})")
   // where Rust's `Debug` for the `EncapsulationScheme` enum emits
   // the variant name in **uppercase** (e.g. `MLKEM512`). The TS enum

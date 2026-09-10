@@ -4,11 +4,11 @@
  *
  */
 
-/// Format module exports for Gordian Envelope.
-///
-/// This module provides various formatting options for displaying and
-/// serializing envelopes, including hex, diagnostic, notation, tree,
-/// UR, and mermaid diagram formats.
+// Format module exports for Gordian Envelope.
+//
+// This module provides various formatting options for displaying and
+// serializing envelopes, including hex, diagnostic, notation, tree,
+// UR, and mermaid diagram formats.
 
 /**
  * Formatting: notation, tree, mermaid, diagnostic, annotated hex and

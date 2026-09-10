@@ -4,10 +4,10 @@
  *
  */
 
-/// Envelope summary functionality for generating short text representations.
-///
-/// This module provides the EnvelopeSummary interface and implementations
-/// for generating concise text summaries of CBOR values and envelopes.
+// Envelope summary functionality for generating short text representations.
+//
+// This module provides the EnvelopeSummary interface and implementations
+// for generating concise text summaries of CBOR values and envelopes.
 
 import {
   type Cbor,
@@ -36,12 +36,12 @@ export interface EnvelopeSummary {
 // CBOR Summary Implementation
 // ============================================================================
 
-/// Helper to flank a string with prefix and suffix
+/** Helper to flank a string with prefix and suffix */
 const flankedBy = (s: string, prefix: string, suffix: string): string => {
   return `${prefix}${s}${suffix}`;
 };
 
-/// Generate an envelope summary for a CBOR value.
+/** Generate an envelope summary for a CBOR value. */
 export const cborEnvelopeSummary = (
   cbor: Cbor,
   maxLength: number,

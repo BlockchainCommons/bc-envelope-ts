@@ -31,7 +31,6 @@
  * decrypt the content key from the appropriate `SealedMessage`, and then use
  * that content key to decrypt the envelope's subject.
  *
- * Ported from bc-envelope-rust/src/extension/recipient.rs
  */
 
 import { type Envelope } from "../base/envelope";

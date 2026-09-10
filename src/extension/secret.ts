@@ -4,14 +4,14 @@
  *
  */
 
-/// Secret-based envelope locking and unlocking.
-///
-/// This module provides functionality for encrypting envelope subjects using
-/// password-based or key-based derivation methods, allowing envelopes to be
-/// locked with secrets and later unlocked.
-///
-/// The implementation uses `EncryptedKey` from bc-components for key
-/// derivation and encryption.
+// Secret-based envelope locking and unlocking.
+//
+// This module provides functionality for encrypting envelope subjects using
+// password-based or key-based derivation methods, allowing envelopes to be
+// locked with secrets and later unlocked.
+//
+// The implementation uses `EncryptedKey` from bc-components for key
+// derivation and encryption.
 
 import { SymmetricKey as ComponentsSymmetricKey } from "@blockchaincommons/components";
 import { EncryptedKey, type KeyDerivationMethod } from "@blockchaincommons/components/kdf";
@@ -25,7 +25,6 @@ import { SymmetricKey } from "@blockchaincommons/components";
 // Envelope Prototype Extensions for Secret Locking
 // ============================================================================
 
-/// Implementation of lockSubject
 export function lockSubject(
   envelope: Envelope,
   method: KeyDerivationMethod,
@@ -45,7 +44,6 @@ export function lockSubject(
   return encrypted.addAssertion(HAS_SECRET, encryptedKey);
 }
 
-/// Implementation of unlockSubject
 export function unlockSubject(envelope: Envelope, secret: Uint8Array): Envelope {
   // Find all hasSecret assertions
   const assertions = envelope.assertionsWithPredicate(HAS_SECRET);
@@ -80,7 +78,6 @@ export function unlockSubject(envelope: Envelope, secret: Uint8Array): Envelope 
   throw EnvelopeError.unknownSecret();
 }
 
-/// Implementation of isLockedWithPassword
 export function isLockedWithPassword(envelope: Envelope): boolean {
   const assertions = envelope.assertionsWithPredicate(HAS_SECRET);
 
@@ -101,7 +98,6 @@ export function isLockedWithPassword(envelope: Envelope): boolean {
   return false;
 }
 
-/// Implementation of isLockedWithSshAgent
 export function isLockedWithSshAgent(envelope: Envelope): boolean {
   const assertions = envelope.assertionsWithPredicate(HAS_SECRET);
 
@@ -122,7 +118,6 @@ export function isLockedWithSshAgent(envelope: Envelope): boolean {
   return false;
 }
 
-/// Implementation of addSecret
 export function addSecret(
   envelope: Envelope,
   method: KeyDerivationMethod,
@@ -139,7 +134,6 @@ export function addSecret(
   return envelope.addAssertion(HAS_SECRET, encryptedKey);
 }
 
-/// Implementation of lock
 export function lock(
   envelope: Envelope,
   method: KeyDerivationMethod,
@@ -148,7 +142,6 @@ export function lock(
   return lockSubject(envelope.wrap(), method, secret);
 }
 
-/// Implementation of unlock
 export function unlock(envelope: Envelope, secret: Uint8Array): Envelope {
   return unlockSubject(envelope, secret).unwrap();
 }
@@ -156,8 +149,3 @@ export function unlock(envelope: Envelope, secret: Uint8Array): Envelope {
 // ============================================================================
 // Module Registration
 // ============================================================================
-
-/// Register the secret extension
-export const registerSecretExtension = (): void => {
-  // Extension methods are already added to prototype above
-};

@@ -70,4 +70,33 @@ describe.skipIf(!built)("dist packaging", () => {
         .sort();
     expect(names(cjs)).toEqual(names(esm));
   });
+
+  it("the root entry installs no extension methods; /all installs them all", async () => {
+    const root = (await import(join(dist, "index.mjs"))) as {
+      Envelope: { prototype: Record<string, unknown> };
+    };
+    const proto = root.Envelope.prototype;
+    for (const name of ["sign", "format", "treeFormat", "sskrSplit", "addAttachment"])
+      expect(typeof proto[name], name).toBe("undefined");
+    const all = (await import(join(dist, "all.mjs"))) as {
+      Envelope: { prototype: Record<string, unknown> };
+    } & Record<string, unknown>;
+    expect(all.Envelope).toBe(root.Envelope);
+    for (const [name, fn] of Object.entries(all)) {
+      if (typeof fn !== "function" || /^[A-Z]/.test(name)) continue;
+      const params = /^(?:async\s+)?function\s*\w*\s*\(([^)]*)\)/.exec(fn.toString())?.[1] ?? "";
+      if (!/^envelope\b/.test(params.trim())) continue;
+      expect(typeof proto[name], name).toBe("function");
+    }
+  });
+
+  it("only /all and /format declare side effects", () => {
+    const sideEffects = (pkg as unknown as { sideEffects: string[] }).sideEffects;
+    expect(sideEffects.map((s) => s.replace(/\.\/dist\/|\.(m|c)js$/g, "")).sort()).toEqual([
+      "all",
+      "all",
+      "format",
+      "format",
+    ]);
+  });
 });

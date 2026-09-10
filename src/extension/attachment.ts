@@ -263,27 +263,32 @@ export function attachmentConformsTo(envelope: Envelope): string | undefined {
 /**
  * Returns all attachment assertions.
  */
-export function attachments(envelope: Envelope): Envelope[] {
-  return envelope.assertionsWithPredicate(ATTACHMENT).map((a) => {
+/** Which attachments `attachments` and `expectAttachment` select. */
+export interface AttachmentFilter {
+  /** Only attachments from this vendor. */
+  vendor?: string;
+  /** Only attachments whose `conformsTo` equals this. */
+  conformsTo?: string;
+}
+
+/** The envelope's attachments, optionally only those matching `filter`. */
+export function attachments(envelope: Envelope, filter: AttachmentFilter = {}): Envelope[] {
+  const all = envelope.assertionsWithPredicate(ATTACHMENT).map((a) => {
     const c = a.case;
     if (c.type === "assertion") {
       return c.assertion.object();
     }
     throw EnvelopeError.general("Invalid attachment assertion");
   });
+  if (filter.vendor === undefined && filter.conformsTo === undefined) return all;
+  return all.filter((attachment) => attachmentMatches(attachment, filter));
 }
 
-/**
- * Returns attachments matching vendor and/or conformsTo.
- */
-export function attachmentsWithVendorAndConformsTo(
-  envelope: Envelope,
-  vendor?: string,
-  conformsTo?: string,
-): Envelope[] {
-  const allAttachments = attachments(envelope);
-
-  return allAttachments.filter((attachment) => {
+const attachmentMatches = (
+  attachment: Envelope,
+  { vendor, conformsTo }: AttachmentFilter,
+): boolean => {
+  {
     try {
       // The attachment is already a wrapped envelope with vendor/conformsTo assertions
       // Check vendor if specified
@@ -311,8 +316,8 @@ export function attachmentsWithVendorAndConformsTo(
     } catch {
       return false;
     }
-  });
-}
+  }
+};
 
 /**
  * Validates that this envelope is a valid attachment.
@@ -354,7 +359,7 @@ export function validateAttachment(envelope: Envelope): void {
 /**
  * Finds a single attachment matching the given vendor and conformsTo.
  *
- * Unlike `attachmentsWithVendorAndConformsTo` which returns an array,
+ * Unlike `attachments` which returns an array,
  * this method requires exactly one attachment to match.
  *
  * @param vendor - Optional vendor identifier to match
@@ -362,12 +367,8 @@ export function validateAttachment(envelope: Envelope): void {
  * @returns The matching attachment envelope
  * @throws EnvelopeError if not exactly one attachment matches
  */
-export function attachmentWithVendorAndConformsTo(
-  envelope: Envelope,
-  vendor?: string,
-  conformsTo?: string,
-): Envelope {
-  const matches = attachmentsWithVendorAndConformsTo(envelope, vendor, conformsTo);
+export function expectAttachment(envelope: Envelope, filter: AttachmentFilter = {}): Envelope {
+  const matches = attachments(envelope, filter);
 
   if (matches.length === 0) {
     throw EnvelopeError.general("No matching attachment found");

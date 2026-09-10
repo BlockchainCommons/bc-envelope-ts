@@ -32,13 +32,13 @@ describe("Type System", () => {
     it("should validate matching types", () => {
       const document = Envelope.from("Contract").addType("LegalDocument");
 
-      expect(() => document.checkType("LegalDocument")).not.toThrow();
+      expect(() => document.expectType("LegalDocument")).not.toThrow();
     });
 
     it("should reject non-matching types", () => {
       const document = Envelope.from("Contract").addType("LegalDocument");
 
-      expect(() => document.checkType("Spreadsheet")).toThrow();
+      expect(() => document.expectType("Spreadsheet")).toThrow();
     });
   });
 

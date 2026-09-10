@@ -129,7 +129,7 @@ describe("Multi-Permit", () => {
     //
     const sskrGroup = GroupSpec.from({ memberThreshold: 2, memberCount: 3 });
     const spec = Spec.from({ groupThreshold: 1, groups: [sskrGroup] });
-    const shardedEnvelopes = lockedWithRecipients.sskrSplitFlattened(spec, contentKey);
+    const shardedEnvelopes = lockedWithRecipients.sskrSplit(spec, contentKey).flat();
 
     // Should have 3 sharded envelopes
     expect(shardedEnvelopes.length).toBe(3);
@@ -267,7 +267,7 @@ describe("Multi-Permit", () => {
         groupThreshold: 1,
         groups: [GroupSpec.from({ memberThreshold: 2, memberCount: 3 })],
       });
-      const shares = encryptedEnvelope.sskrSplitFlattened(spec, contentKey);
+      const shares = encryptedEnvelope.sskrSplit(spec, contentKey).flat();
 
       expect(shares.length).toBe(3);
 
@@ -354,7 +354,7 @@ describe("Multi-Permit", () => {
       const withRecipient = withPassword.addRecipient(alice.publicKeys(), contentKey);
 
       // Add SSKR permits
-      const shares = withRecipient.sskrSplitFlattened(sskrSpec, contentKey);
+      const shares = withRecipient.sskrSplit(sskrSpec, contentKey).flat();
 
       // Verify all unlocking methods work
       const share = shares[0];
@@ -412,7 +412,7 @@ describe("Multi-Permit", () => {
         groupThreshold: 1,
         groups: [GroupSpec.from({ memberThreshold: 2, memberCount: 3 })],
       });
-      const shares = encrypted.sskrSplitFlattened(spec, contentKey);
+      const shares = encrypted.sskrSplit(spec, contentKey).flat();
 
       // Only 1 share is not enough for 2-of-3
       expect(() =>

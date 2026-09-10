@@ -16,7 +16,6 @@ import { summary } from "./envelope-summary.js";
 /**
  * Specifies the format for displaying envelope digests in tree output.
  *
- * Ported from bc-envelope-rust/src/format/tree/format/digest.rs
  */
 export const DigestDisplayFormat = {
   /**
@@ -39,54 +38,57 @@ export const DigestDisplayFormat = {
 /** One of the `DigestDisplayFormat` values. */
 export type DigestDisplayFormat = (typeof DigestDisplayFormat)[keyof typeof DigestDisplayFormat];
 
-/// Tree formatting for Gordian Envelopes.
-///
-/// This module provides functionality for creating textual tree
-/// representations of envelopes, which is useful for debugging and visualizing
-/// the hierarchical structure of complex envelopes.
-///
-/// The tree format displays each component of an envelope (subject and
-/// assertions) as nodes in a tree, making it easy to understand the
-/// hierarchical structure of nested envelopes. Each node includes:
-///
-/// - The first 8 characters of the element's digest (for easy reference)
-/// - The type of the element (NODE, ASSERTION, ELIDED, etc.)
-/// - The content of the element (for leaf nodes)
+// Tree formatting for Gordian Envelopes.
+//
+// This module provides functionality for creating textual tree
+// representations of envelopes, which is useful for debugging and visualizing
+// the hierarchical structure of complex envelopes.
+//
+// The tree format displays each component of an envelope (subject and
+// assertions) as nodes in a tree, making it easy to understand the
+// hierarchical structure of nested envelopes. Each node includes:
+//
+// - The first 8 characters of the element's digest (for easy reference)
+// - The type of the element (NODE, ASSERTION, ELIDED, etc.)
+// - The content of the element (for leaf nodes)
 
-/// Options for tree formatting
+/** Options for tree formatting */
 export interface TreeFormatOptions {
-  /// If true, hides NODE identifiers and only shows semantic content
+  /** If true, hides NODE identifiers and only shows semantic content */
   hideNodes?: boolean;
-  /// Set of digest strings to highlight in the tree
+  /** Set of digest strings to highlight in the tree */
   highlightDigests?: Set<string>;
-  /// Format for displaying digests: "short" (8 hex chars matching Rust
-  /// `short_description`), "full" (64 hex chars), or "ur" (UR string)
+  /**
+   * Format for displaying digests: "short" (8 hex chars matching Rust
+   * `short_description`), "full" (64 hex chars), or "ur" (UR string)
+   */
   digestDisplay?: DigestDisplayFormat | "short" | "full" | "ur";
-  /// Optional format context used for tag name resolution and KnownValue
-  /// summarisation. When omitted, the global format context is used —
-  /// matching Rust `tree_format_opt(&self, opts: TreeFormatOpts)` which
-  /// reads names off the global context unless callers override.
+  /**
+   * Optional format context used for tag name resolution and KnownValue
+   * summarisation. When omitted, the global format context is used —
+   * matching Rust `tree_format_opt(&self, opts: TreeFormatOpts)` which
+   * reads names off the global context unless callers override.
+   */
   context?: FormatContext;
 }
 
-/// Represents an element in the tree representation
+/** Represents an element in the tree representation */
 interface TreeElement {
-  /// Indentation level
+  /** Indentation level */
   level: number;
-  /// The envelope element
+  /** The envelope element */
   envelope: Envelope;
-  /// Type of incoming edge
+  /** Type of incoming edge */
   incomingEdge: EdgeType;
-  /// Whether to show the digest ID
+  /** Whether to show the digest ID */
   showId: boolean;
-  /// Whether this element is highlighted
+  /** Whether this element is highlighted */
   isHighlighted: boolean;
 }
 
 // Note: Method declarations are in the base Envelope class.
 // This module provides the prototype implementations.
 
-/// Implementation of shortId()
 export function shortId(envelope: Envelope, format: "short" | "full" | "ur" = "short"): string {
   const digest = envelope.digest();
   if (format === "full") {
@@ -98,19 +100,18 @@ export function shortId(envelope: Envelope, format: "short" | "full" | "ur" = "s
   return digest.short();
 }
 
-/// Implementation of treeFormat()
-///
-/// Mirrors Rust `Envelope::tree_format_opt` (`bc-envelope-rust/src/format/
-/// tree.rs`). For each element line we emit:
-///
-///   `[*]<short_id> [edge_label] <summary>`
-///
-/// The summary is rendered through {@link Envelope.summaryWithContext} —
-/// **not** the context-free `summary()` — so KnownValue assertions appear
-/// as their registered names (e.g. `'isA'`, `'note'`) instead of the
-/// placeholder string `KNOWN_VALUE`. The format context defaults to the
-/// global one (via {@link getGlobalFormatContext}); callers can override
-/// per-call via {@link TreeFormatOptions.context}.
+/**
+ * tree.rs`). For each element line we emit:
+ *
+ *   `[*]<short_id> [edge_label] <summary>`
+ *
+ * The summary is rendered through {@link Envelope.summaryWithContext} —
+ * **not** the context-free `summary()` — so KnownValue assertions appear
+ * as their registered names (e.g. `'isA'`, `'note'`) instead of the
+ * placeholder string `KNOWN_VALUE`. The format context defaults to the
+ * global one (via {@link getGlobalFormatContext}); callers can override
+ * per-call via {@link TreeFormatOptions.context}.
+ */
 export function treeFormat(envelope: Envelope, options: TreeFormatOptions = {}): string {
   const hideNodes = options.hideNodes ?? false;
   const highlightDigests = options.highlightDigests ?? new Set<string>();

@@ -136,7 +136,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
                 e.spec.groups.map((g) => C.SSKRGroupSpec.new(g.mt, g.mc)),
               );
         const encrypted = env.encryptSubject(key);
-        const groups: any[][] = encrypted.sskrSplitUsing(spec, key, deps.seededRng(e.rng));
+        const groups: any[][] = encrypted.sskrSplit(spec, key, { rng: deps.seededRng(e.rng) });
         return { sskrGroups: groups, original: env, spec: e.spec };
       }
       case "attach":

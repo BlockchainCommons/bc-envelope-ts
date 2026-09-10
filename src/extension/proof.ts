@@ -7,53 +7,52 @@
 import { type Envelope } from "../base/envelope";
 import { type Digest } from "../base/digest";
 
-/// Extension for envelope inclusion proofs.
-///
-/// Inclusion proofs allow a holder of an envelope to prove that specific
-/// elements exist within the envelope without revealing the entire contents.
-/// This is particularly useful for selective disclosure of information in
-/// privacy-preserving scenarios.
-///
-/// ## How Inclusion Proofs Work
-///
-/// The inclusion proof mechanism leverages the Merkle-like digest tree
-/// structure of envelopes:
-/// - The holder creates a minimal structure containing only the digests
-///   necessary to validate the proof
-/// - A verifier with a trusted root digest can confirm that the specific
-///   elements exist in the original envelope
-/// - All other content can remain elided, preserving privacy
-///
-/// For enhanced privacy, elements can be salted to prevent correlation attacks.
-///
-/// @example
-/// ```typescript
-/// // Create an envelope with multiple assertions
-/// const aliceFriends = Envelope.from('Alice')
-///   .addAssertion('knows', 'Bob')
-///   .addAssertion('knows', 'Carol')
-///   .addAssertion('knows', 'Dan');
-///
-/// // Create a representation of just the root digest
-/// const aliceFriendsRoot = aliceFriends.elide({ revealing: new Set() });
-///
-/// // Create the target we want to prove exists
-/// const knowsBobAssertion = Envelope.assertion('knows', 'Bob');
-///
-/// // Generate a proof that Alice knows Bob
-/// const aliceKnowsBobProof = aliceFriends.proofContainsTarget(knowsBobAssertion);
-///
-/// // A third party can verify the proof against the trusted root
-/// if (aliceKnowsBobProof) {
-///   const isValid = aliceFriendsRoot.confirmContainsTarget(
-///     knowsBobAssertion,
-///     aliceKnowsBobProof
-///   );
-///   console.log('Proof is valid:', isValid);
-/// }
-/// ```
+// Extension for envelope inclusion proofs.
+//
+// Inclusion proofs allow a holder of an envelope to prove that specific
+// elements exist within the envelope without revealing the entire contents.
+// This is particularly useful for selective disclosure of information in
+// privacy-preserving scenarios.
+//
+// ## How Inclusion Proofs Work
+//
+// The inclusion proof mechanism leverages the Merkle-like digest tree
+// structure of envelopes:
+// - The holder creates a minimal structure containing only the digests
+//   necessary to validate the proof
+// - A verifier with a trusted root digest can confirm that the specific
+//   elements exist in the original envelope
+// - All other content can remain elided, preserving privacy
+//
+// For enhanced privacy, elements can be salted to prevent correlation attacks.
+//
+// @example
+// ```typescript
+// // Create an envelope with multiple assertions
+// const aliceFriends = Envelope.from('Alice')
+//   .addAssertion('knows', 'Bob')
+//   .addAssertion('knows', 'Carol')
+//   .addAssertion('knows', 'Dan');
+//
+// // Create a representation of just the root digest
+// const aliceFriendsRoot = aliceFriends.elide({ revealing: new Set() });
+//
+// // Create the target we want to prove exists
+// const knowsBobAssertion = Envelope.assertion('knows', 'Bob');
+//
+// // Generate a proof that Alice knows Bob
+// const aliceKnowsBobProof = aliceFriends.proofContainsTarget(knowsBobAssertion);
+//
+// // A third party can verify the proof against the trusted root
+// if (aliceKnowsBobProof) {
+//   const isValid = aliceFriendsRoot.confirmContainsTarget(
+//     knowsBobAssertion,
+//     aliceKnowsBobProof
+//   );
+//   console.log('Proof is valid:', isValid);
+// }
+// ```
 
-/// Implementation of proof methods on Envelope prototype
 export function proofContainsSet(envelope: Envelope, target: Set<Digest>): Envelope | undefined {
   const revealSet = revealSetOfSet(envelope, target);
 
@@ -95,22 +94,26 @@ export function confirmContainsTarget(
   return confirmContainsSet(envelope, targetSet, proof);
 }
 
-/// Internal helper functions
+// Internal helper functions
 
-/// Builds a set of all digests needed to reveal the target set.
-///
-/// This collects all digests in the path from the envelope's root to each
-/// target element.
+/**
+ * Builds a set of all digests needed to reveal the target set.
+ *
+ * This collects all digests in the path from the envelope's root to each
+ * target element.
+ */
 function revealSetOfSet(envelope: Envelope, target: Set<Digest>): Set<Digest> {
   const result = new Set<Digest>();
   revealSets(envelope, target, new Set<Digest>(), result);
   return result;
 }
 
-/// Recursively traverses the envelope to collect all digests needed to
-/// reveal the target set.
-///
-/// Builds the set of digests forming the path from the root to each target element.
+/**
+ * Recursively traverses the envelope to collect all digests needed to
+ * reveal the target set.
+ *
+ * Builds the set of digests forming the path from the root to each target element.
+ */
 function revealSets(
   envelope: Envelope,
   target: Set<Digest>,
@@ -152,18 +155,22 @@ function revealSets(
   // For leaf envelopes (elided, encrypted, compressed, leaf), no further traversal needed
 }
 
-/// Checks if this envelope contains all elements in the target set.
-///
-/// Used during proof verification to confirm all target elements exist in the proof.
+/**
+ * Checks if this envelope contains all elements in the target set.
+ *
+ * Used during proof verification to confirm all target elements exist in the proof.
+ */
 function containsAll(envelope: Envelope, target: Set<Digest>): boolean {
   const targetCopy = new Set(target);
   removeAllFound(envelope, targetCopy);
   return targetCopy.size === 0;
 }
 
-/// Recursively traverses the envelope and removes found target elements from the set.
-///
-/// Used during proof verification to confirm all target elements are present.
+/**
+ * Recursively traverses the envelope and removes found target elements from the set.
+ *
+ * Used during proof verification to confirm all target elements are present.
+ */
 function removeAllFound(envelope: Envelope, target: Set<Digest>): void {
   // Check if this envelope's digest is in the target set
   if (containsDigest(target, envelope.digest())) {
@@ -202,7 +209,7 @@ function removeAllFound(envelope: Envelope, target: Set<Digest>): void {
   // For leaf envelopes (elided, encrypted, compressed, leaf), no further traversal needed
 }
 
-/// Helper function to check if a set contains a digest (by hex comparison)
+/** Helper function to check if a set contains a digest (by hex comparison) */
 function containsDigest(set: Set<Digest>, digest: Digest): boolean {
   const hexToFind = digest.toHex();
   for (const d of set) {
@@ -213,7 +220,7 @@ function containsDigest(set: Set<Digest>, digest: Digest): boolean {
   return false;
 }
 
-/// Helper function to remove a digest from a set (by hex comparison)
+/** Helper function to remove a digest from a set (by hex comparison) */
 function removeDigest(set: Set<Digest>, digest: Digest): void {
   const hexToFind = digest.toHex();
   for (const d of set) {
@@ -224,7 +231,7 @@ function removeDigest(set: Set<Digest>, digest: Digest): void {
   }
 }
 
-/// Helper function to check if one set is a subset of another (by hex comparison)
+/** Helper function to check if one set is a subset of another (by hex comparison) */
 function isSubset(subset: Set<Digest>, superset: Set<Digest>): boolean {
   for (const digest of subset) {
     if (!containsDigest(superset, digest)) {
@@ -234,6 +241,6 @@ function isSubset(subset: Set<Digest>, superset: Set<Digest>): boolean {
   return true;
 }
 
-/// Register proof extension on Envelope prototype.
-/// This function is exported to allow explicit registration.
+// Register proof extension on Envelope prototype.
+// This function is exported to allow explicit registration.
 // Methods are already registered above when this module loads

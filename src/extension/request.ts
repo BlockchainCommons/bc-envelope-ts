@@ -5,8 +5,6 @@
  *
  * Request type for distributed function calls.
  *
- * Ported from bc-envelope-rust/src/extension/expressions/request.rs
- *
  * A Request represents a message requesting execution of a function with
  * parameters. Requests are part of the expression system that enables
  * distributed function calls and communication between systems.

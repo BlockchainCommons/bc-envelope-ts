@@ -5,8 +5,6 @@
  *
  * Response type for distributed function calls.
  *
- * Ported from bc-envelope-rust/src/extension/expressions/response.rs
- *
  * A Response represents a reply to a Request containing either a
  * successful result or an error.
  *

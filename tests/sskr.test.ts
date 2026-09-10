@@ -75,7 +75,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
 
       // Should be a flat array of 3 shares
       expect(shares.length).toBe(3);
@@ -86,7 +86,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(multiGroupSpec, contentKey);
+      const shares = encrypted.sskrSplit(multiGroupSpec, contentKey).flat();
 
       // Should have 6 total shares (3 + 3)
       expect(shares.length).toBe(6);
@@ -100,7 +100,7 @@ describe("SSKR Extension", () => {
       const encrypted = original.encryptSubject(contentKey);
 
       // Split into shares
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
 
       // Take only 2 shares (threshold)
       const subset = shares.slice(0, 2);
@@ -118,7 +118,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
 
       // Take only 1 share (below threshold)
       const insufficient = shares.slice(0, 1);
@@ -140,7 +140,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
 
       // All possible 2-combinations from 3 shares should work
       const combinations = [
@@ -162,7 +162,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
 
       // Using all 3 should also work
       const recovered = (Envelope as unknown as { sskrJoin: (e: Envelope[]) => Envelope }).sskrJoin(
@@ -216,7 +216,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
       const recovered = (Envelope as unknown as { sskrJoin: (e: Envelope[]) => Envelope }).sskrJoin(
         shares.slice(0, 2),
       );
@@ -232,7 +232,7 @@ describe("SSKR Extension", () => {
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
-      const shares = encrypted.sskrSplitFlattened(simpleSpec, contentKey);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey).flat();
       const recovered = (Envelope as unknown as { sskrJoin: (e: Envelope[]) => Envelope }).sskrJoin(
         shares.slice(0, 2),
       );
@@ -263,8 +263,8 @@ describe("SSKR Extension", () => {
       const rng1 = new SeededRng(seed);
       const rng2 = new SeededRng(seed);
 
-      const shares1 = encrypted.sskrSplitUsing(simpleSpec, contentKey, rng1);
-      const shares2 = encrypted.sskrSplitUsing(simpleSpec, contentKey, rng2);
+      const shares1 = encrypted.sskrSplit(simpleSpec, contentKey, { rng: rng1 });
+      const shares2 = encrypted.sskrSplit(simpleSpec, contentKey, { rng: rng2 });
 
       // Should produce same shares with same seed
       expect(shares1.length).toBe(shares2.length);
@@ -287,8 +287,8 @@ describe("SSKR Extension", () => {
       const rng1 = new SeededRng(seed1);
       const rng2 = new SeededRng(seed2);
 
-      const shares1 = encrypted.sskrSplitUsing(simpleSpec, contentKey, rng1);
-      const shares2 = encrypted.sskrSplitUsing(simpleSpec, contentKey, rng2);
+      const shares1 = encrypted.sskrSplit(simpleSpec, contentKey, { rng: rng1 });
+      const shares2 = encrypted.sskrSplit(simpleSpec, contentKey, { rng: rng2 });
 
       // Should produce different shares with different seeds
       // (very unlikely all 3 shares have same digest)
@@ -306,7 +306,7 @@ describe("SSKR Extension", () => {
       const seed = makeSeed(99);
       const rng = new SeededRng(seed);
 
-      const shares = encrypted.sskrSplitUsing(simpleSpec, contentKey, rng);
+      const shares = encrypted.sskrSplit(simpleSpec, contentKey, { rng: rng });
 
       // Take 2 shares and recover
       const subset = shares[0].slice(0, 2);

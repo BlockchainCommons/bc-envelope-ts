@@ -4,11 +4,11 @@
  *
  */
 
-/// Base module exports for Gordian Envelope.
-///
-/// This module provides the core functionality for working with Gordian
-/// Envelopes, including the main Envelope class, assertions, digests,
-/// error handling, and various utility functions.
+// Base module exports for Gordian Envelope.
+//
+// This module provides the core functionality for working with Gordian
+// Envelopes, including the main Envelope class, assertions, digests,
+// error handling, and various utility functions.
 
 // Core types
 export { Envelope, type EnvelopeCase } from "./envelope";

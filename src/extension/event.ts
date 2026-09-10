@@ -5,8 +5,6 @@
  *
  * Event type for notifications and messages.
  *
- * Ported from bc-envelope-rust/src/extension/expressions/event.rs
- *
  * An Event represents a notification or message that doesn't expect a
  * response.
  *

@@ -4,17 +4,17 @@
  *
  */
 
-/// SSKR-based envelope splitting and joining.
-///
-/// This module provides functionality for splitting encrypted envelopes
-/// using SSKR (Sharded Secret Key Reconstruction), which is an implementation
-/// of Shamir's Secret Sharing. SSKR allows splitting a secret (the symmetric
-/// encryption key) into multiple shares, with a threshold required for
-/// reconstruction.
-///
-/// SSKR provides social recovery for encrypted envelopes by allowing the owner
-/// to distribute shares to trusted individuals or storage locations, with a
-/// specified threshold required to reconstruct the original envelope.
+// SSKR-based envelope splitting and joining.
+//
+// This module provides functionality for splitting encrypted envelopes
+// using SSKR (Sharded Secret Key Reconstruction), which is an implementation
+// of Shamir's Secret Sharing. SSKR allows splitting a secret (the symmetric
+// encryption key) into multiple shares, with a threshold required for
+// reconstruction.
+//
+// SSKR provides social recovery for encrypted envelopes by allowing the owner
+// to distribute shares to trusted individuals or storage locations, with a
+// specified threshold required to reconstruct the original envelope.
 
 import { SskrShare } from "@blockchaincommons/components/sskr";
 import { Secret, Spec, GroupSpec } from "@blockchaincommons/sskr";
@@ -32,18 +32,29 @@ export { Spec, GroupSpec, SskrShare, Secret };
 // Envelope Prototype Extensions for SSKR
 // ============================================================================
 
-/// Helper function to add an SSKR share assertion to the envelope
+/** Helper function to add an SSKR share assertion to the envelope */
 const addSskrShare = (envelope: Envelope, share: SskrShare): Envelope => {
   return envelope.addAssertion(SSKR_SHARE, share);
 };
 
-/// Implementation of sskrSplit
-export function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey): Envelope[][] {
-  // Convert symmetric key to SSKR secret
+/**
+ * Splits `contentKey` into SSKR shares per `spec` and returns one copy of
+ * the envelope per share, each carrying its share as an `sskrShare`
+ * assertion, grouped as the spec groups them. `sskrJoin` recovers the
+ * envelope from a quorum.
+ */
+export function sskrSplit(
+  envelope: Envelope,
+  spec: Spec,
+  contentKey: SymmetricKey,
+  { rng }: { rng?: RandomNumberGenerator } = {},
+): Envelope[][] {
   const masterSecret = Secret.from(contentKey.bytes);
-
-  // Generate SSKR shares with CBOR wrappers
-  const shareGroups: SskrShare[][] = SskrShare.generate(spec, masterSecret);
+  const shareGroups: SskrShare[][] = SskrShare.generate(
+    spec,
+    masterSecret,
+    rng === undefined ? {} : { rng },
+  );
 
   // Create envelope copies with SSKR share assertions
   const result: Envelope[][] = [];
@@ -59,43 +70,7 @@ export function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricK
   return result;
 }
 
-/// Implementation of sskrSplitFlattened
-export function sskrSplitFlattened(
-  envelope: Envelope,
-  spec: Spec,
-  contentKey: SymmetricKey,
-): Envelope[] {
-  return sskrSplit(envelope, spec, contentKey).flat();
-}
-
-/// Implementation of sskrSplitUsing (with custom RNG)
-export function sskrSplitUsing(
-  envelope: Envelope,
-  spec: Spec,
-  contentKey: SymmetricKey,
-  rng: RandomNumberGenerator,
-): Envelope[][] {
-  // Convert symmetric key to SSKR secret
-  const masterSecret = Secret.from(contentKey.bytes);
-
-  // Generate SSKR shares using custom RNG
-  const shareGroups = SskrShare.generate(spec, masterSecret, { rng });
-
-  // Convert raw bytes to SskrShare and create envelope copies
-  const result: Envelope[][] = [];
-  for (const group of shareGroups) {
-    const groupResult: Envelope[] = [];
-    for (const share of group) {
-      const shareEnvelope = addSskrShare(envelope, share);
-      groupResult.push(shareEnvelope);
-    }
-    result.push(groupResult);
-  }
-
-  return result;
-}
-
-/// Helper function to extract SSKR shares from envelopes, grouped by identifier
+/** Helper function to extract SSKR shares from envelopes, grouped by identifier */
 const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[]> => {
   const result = new Map<number, SskrShare[]>();
 
@@ -130,7 +105,6 @@ const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[
   return result;
 };
 
-/// Implementation of sskrJoin (static method)
 export function sskrJoin(envelopes: Envelope[]): Envelope {
   if (envelopes.length === 0) {
     throw EnvelopeError.invalidShares();
@@ -166,8 +140,3 @@ export function sskrJoin(envelopes: Envelope[]): Envelope {
 // ============================================================================
 // Module Registration
 // ============================================================================
-
-/// Register the SSKR extension
-export const registerSskrExtension = (): void => {
-  // Extension methods are already added to prototype above
-};

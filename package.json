@@ -241,12 +241,10 @@
   "dependencies": {
     "@blockchaincommons/components": "^1.0.0-beta.1",
     "@blockchaincommons/crypto": "^1.0.0-beta.1",
-    "@blockchaincommons/dcbor-compat": "^1.0.0-beta.1",
     "@blockchaincommons/known-values": "^1.0.0-beta.1",
     "@blockchaincommons/rand": "^1.0.0-beta.1",
     "@blockchaincommons/sskr": "^1.0.0-beta.1",
     "@blockchaincommons/tags": "^1.0.0-beta.1",
-    "@blockchaincommons/uniform-resources": "^1.0.0-beta.1",
-    "pako": "^3.0.1"
+    "@blockchaincommons/uniform-resources": "^1.0.0-beta.1"
   }
 }

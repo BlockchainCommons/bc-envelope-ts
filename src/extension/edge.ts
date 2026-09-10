@@ -16,8 +16,6 @@
  * the implementation handles both wrapped (signed) and unwrapped edges
  * transparently.
  *
- * Equivalent to Rust's `src/extension/edge/` module.
- *
  * @module edge
  */
 
@@ -43,7 +41,6 @@ import {
  * mirroring the `Attachments` container but for edges as defined in
  * BCR-2026-003.
  *
- * Equivalent to Rust's `Edges` struct in `src/extension/edge/edges.rs`.
  */
 export class Edges {
   private readonly _envelopes: Map<string, Envelope>;
@@ -144,8 +141,6 @@ export class Edges {
   /**
    * Extracts edges from an envelope's `'edge'` assertions.
    *
-   * Equivalent to Rust's `Edges::try_from_envelope()`.
-   *
    * @param envelope - The envelope to extract edges from
    * @returns A new Edges container with the envelope's edges
    */
@@ -169,7 +164,6 @@ export class Edges {
  * Types implementing this interface can store and retrieve edge envelopes
  * representing verifiable claims as defined in BCR-2026-003.
  *
- * Equivalent to Rust's `Edgeable` trait in `src/extension/edge/edges.rs`.
  */
 export interface Edgeable {
   /** Returns a reference to the edges container. */
@@ -195,7 +189,6 @@ export interface Edgeable {
 /**
  * Returns a new envelope with an added `'edge': <edge>` assertion.
  *
- * Equivalent to Rust's `Envelope::add_edge_envelope()`.
  */
 export function addEdgeEnvelope(envelope: Envelope, edge: Envelope): Envelope {
   return envelope.addAssertion(EDGE, edge);
@@ -204,7 +197,6 @@ export function addEdgeEnvelope(envelope: Envelope, edge: Envelope): Envelope {
 /**
  * Returns all edge object envelopes (assertions with predicate `'edge'`).
  *
- * Equivalent to Rust's `Envelope::edges()`.
  */
 export function edges(envelope: Envelope): Envelope[] {
   return envelope.objectsForPredicate(EDGE);
@@ -217,7 +209,6 @@ export function edges(envelope: Envelope): Envelope[] {
  * must have exactly three assertion predicates: `'isA'`, `'source'`,
  * and `'target'`. No other assertions are permitted on the edge
  * subject. Mirrors Rust `Envelope::validate_edge`
- * (`bc-envelope-rust/src/extension/edge/edge_impl.rs`).
  *
  * @throws {EnvelopeError} If a required predicate is missing or
  *   duplicated, or if any other assertion is present
@@ -277,7 +268,6 @@ export function validateEdge(envelope: Envelope): void {
 /**
  * Extracts the `'isA'` assertion object from an edge envelope.
  *
- * Equivalent to Rust's `Envelope::edge_is_a()`.
  */
 export function edgeIsA(envelope: Envelope): Envelope {
   const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
@@ -287,7 +277,6 @@ export function edgeIsA(envelope: Envelope): Envelope {
 /**
  * Extracts the `'source'` assertion object from an edge envelope.
  *
- * Equivalent to Rust's `Envelope::edge_source()`.
  */
 export function edgeSource(envelope: Envelope): Envelope {
   const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
@@ -297,7 +286,6 @@ export function edgeSource(envelope: Envelope): Envelope {
 /**
  * Extracts the `'target'` assertion object from an edge envelope.
  *
- * Equivalent to Rust's `Envelope::edge_target()`.
  */
 export function edgeTarget(envelope: Envelope): Envelope {
   const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
@@ -307,7 +295,6 @@ export function edgeTarget(envelope: Envelope): Envelope {
 /**
  * Extracts the edge's subject identifier (the inner envelope's subject).
  *
- * Equivalent to Rust's `Envelope::edge_subject()`.
  */
 export function edgeSubject(envelope: Envelope): Envelope {
   const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
@@ -319,8 +306,6 @@ export function edgeSubject(envelope: Envelope): Envelope {
  *
  * Each parameter is optional. When provided, only edges matching
  * all specified criteria are returned.
- *
- * Equivalent to Rust's `Envelope::edges_matching()`.
  *
  * @param isA - Optional `'isA'` envelope to match
  * @param source - Optional `'source'` envelope to match

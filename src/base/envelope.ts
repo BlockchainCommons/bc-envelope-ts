@@ -50,165 +50,173 @@ import { nextInClosedRangeI32 } from "@blockchaincommons/rand/samplers";
 // Type imports for extension method declarations
 // These are imported as types only to avoid circular dependencies at runtime
 
-/// These match the Rust reference implementation in bc-tags-rust
+/** These match the Rust reference implementation in bc-tags-rust */
 const TAG_ENVELOPE = ENVELOPE.value;
 const TAG_LEAF = LEAF.value;
 const TAG_ENCRYPTED = ENCRYPTED.value;
 const TAG_COMPRESSED = COMPRESSED.value;
 
-/// The core structural variants of a Gordian Envelope.
-///
-/// Each variant represents a different structural form that an
-/// envelope can take, as defined in the Gordian Envelope IETF Internet Draft.
-/// The different cases provide different capabilities and serve different
-/// purposes in the envelope ecosystem.
-///
-/// The `EnvelopeCase` is the internal representation of an envelope's
-/// structure. While each case has unique properties, they all maintain a digest
-/// that ensures the integrity of the envelope.
-///
-/// It is advised to use the other Envelope APIs for most uses. Please see the
-/// queries module for more information on how to interact with envelopes.
+/**
+ * The core structural variants of a Gordian Envelope.
+ *
+ * Each variant represents a different structural form that an
+ * envelope can take, as defined in the Gordian Envelope IETF Internet Draft.
+ * The different cases provide different capabilities and serve different
+ * purposes in the envelope ecosystem.
+ *
+ * The `EnvelopeCase` is the internal representation of an envelope's
+ * structure. While each case has unique properties, they all maintain a digest
+ * that ensures the integrity of the envelope.
+ *
+ * It is advised to use the other Envelope APIs for most uses. Please see the
+ * queries module for more information on how to interact with envelopes.
+ */
 export type EnvelopeCase =
   | {
       type: "node";
-      /// The subject of the node
+      /** The subject of the node */
       subject: Envelope;
-      /// The assertions attached to the subject
+      /** The assertions attached to the subject */
       assertions: Envelope[];
-      /// The digest of the node
+      /** The digest of the node */
       digest: Digest;
     }
   | {
       type: "leaf";
-      /// The CBOR value contained in the leaf
+      /** The CBOR value contained in the leaf */
       cbor: Cbor;
-      /// The digest of the leaf
+      /** The digest of the leaf */
       digest: Digest;
     }
   | {
       type: "wrapped";
-      /// The envelope being wrapped
+      /** The envelope being wrapped */
       envelope: Envelope;
-      /// The digest of the wrapped envelope
+      /** The digest of the wrapped envelope */
       digest: Digest;
     }
   | {
       type: "assertion";
-      /// The assertion
+      /** The assertion */
       assertion: Assertion;
     }
   | {
       type: "elided";
-      /// The digest of the elided content
+      /** The digest of the elided content */
       digest: Digest;
     }
   | {
       type: "knownValue";
-      /// The known value instance
+      /** The known value instance */
       value: KnownValue;
-      /// The digest of the known value
+      /** The digest of the known value */
       digest: Digest;
     }
   | {
       type: "encrypted";
-      /// The encrypted message
+      /** The encrypted message */
       message: EncryptedMessage;
     }
   | {
       type: "compressed";
-      /// The compressed data
+      /** The compressed data */
       value: Compressed;
     };
 
 // Import types from extension modules (will be available at runtime)
 
-/// A flexible container for structured data with built-in integrity
-/// verification.
-///
-/// Gordian Envelope is the primary data structure of this library. It provides a
-/// way to encapsulate and organize data with cryptographic integrity, privacy
-/// features, and selective disclosure capabilities.
-///
-/// Key characteristics of envelopes:
-///
-/// - **Immutability**: Envelopes are immutable. Operations that appear to
-///   "modify" an envelope actually create a new envelope. This immutability is
-///   fundamental to maintaining the integrity of the envelope's digest tree.
-///
-/// - **Efficient Cloning**: Envelopes use shallow copying for efficient O(1)
-///   cloning. Since they're immutable, clones share the same underlying data.
-///
-/// - **Semantic Structure**: Envelopes can represent various semantic
-///   relationships through subjects, predicates, and objects (similar to RDF
-///   triples).
-///
-/// - **Digest Tree**: Each envelope maintains a Merkle-like digest tree that
-///   ensures the integrity of its contents and enables verification of
-///   individual parts.
-///
-/// - **Privacy Features**: Envelopes support selective disclosure through
-///   elision, encryption, and compression of specific parts, while maintaining
-///   the overall integrity of the structure.
-///
-/// - **Deterministic Representation**: Envelopes use deterministic CBOR
-///   encoding to ensure consistent serialization across platforms.
-///
-/// The Gordian Envelope specification is defined in an IETF Internet Draft, and
-/// this implementation closely follows that specification.
-///
-/// @example
-/// ```typescript
-/// // Create an envelope representing a person
-/// const person = Envelope.from("person")
-///     .addAssertion("name", "Alice")
-///     .addAssertion("age", 30)
-///     .addAssertion("email", "alice@example.com");
-///
-/// // Create a partially redacted version by eliding the email
-/// const redacted = person.elide({ removing: [///     person.assertionWithPredicate("email")
-///] });
-///
-/// // The digest of both envelopes remains the same
-/// assert(person.digest().equals(redacted.digest()));
-/// ```
+// A flexible container for structured data with built-in integrity
+// verification.
+//
+// Gordian Envelope is the primary data structure of this library. It provides a
+// way to encapsulate and organize data with cryptographic integrity, privacy
+// features, and selective disclosure capabilities.
+//
+// Key characteristics of envelopes:
+//
+// - **Immutability**: Envelopes are immutable. Operations that appear to
+//   "modify" an envelope actually create a new envelope. This immutability is
+//   fundamental to maintaining the integrity of the envelope's digest tree.
+//
+// - **Efficient Cloning**: Envelopes use shallow copying for efficient O(1)
+//   cloning. Since they're immutable, clones share the same underlying data.
+//
+// - **Semantic Structure**: Envelopes can represent various semantic
+//   relationships through subjects, predicates, and objects (similar to RDF
+//   triples).
+//
+// - **Digest Tree**: Each envelope maintains a Merkle-like digest tree that
+//   ensures the integrity of its contents and enables verification of
+//   individual parts.
+//
+// - **Privacy Features**: Envelopes support selective disclosure through
+//   elision, encryption, and compression of specific parts, while maintaining
+//   the overall integrity of the structure.
+//
+// - **Deterministic Representation**: Envelopes use deterministic CBOR
+//   encoding to ensure consistent serialization across platforms.
+//
+// The Gordian Envelope specification is defined in an IETF Internet Draft, and
+// this implementation closely follows that specification.
+//
+// @example
+// ```typescript
+// // Create an envelope representing a person
+// const person = Envelope.from("person")
+//     .addAssertion("name", "Alice")
+//     .addAssertion("age", 30)
+//     .addAssertion("email", "alice@example.com");
+//
+// // Create a partially redacted version by eliding the email
+// const redacted = person.elide({ removing: [///     person.assertionWithPredicate("email")
+// ] });
+//
+// // The digest of both envelopes remains the same
+// assert(person.digest().equals(redacted.digest()));
+// ```
 
 let ENVELOPE_CODEC: CborCodec<Envelope> | undefined;
 
 export class Envelope implements DigestProvider {
   private readonly _case: EnvelopeCase;
 
-  /// Private constructor. Use static factory methods to create envelopes.
-  ///
-  /// @param envelopeCase - The envelope case variant
+  /**
+   * Private constructor. Use static factory methods to create envelopes.
+   *
+   * @param envelopeCase - The envelope case variant
+   */
   private constructor(envelopeCase: EnvelopeCase) {
     this._case = envelopeCase;
   }
 
-  /// Returns a reference to the underlying envelope case.
-  ///
-  /// The `EnvelopeCase` enum represents the specific structural variant of
-  /// this envelope. This method provides access to that underlying
-  /// variant for operations that need to differentiate between the
-  /// different envelope types.
-  ///
-  /// @returns The `EnvelopeCase` that defines this envelope's structure.
+  /**
+   * Returns a reference to the underlying envelope case.
+   *
+   * The `EnvelopeCase` enum represents the specific structural variant of
+   * this envelope. This method provides access to that underlying
+   * variant for operations that need to differentiate between the
+   * different envelope types.
+   *
+   * @returns The `EnvelopeCase` that defines this envelope's structure.
+   */
   get case(): EnvelopeCase {
     return this._case;
   }
 
-  /// Creates an envelope with a subject, which can be any value that
-  /// can be encoded as an envelope.
-  ///
-  /// @param subject - The subject value
-  /// @returns A new envelope containing the subject
-  ///
-  /// @example
-  /// ```typescript
-  /// const envelope = Envelope.from("Hello, world!");
-  /// const numberEnvelope = Envelope.from(42);
-  /// const binaryEnvelope = Envelope.from(new Uint8Array([1, 2, 3]));
-  /// ```
+  /**
+   * Creates an envelope with a subject, which can be any value that
+   * can be encoded as an envelope.
+   *
+   * @param subject - The subject value
+   * @returns A new envelope containing the subject
+   *
+   * @example
+   * ```typescript
+   * const envelope = Envelope.from("Hello, world!");
+   * const numberEnvelope = Envelope.from(42);
+   * const binaryEnvelope = Envelope.from(new Uint8Array([1, 2, 3]));
+   * ```
+   */
   static from(subject: EnvelopeInput): Envelope {
     // Convert the subject to an envelope
     if (subject instanceof Envelope) {
@@ -242,17 +250,19 @@ export class Envelope implements DigestProvider {
     // Handle primitives and create leaf envelopes
     return Envelope.leaf(subject);
   }
-  /// Creates an envelope with a subject, or `undefined` if the subject is
-  /// **absent** (`undefined` *or* JS `null`).
-  ///
-  /// **TS↔Rust note**: Rust `Envelope::new_or_none` returns
-  /// `Option<Envelope>` — the `None` branch fires only on `None`. We
-  /// follow the same convention as {@link Envelope.newOrNull} and treat
-  /// JS `null` and `undefined` interchangeably as the absent case.
-  ///
-  /// @param subject - The optional subject value (`undefined` *or* `null`
-  ///   triggers the absent branch).
-  /// @returns A new envelope or `undefined`
+  /**
+   * Creates an envelope with a subject, or `undefined` if the subject is
+   * **absent** (`undefined` *or* JS `null`).
+   *
+   * **TS↔Rust note**: Rust `Envelope::new_or_none` returns
+   * `Option<Envelope>` — the `None` branch fires only on `None`. We
+   * follow the same convention as {@link Envelope.newOrNull} and treat
+   * JS `null` and `undefined` interchangeably as the absent case.
+   *
+   * @param subject - The optional subject value (`undefined` *or* `null`
+   *   triggers the absent branch).
+   * @returns A new envelope or `undefined`
+   */
   static fromOptional(subject: EnvelopeInput | undefined): Envelope | undefined {
     if (subject === undefined || subject === null) {
       return undefined;
@@ -260,36 +270,42 @@ export class Envelope implements DigestProvider {
     return Envelope.from(subject);
   }
 
-  /// Creates an envelope from an EnvelopeCase.
-  ///
-  /// This is an internal method used by extensions to create envelopes
-  /// from custom case types like compressed or encrypted.
-  ///
-  /// @param envelopeCase - The envelope case to wrap
-  /// @returns A new envelope with the given case
+  /**
+   * Creates an envelope from an EnvelopeCase.
+   *
+   * This is an internal method used by extensions to create envelopes
+   * from custom case types like compressed or encrypted.
+   *
+   * @param envelopeCase - The envelope case to wrap
+   * @returns A new envelope with the given case
+   */
   static fromCase(envelopeCase: EnvelopeCase): Envelope {
     return new Envelope(envelopeCase);
   }
 
-  /// Creates an assertion envelope with a predicate and object.
-  ///
-  /// @param predicate - The predicate of the assertion
-  /// @param object - The object of the assertion
-  /// @returns A new assertion envelope
-  ///
-  /// @example
-  /// ```typescript
-  /// const assertion = Envelope.assertion("name", "Alice");
-  /// ```
+  /**
+   * Creates an assertion envelope with a predicate and object.
+   *
+   * @param predicate - The predicate of the assertion
+   * @param object - The object of the assertion
+   * @returns A new assertion envelope
+   *
+   * @example
+   * ```typescript
+   * const assertion = Envelope.assertion("name", "Alice");
+   * ```
+   */
   static assertion(predicate: EnvelopeInput, object: EnvelopeInput): Envelope {
     const predicateEnv = predicate instanceof Envelope ? predicate : Envelope.from(predicate);
     const objectEnv = object instanceof Envelope ? object : Envelope.from(object);
     return Envelope.fromAssertion(new Assertion(predicateEnv, objectEnv));
   }
 
-  /// Creates a null envelope (containing CBOR null).
-  ///
-  /// @returns A null envelope
+  /**
+   * Creates a null envelope (containing CBOR null).
+   *
+   * @returns A null envelope
+   */
   static get NULL(): Envelope {
     return Envelope.leaf(null);
   }
@@ -298,13 +314,15 @@ export class Envelope implements DigestProvider {
   // Internal constructors
   //
 
-  /// Creates an envelope with a subject and unchecked assertions.
-  ///
-  /// The assertions are sorted by digest and the envelope's digest is calculated.
-  ///
-  /// @param subject - The subject envelope
-  /// @param uncheckedAssertions - The assertions to attach
-  /// @returns A new node envelope
+  /**
+   * Creates an envelope with a subject and unchecked assertions.
+   *
+   * The assertions are sorted by digest and the envelope's digest is calculated.
+   *
+   * @param subject - The subject envelope
+   * @param uncheckedAssertions - The assertions to attach
+   * @returns A new node envelope
+   */
   private static nodeUnchecked(subject: Envelope, uncheckedAssertions: Envelope[]): Envelope {
     if (uncheckedAssertions.length === 0) {
       throw new Error("Assertions array cannot be empty");
@@ -329,14 +347,16 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates an envelope with a subject and validated assertions.
-  ///
-  /// All assertions must be assertion or obscured envelopes.
-  ///
-  /// @param subject - The subject envelope
-  /// @param assertions - The assertions to attach
-  /// @returns A new node envelope
-  /// @throws {EnvelopeError} If any assertion is not valid
+  /**
+   * Creates an envelope with a subject and validated assertions.
+   *
+   * All assertions must be assertion or obscured envelopes.
+   *
+   * @param subject - The subject envelope
+   * @param assertions - The assertions to attach
+   * @returns A new node envelope
+   * @throws {EnvelopeError} If any assertion is not valid
+   */
   static node(
     subject: Envelope,
     assertions: Envelope[],
@@ -353,10 +373,12 @@ export class Envelope implements DigestProvider {
     return Envelope.node(subject, assertions, { unchecked: true });
   }
 
-  /// Creates an envelope with an assertion as its subject.
-  ///
-  /// @param assertion - The assertion
-  /// @returns A new assertion envelope
+  /**
+   * Creates an envelope with an assertion as its subject.
+   *
+   * @param assertion - The assertion
+   * @returns A new assertion envelope
+   */
   static fromAssertion(assertion: Assertion): Envelope {
     return new Envelope({
       type: "assertion",
@@ -364,10 +386,12 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates an envelope with a known value.
-  ///
-  /// @param value - The known value (can be a KnownValue instance or a number/bigint)
-  /// @returns A new known value envelope
+  /**
+   * Creates an envelope with a known value.
+   *
+   * @param value - The known value (can be a KnownValue instance or a number/bigint)
+   * @returns A new known value envelope
+   */
   static knownValue(value: KnownValue | number | bigint): Envelope {
     const knownValue = value instanceof KnownValue ? value : new KnownValue(value);
     // Calculate digest from CBOR encoding of the known value
@@ -379,15 +403,15 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates an envelope with encrypted content.
-  ///
-  /// Mirrors Rust `Envelope::new_with_encrypted`
-  /// (`bc-envelope-rust/src/base/envelope.rs:317-324`), which returns
-  /// `Err(Error::MissingDigest)` when the message has no AAD digest.
-  ///
-  /// @param encryptedMessage - The encrypted message
-  /// @returns A new encrypted envelope
-  /// @throws {EnvelopeError} If the encrypted message doesn't have a digest
+  /**
+   * Creates an envelope with encrypted content.
+   *
+   * `Err(Error::MissingDigest)` when the message has no AAD digest.
+   *
+   * @param encryptedMessage - The encrypted message
+   * @returns A new encrypted envelope
+   * @throws {EnvelopeError} If the encrypted message doesn't have a digest
+   */
   static encrypted(encryptedMessage: EncryptedMessage): Envelope {
     if (!encryptedMessage.hasDigest()) {
       throw EnvelopeError.missingDigest();
@@ -398,15 +422,15 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates an envelope with compressed content.
-  ///
-  /// Mirrors Rust `Envelope::new_with_compressed`
-  /// (`bc-envelope-rust/src/base/envelope.rs:326-332`), which returns
-  /// `Err(Error::MissingDigest)` when the compressed value has no digest.
-  ///
-  /// @param compressed - The compressed data
-  /// @returns A new compressed envelope
-  /// @throws {EnvelopeError} If the compressed data doesn't have a digest
+  /**
+   * Creates an envelope with compressed content.
+   *
+   * `Err(Error::MissingDigest)` when the compressed value has no digest.
+   *
+   * @param compressed - The compressed data
+   * @returns A new compressed envelope
+   * @throws {EnvelopeError} If the compressed data doesn't have a digest
+   */
   static compressed(compressed: Compressed): Envelope {
     if (!compressed.hasDigest()) {
       throw EnvelopeError.missingDigest();
@@ -417,10 +441,12 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates an elided envelope containing only a digest.
-  ///
-  /// @param digest - The digest of the elided content
-  /// @returns A new elided envelope
+  /**
+   * Creates an elided envelope containing only a digest.
+   *
+   * @param digest - The digest of the elided content
+   * @returns A new elided envelope
+   */
   static elided(digest: Digest): Envelope {
     return new Envelope({
       type: "elided",
@@ -428,10 +454,12 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates a leaf envelope containing a CBOR value.
-  ///
-  /// @param value - The value to encode as CBOR
-  /// @returns A new leaf envelope
+  /**
+   * Creates a leaf envelope containing a CBOR value.
+   *
+   * @param value - The value to encode as CBOR
+   * @returns A new leaf envelope
+   */
   static leaf(value: unknown): Envelope {
     // Convert value to CBOR
     const cbor = Envelope.valueToCbor(value);
@@ -447,10 +475,12 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Creates a wrapped envelope.
-  ///
-  /// @param envelope - The envelope to wrap
-  /// @returns A new wrapped envelope
+  /**
+   * Creates a wrapped envelope.
+   *
+   * @param envelope - The envelope to wrap
+   * @returns A new wrapped envelope
+   */
   static wrap(envelope: Envelope): Envelope {
     const digest = Digest.fromDigests([envelope.digest()]);
     return new Envelope({
@@ -460,11 +490,12 @@ export class Envelope implements DigestProvider {
     });
   }
 
-  /// Returns the digest of this envelope.
-  ///
-  /// Implementation of DigestProvider interface.
-  ///
-  /// @returns The envelope's digest
+  /**
+   * Returns the digest of this envelope.
+   *
+   *
+   * @returns The envelope's digest
+   */
   digest(): Digest {
     const c = this._case;
     switch (c.type) {
@@ -498,13 +529,15 @@ export class Envelope implements DigestProvider {
     }
   }
 
-  /// Returns the subject of this envelope.
-  ///
-  /// For different envelope cases:
-  /// - Node: Returns the subject envelope
-  /// - Other cases: Returns the envelope itself
-  ///
-  /// @returns The subject envelope
+  /**
+   * Returns the subject of this envelope.
+   *
+   * For different envelope cases:
+   * - Node: Returns the subject envelope
+   * - Other cases: Returns the envelope itself
+   *
+   * @returns The subject envelope
+   */
   subject(): Envelope {
     const c = this._case;
     switch (c.type) {
@@ -521,18 +554,22 @@ export class Envelope implements DigestProvider {
     }
   }
 
-  /// Checks if the envelope's subject is an assertion.
-  ///
-  /// @returns `true` if the subject is an assertion, `false` otherwise
+  /**
+   * Checks if the envelope's subject is an assertion.
+   *
+   * @returns `true` if the subject is an assertion, `false` otherwise
+   */
   isSubjectAssertion(): boolean {
     if (this._case.type === "assertion") return true;
     if (this._case.type === "node") return this._case.subject.isSubjectAssertion();
     return false;
   }
 
-  /// Checks if the envelope's subject is obscured (elided, encrypted, or compressed).
-  ///
-  /// @returns `true` if the subject is obscured, `false` otherwise
+  /**
+   * Checks if the envelope's subject is obscured (elided, encrypted, or compressed).
+   *
+   * @returns `true` if the subject is obscured, `false` otherwise
+   */
   isSubjectObscured(): boolean {
     const t = this._case.type;
     return t === "elided" || t === "encrypted" || t === "compressed";
@@ -542,29 +579,35 @@ export class Envelope implements DigestProvider {
   // CBOR conversion helpers
   //
 
-  /// Converts a value to CBOR.
-  ///
-  /// @param value - The value to convert
-  /// @returns A CBOR representation
+  /**
+   * Converts a value to CBOR.
+   *
+   * @param value - The value to convert
+   * @returns A CBOR representation
+   */
   private static valueToCbor(value: unknown): Cbor {
     // Import cbor function at runtime to avoid circular dependencies
 
     return cbor(value as Parameters<typeof cbor>[0]);
   }
 
-  /// Converts CBOR to bytes.
-  ///
-  /// @param cbor - The CBOR value
-  /// @returns Byte representation
+  /**
+   * Converts CBOR to bytes.
+   *
+   * @param cbor - The CBOR value
+   * @returns Byte representation
+   */
   private static cborToBytes(cbor: Cbor): Uint8Array {
     // Import encodeCbor function at runtime to avoid circular dependencies
 
     return encodeCbor(cbor);
   }
 
-  /// Returns the untagged CBOR representation of this envelope.
-  ///
-  /// @returns The untagged CBOR
+  /**
+   * Returns the untagged CBOR representation of this envelope.
+   *
+   * @returns The untagged CBOR
+   */
   untaggedCbor(): Cbor {
     const c = this._case;
     switch (c.type) {
@@ -605,17 +648,18 @@ export class Envelope implements DigestProvider {
         // Compressed envelopes serialize as the canonical
         // `@blockchaincommons/components::Compressed` tagged CBOR
         // (tag 40003, array `[checksum, decompressedSize, compressedData, ?digest]`).
-        // Matches Rust `bc-components/src/compressed.rs::CBORTaggedEncodable`.
         return c.value.toCbor();
       }
     }
   }
 
-  /// Returns the tagged CBOR representation of this envelope.
-  ///
-  /// All envelopes are tagged with TAG_ENVELOPE (200).
-  ///
-  /// @returns The tagged CBOR
+  /**
+   * Returns the tagged CBOR representation of this envelope.
+   *
+   * All envelopes are tagged with TAG_ENVELOPE (200).
+   *
+   * @returns The tagged CBOR
+   */
   toCbor(): Cbor {
     return taggedValue(TAG_ENVELOPE, this.untaggedCbor());
   }
@@ -674,10 +718,12 @@ export class Envelope implements DigestProvider {
     }
   }
 
-  /// Creates an envelope from untagged CBOR.
-  ///
-  /// @param cbor - The untagged CBOR value
-  /// @returns A new envelope
+  /**
+   * Creates an envelope from untagged CBOR.
+   *
+   * @param cbor - The untagged CBOR value
+   * @returns A new envelope
+   */
   static fromUntaggedCbor(cbor: Cbor): Envelope {
     // Check if it's a tagged value
     const tagged = asTaggedValue(cbor);
@@ -705,7 +751,6 @@ export class Envelope implements DigestProvider {
           // Delegate to the canonical `@blockchaincommons/components::EncryptedMessage`
           // decoder (`[ciphertext, nonce, auth, ?aadBytes]` with `aadBytes`
           // being the CBOR-encoded tagged Digest of the plaintext).
-          // Matches Rust
           // `bc-components/src/symmetric/encrypted_message.rs::from_untagged_cbor`.
           const message = EncryptedMessage.fromCbor(cbor);
           return Envelope.encrypted(message);
@@ -762,22 +807,24 @@ export class Envelope implements DigestProvider {
     throw EnvelopeError.cbor("invalid envelope format");
   }
 
-  /// Creates an envelope from tagged CBOR.
-  ///
-  /// @param cbor - The tagged CBOR value (should have TAG_ENVELOPE)
-  /// @returns A new envelope
-  /// Adds an assertion to this envelope.
-  ///
-  /// @param predicate - The assertion predicate
-  /// @param object - The assertion object
-  /// @returns A new envelope with the assertion added
-  ///
-  /// @example
-  /// ```typescript
-  /// const person = Envelope.from("Alice")
-  ///     .addAssertion("age", 30)
-  ///     .addAssertion("city", "Boston");
-  /// ```
+  /**
+   * Creates an envelope from tagged CBOR.
+   *
+   * @param cbor - The tagged CBOR value (should have TAG_ENVELOPE)
+   * @returns A new envelope
+   * Adds an assertion to this envelope.
+   *
+   * @param predicate - The assertion predicate
+   * @param object - The assertion object
+   * @returns A new envelope with the assertion added
+   *
+   * @example
+   * ```typescript
+   * const person = Envelope.from("Alice")
+   *     .addAssertion("age", 30)
+   *     .addAssertion("city", "Boston");
+   * ```
+   */
   addAssertion(
     predicate: EnvelopeInput,
     object: EnvelopeInput,
@@ -787,10 +834,12 @@ export class Envelope implements DigestProvider {
     return this.addAssertionEnvelope(assertion, options);
   }
 
-  /// Adds an assertion envelope to this envelope.
-  ///
-  /// @param assertion - The assertion envelope
-  /// @returns A new envelope with the assertion added
+  /**
+   * Adds an assertion envelope to this envelope.
+   *
+   * @param assertion - The assertion envelope
+   * @returns A new envelope with the assertion added
+   */
   addAssertionEnvelope(assertion: Envelope, { salt = false }: AddAssertionOptions = {}): Envelope {
     const c = this._case;
     // A salted assertion is a node (the assertion plus its `salt` assertion),
@@ -807,81 +856,78 @@ export class Envelope implements DigestProvider {
     return Envelope.node(this, [added], { unchecked });
   }
 
-  /// Creates a string representation of this envelope.
-  ///
-  /// @returns A string representation
+  /**
+   * Creates a string representation of this envelope.
+   *
+   * @returns A string representation
+   */
   toString(): string {
     return `Envelope(${this._case.type})`;
   }
 
-  /// Creates a shallow copy of this envelope.
-  ///
-  /// Since envelopes are immutable, this returns the same instance.
-  ///
-  /// @returns This envelope
+  // Creates a shallow copy of this envelope.
+  //
+  // Since envelopes are immutable, this returns the same instance.
+  //
+  // @returns This envelope
   //
   // Format methods (implemented via prototype extension in format module)
   //
 
-  /// Returns a tree-formatted string representation of the envelope.
-  ///
-  /// The tree format displays the hierarchical structure of the envelope,
-  /// showing subjects, assertions, and their relationships.
-  ///
-  /// @param options - Optional formatting options
-  /// @returns A tree-formatted string
+  // Returns a tree-formatted string representation of the envelope.
+  //
+  // The tree format displays the hierarchical structure of the envelope,
+  // showing subjects, assertions, and their relationships.
+  //
+  // @param options - Optional formatting options
+  // @returns A tree-formatted string
 
-  /// Returns a short identifier for this envelope based on its digest.
-  ///
-  /// @param format - Format for the digest ('short', 'full', or 'ur')
-  /// @returns A digest identifier string
+  // Returns a short identifier for this envelope based on its digest.
+  //
+  // @param format - Format for the digest ('short', 'full', or 'ur')
+  // @returns A digest identifier string
 
-  /// Returns a summary string for this envelope.
-  ///
-  /// @param maxLength - Maximum length of the summary
-  /// @returns A summary string
+  // Returns a summary string for this envelope.
+  //
+  // @param maxLength - Maximum length of the summary
+  // @returns A summary string
 
-  /// Returns an annotated hex representation of the envelope's CBOR encoding.
-  ///
-  /// Default is the rich, multi-line annotated dump (tag names + per-line
-  /// notes), matching Rust `Envelope::hex` /
-  /// `dcbor::HexFormatOpts { annotate: true }`. Pass `false` to
-  /// {@link Envelope.hexOpt} for a plain, flat hex string.
-  ///
-  /// @returns A multi-line annotated hex string
+  // Returns an annotated hex representation of the envelope's CBOR encoding.
+  //
+  // Default is the rich, multi-line annotated dump (tag names + per-line
+  // notes), matching Rust `Envelope::hex` /
+  // `dcbor::HexFormatOpts { annotate: true }`. Pass `false` to
+  // {@link Envelope.hexOpt} for a plain, flat hex string.
+  //
+  // @returns A multi-line annotated hex string
 
-  /// Returns the CBOR-encoded bytes of the envelope.
-  ///
-  /// @returns The CBOR bytes
+  // Returns the CBOR-encoded bytes of the envelope.
+  //
+  // @returns The CBOR bytes
 
-  /// Returns a hex representation with explicit annotate flag and optional
-  /// {@link FormatContext} for tag-name resolution.
-  ///
-  /// Mirrors Rust `Envelope::hex_opt(annotate, context)`.
-  ///
-  /// @param annotate - When true, produce the annotated multi-line dump;
-  ///   when false, produce a plain hex string (no spaces, no labels).
-  /// @param context - Optional format context for resolving tag names.
-  ///   Defaults to the global format context.
-  /// @returns A hex string in the requested format
+  // Returns a hex representation with explicit annotate flag and optional
+  // {@link FormatContext} for tag-name resolution.
+  //
+  // @param annotate - When true, produce the annotated multi-line dump;
+  //   when false, produce a plain hex string (no spaces, no labels).
+  // @param context - Optional format context for resolving tag names.
+  //   Defaults to the global format context.
+  // @returns A hex string in the requested format
 
-  /// Returns a CBOR diagnostic notation string for the envelope.
-  ///
-  /// Mirrors Rust `Envelope::diagnostic`, which delegates to
-  /// `dcbor::diagnostic_opt` with annotation on. For tag-name resolution
-  /// from a custom {@link FormatContext}, use
-  /// {@link Envelope.diagnosticAnnotated}.
-  ///
-  /// @returns A diagnostic string
+  // Returns a CBOR diagnostic notation string for the envelope.
+  //
+  // `dcbor::diagnostic_opt` with annotation on. For tag-name resolution
+  // from a custom {@link FormatContext}, use
+  // {@link Envelope.diagnosticAnnotated}.
+  //
+  // @returns A diagnostic string
 
-  /// Returns a CBOR diagnostic notation string with explicit tag annotation
-  /// and an optional {@link FormatContext} for tag-name resolution.
-  ///
-  /// Mirrors Rust `Envelope::diagnostic_annotated`.
-  ///
-  /// @param context - Optional format context for resolving tag names.
-  ///   Defaults to the global format context.
-  /// @returns An annotated diagnostic string
+  // Returns a CBOR diagnostic notation string with explicit tag annotation
+  // and an optional {@link FormatContext} for tag-name resolution.
+  //
+  // @param context - Optional format context for resolving tag names.
+  //   Defaults to the global format context.
+  // @returns An annotated diagnostic string
 
   //
   // Extension methods (implemented via prototype extension in extension modules)
@@ -1692,7 +1738,6 @@ export class Envelope implements DigestProvider {
    *
    * Returns the set of digests in the envelope, down to the specified level.
    *
-   * Mirrors Rust `Envelope::digests` (`bc-envelope-rust/src/base/digest.rs:103-119`).
    * Rust uses `HashSet<Digest>` which dedupes by content; native JS `Set`
    * dedupes by reference, so we route inserts through a hex-keyed `Map`
    * before materialising the final `Set`. That keeps the public signature
@@ -1743,8 +1788,6 @@ export class Envelope implements DigestProvider {
   /**
    * Implementation of structuralDigest()
    *
-   * Mirrors Rust `Envelope::structural_digest`
-   * (`bc-envelope-rust/src/base/digest.rs:241-261`). Walks every node in
    * structure mode, building an image:
    *
    * - Each obscured case prepends a 1-byte discriminator: `0` for Encrypted,
@@ -1866,7 +1909,6 @@ export class Envelope implements DigestProvider {
   /**
    * Implementation of nodesMatching
    *
-   * Mirrors Rust `Envelope::nodes_matching`. The TS public signature is
    * `Set<Digest>` for backward compatibility with callers, but the
    * underlying dedup is by **hex content** (via a hex-keyed Map) so two
    * `Digest` instances that represent the same hash bytes count once,
@@ -2000,7 +2042,6 @@ export class Envelope implements DigestProvider {
    * Two envelopes are equivalent if they have the same digest (semantic equivalence).
    * This is a weaker comparison than `isIdenticalTo` which also checks the case type.
    *
-   * Equivalent to Rust's `is_equivalent_to()` in `src/base/digest.rs`.
    */
   isEquivalentTo(other: Envelope): boolean {
     return this.digest().equals(other.digest());
@@ -2009,8 +2050,6 @@ export class Envelope implements DigestProvider {
   /**
    * Implementation of isIdenticalTo
    *
-   * Mirrors Rust `Envelope::is_identical_to`
-   * (`bc-envelope-rust/src/base/digest.rs:344-349`):
    * short-circuit on a *semantic* mismatch (different `digest()`), then fall
    * through to a {@link Envelope.structuralDigest} comparison. Two envelopes
    * whose digests match but whose structures differ — e.g. an envelope and a
@@ -2025,9 +2064,6 @@ export class Envelope implements DigestProvider {
 
   /**
    * Implementation of walkDecrypt
-   *
-   * Mirrors Rust `Envelope::walk_decrypt`
-   * (`bc-envelope-rust/src/base/elide.rs:963-1019`).
    *
    * Recursively walks the envelope and decrypts every encrypted node it
    * can. For an Encrypted node, each provided key is tried in order; the
@@ -2101,9 +2137,6 @@ export class Envelope implements DigestProvider {
 
   /**
    * Implementation of walkDecompress
-   *
-   * Mirrors Rust `Envelope::walk_decompress`
-   * (`bc-envelope-rust/src/base/elide.rs:1067-1135`).
    *
    * Recursively walks the envelope and decompresses any compressed node
    * whose digest is in `targetDigests` (or every compressed node if
@@ -2463,36 +2496,40 @@ export class Envelope implements DigestProvider {
   }
 }
 
-/// The type of incoming edge provided to the visitor.
-///
-/// This enum identifies how an envelope element is connected to its parent in
-/// the hierarchy during traversal. It helps the visitor function understand the
-/// semantic relationship between elements.
+/**
+ * The type of incoming edge provided to the visitor.
+ *
+ * This enum identifies how an envelope element is connected to its parent in
+ * the hierarchy during traversal. It helps the visitor function understand the
+ * semantic relationship between elements.
+ */
 export const EdgeType = {
-  /// No incoming edge (root)
+  /** No incoming edge (root) */
   None: "none",
-  /// Element is the subject of a node
+  /** Element is the subject of a node */
   Subject: "subject",
-  /// Element is an assertion on a node
+  /** Element is an assertion on a node */
   Assertion: "assertion",
-  /// Element is the predicate of an assertion
+  /** Element is the predicate of an assertion */
   Predicate: "predicate",
-  /// Element is the object of an assertion
+  /** Element is the object of an assertion */
   Object: "object",
-  /// Element is the content wrapped by another envelope
+  /** Element is the content wrapped by another envelope */
   Content: "content",
 } as const;
 /** One of the `EdgeType` values. */
 export type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];
 
-/// Returns a short text label for the edge type, or undefined if no label is
-/// needed.
-///
-/// This is primarily used for tree formatting to identify relationships
-/// between elements.
-///
-/// @param edgeType - The edge type
-/// @returns A short label or undefined
+/**
+ * Returns a short text label for the edge type, or undefined if no label is
+ * needed.
+ *
+ * This is primarily used for tree formatting to identify relationships
+ * between elements.
+ *
+ * @param edgeType - The edge type
+ * @returns A short label or undefined
+ */
 export function edgeLabel(edgeType: EdgeType): string | undefined {
   switch (edgeType) {
     case EdgeType.Subject:
@@ -2511,19 +2548,21 @@ export function edgeLabel(edgeType: EdgeType): string | undefined {
   }
 }
 
-/// A visitor function that is called for each element in the envelope.
-///
-/// The visitor function takes the following parameters:
-/// - `envelope`: The current envelope element being visited
-/// - `level`: The depth level in the hierarchy (0 for root)
-/// - `incomingEdge`: The type of edge connecting this element to its parent
-/// - `state`: Optional context passed down from the parent's visitor call
-///
-/// The visitor returns a tuple of:
-/// - The state that will be passed to child elements
-/// - A boolean indicating whether to stop traversal (true = stop)
-///
-/// This enables accumulating state or passing context during traversal.
+/**
+ * A visitor function that is called for each element in the envelope.
+ *
+ * The visitor function takes the following parameters:
+ * - `envelope`: The current envelope element being visited
+ * - `level`: The depth level in the hierarchy (0 for root)
+ * - `incomingEdge`: The type of edge connecting this element to its parent
+ * - `state`: Optional context passed down from the parent's visitor call
+ *
+ * The visitor returns a tuple of:
+ * - The state that will be passed to child elements
+ * - A boolean indicating whether to stop traversal (true = stop)
+ *
+ * This enables accumulating state or passing context during traversal.
+ */
 export type Visitor<State> = (
   envelope: Envelope,
   level: number,
@@ -2531,11 +2570,13 @@ export type Visitor<State> = (
   state: State,
 ) => [State, boolean];
 
-/// Recursive implementation of structure-based traversal.
-///
-/// This internal function performs the actual recursive traversal of the
-/// envelope structure, visiting every element and maintaining the
-/// correct level and edge relationships.
+/**
+ * Recursive implementation of structure-based traversal.
+ *
+ * This internal function performs the actual recursive traversal of the
+ * envelope structure, visiting every element and maintaining the
+ * correct level and edge relationships.
+ */
 function walkStructure<State>(
   envelope: Envelope,
   level: number,
@@ -2583,12 +2624,14 @@ function walkStructure<State>(
   }
 }
 
-/// Recursive implementation of tree-based traversal.
-///
-/// This internal function performs the actual recursive traversal of the
-/// envelope's semantic tree, skipping node containers and focusing on
-/// the semantic content elements. It maintains the correct level and
-/// edge relationships while skipping structural elements.
+/**
+ * Recursive implementation of tree-based traversal.
+ *
+ * This internal function performs the actual recursive traversal of the
+ * envelope's semantic tree, skipping node containers and focusing on
+ * the semantic content elements. It maintains the correct level and
+ * edge relationships while skipping structural elements.
+ */
 function walkTree<State>(
   envelope: Envelope,
   level: number,
@@ -2652,9 +2695,11 @@ function walkTree<State>(
   return currentState;
 }
 
-/// Types of obscuration that can be applied to envelope elements.
-///
-/// This enum identifies the different ways an envelope element can be obscured.
+/**
+ * Types of obscuration that can be applied to envelope elements.
+ *
+ * This enum identifies the different ways an envelope element can be obscured.
+ */
 /** How an obscured element was obscured. */
 export const ObscureType = {
   Elided: "elided",
@@ -2663,10 +2708,12 @@ export const ObscureType = {
 } as const;
 export type ObscureType = (typeof ObscureType)[keyof typeof ObscureType];
 
-/// Actions that can be performed on parts of an envelope to obscure them.
-///
-/// Gordian Envelope supports several ways to obscure parts of an envelope while
-/// maintaining its semantic integrity and digest tree.
+/**
+ * Actions that can be performed on parts of an envelope to obscure them.
+ *
+ * Gordian Envelope supports several ways to obscure parts of an envelope while
+ * maintaining its semantic integrity and digest tree.
+ */
 export type ObscureAction = "elide" | "compress" | { encrypt: SymmetricKey };
 
 /** Options for `Envelope.addAssertion` and friends. */
@@ -2699,13 +2746,13 @@ export interface ElideOptions {
   action?: ObscureAction;
 }
 
-/// Late-binding handler for the encrypt obscure action.
-/// Registered by extension/encrypt.ts to avoid circular dependencies.
+// Late-binding handler for the encrypt obscure action.
+// Registered by extension/encrypt.ts to avoid circular dependencies.
 
-/// Registers the handler for the encrypt obscure action.
-/// Called by registerEncryptExtension() during module initialization.
+// Registers the handler for the encrypt obscure action.
+// Called by registerEncryptExtension() during module initialization.
 
-/// Core elision logic
+/** Core elision logic */
 function elideSetWithAction(
   envelope: Envelope,
   target: Set<Digest>,
@@ -2754,7 +2801,7 @@ function elideSetWithAction(
   return envelope;
 }
 
-/// Helper to walk envelope tree
+/** Helper to walk envelope tree */
 function walkEnvelope(envelope: Envelope, visitor: (e: Envelope) => void): void {
   visitor(envelope);
 
@@ -2772,7 +2819,7 @@ function walkEnvelope(envelope: Envelope, visitor: (e: Envelope) => void): void 
   }
 }
 
-/// Helper for walkUnelide with map
+/** Helper for walkUnelide with map */
 function walkUnelideWithMap(envelope: Envelope, envelopeMap: Map<string, Envelope>): Envelope {
   const c = envelope.case;
 
@@ -2821,11 +2868,13 @@ function walkUnelideWithMap(envelope: Envelope, envelopeMap: Map<string, Envelop
   return envelope;
 }
 
-/// Extracts a string value from an envelope.
-///
-/// @param envelope - The envelope to extract from
-/// @returns The string value
-/// @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+/**
+ * Extracts a string value from an envelope.
+ *
+ * @param envelope - The envelope to extract from
+ * @returns The string value
+ * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+ */
 export function extractString(envelope: Envelope): string {
   const cbor = envelope.expectLeaf();
   try {
@@ -2838,11 +2887,13 @@ export function extractString(envelope: Envelope): string {
   }
 }
 
-/// Extracts a number value from an envelope.
-///
-/// @param envelope - The envelope to extract from
-/// @returns The number value
-/// @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+/**
+ * Extracts a number value from an envelope.
+ *
+ * @param envelope - The envelope to extract from
+ * @returns The number value
+ * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+ */
 export function extractNumber(envelope: Envelope): number {
   const cbor = envelope.expectLeaf();
 
@@ -2880,11 +2931,13 @@ export function extractNumber(envelope: Envelope): number {
   throw EnvelopeError.cbor("envelope does not contain a number");
 }
 
-/// Extracts a boolean value from an envelope.
-///
-/// @param envelope - The envelope to extract from
-/// @returns The boolean value
-/// @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+/**
+ * Extracts a boolean value from an envelope.
+ *
+ * @param envelope - The envelope to extract from
+ * @returns The boolean value
+ * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+ */
 export function extractBoolean(envelope: Envelope): boolean {
   const cbor = envelope.expectLeaf();
   try {
@@ -2897,11 +2950,13 @@ export function extractBoolean(envelope: Envelope): boolean {
   }
 }
 
-/// Extracts a byte array value from an envelope.
-///
-/// @param envelope - The envelope to extract from
-/// @returns The byte array value
-/// @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+/**
+ * Extracts a byte array value from an envelope.
+ *
+ * @param envelope - The envelope to extract from
+ * @returns The byte array value
+ * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+ */
 export function extractBytes(envelope: Envelope): Uint8Array {
   const cbor = envelope.expectLeaf();
   try {
@@ -2914,10 +2969,12 @@ export function extractBytes(envelope: Envelope): Uint8Array {
   }
 }
 
-/// Extracts null from an envelope.
-///
-/// @param envelope - The envelope to extract from
-/// @throws {EnvelopeError} If the envelope is not a leaf containing null
+/**
+ * Extracts null from an envelope.
+ *
+ * @param envelope - The envelope to extract from
+ * @throws {EnvelopeError} If the envelope is not a leaf containing null
+ */
 export function extractNull(envelope: Envelope): null {
   const cbor = envelope.expectLeaf();
   if (isNull(cbor)) {
@@ -2926,30 +2983,32 @@ export function extractNull(envelope: Envelope): null {
   throw EnvelopeError.cbor("envelope does not contain null");
 }
 
-/// Type for CBOR decoder functions
+/** Type for CBOR decoder functions */
 export type CborDecoder<T> = (cbor: Cbor) => T;
 
-/// Extracts the subject of an envelope as type T using a decoder function.
-///
-/// This is the TypeScript equivalent of Rust's `TryFrom<Envelope>` trait bound.
-/// Since TypeScript doesn't have trait bounds on generics, we pass a decoder
-/// function explicitly.
-///
-/// Handles all envelope case types:
-/// - leaf: decodes the CBOR value
-/// - knownValue: converts to tagged CBOR then decodes
-/// - wrapped: recurses into the inner envelope
-/// - node: recurses on the subject
-///
-/// @example
-/// ```typescript
-/// const envelope = Envelope.from(myEncryptedKey.toCbor());
-/// const extracted = envelope.expectSubject(EncryptedKey.fromTaggedCbor);
-/// ```
-///
-/// @param decoder - Function to decode CBOR to type T
-/// @returns The decoded value of type T
-/// @throws {EnvelopeError} If the envelope case is unsupported or decoding fails
+/**
+ * Extracts the subject of an envelope as type T using a decoder function.
+ *
+ * This is the TypeScript equivalent of Rust's `TryFrom<Envelope>` trait bound.
+ * Since TypeScript doesn't have trait bounds on generics, we pass a decoder
+ * function explicitly.
+ *
+ * Handles all envelope case types:
+ * - leaf: decodes the CBOR value
+ * - knownValue: converts to tagged CBOR then decodes
+ * - wrapped: recurses into the inner envelope
+ * - node: recurses on the subject
+ *
+ * @example
+ * ```typescript
+ * const envelope = Envelope.from(myEncryptedKey.toCbor());
+ * const extracted = envelope.expectSubject(EncryptedKey.fromTaggedCbor);
+ * ```
+ *
+ * @param decoder - Function to decode CBOR to type T
+ * @returns The decoded value of type T
+ * @throws {EnvelopeError} If the envelope case is unsupported or decoding fails
+ */
 export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T {
   const subject = envelope.subject();
   const c = subject.case;
@@ -2996,13 +3055,15 @@ export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): 
   }
 }
 
-/// Extracts the object for a predicate as type T using a decoder function.
-///
-/// @param envelope - The envelope to query
-/// @param predicate - The predicate to match
-/// @param decoder - Function to decode CBOR to type T
-/// @returns The decoded value of type T
-/// @throws {EnvelopeError} If predicate not found or decoding fails
+/**
+ * Extracts the object for a predicate as type T using a decoder function.
+ *
+ * @param envelope - The envelope to query
+ * @param predicate - The predicate to match
+ * @param decoder - Function to decode CBOR to type T
+ * @returns The decoded value of type T
+ * @throws {EnvelopeError} If predicate not found or decoding fails
+ */
 export function tryObjectForPredicate<T>(
   envelope: Envelope,
   predicate: EnvelopeInput,
@@ -3012,13 +3073,15 @@ export function tryObjectForPredicate<T>(
   return extractSubject(obj, decoder);
 }
 
-/// Extracts the optional object for a predicate as type T using a decoder function.
-///
-/// @param envelope - The envelope to query
-/// @param predicate - The predicate to match
-/// @param decoder - Function to decode CBOR to type T
-/// @returns The decoded value of type T, or undefined if predicate not found
-/// @throws {EnvelopeError} If decoding fails (but not if predicate not found)
+/**
+ * Extracts the optional object for a predicate as type T using a decoder function.
+ *
+ * @param envelope - The envelope to query
+ * @param predicate - The predicate to match
+ * @param decoder - Function to decode CBOR to type T
+ * @returns The decoded value of type T, or undefined if predicate not found
+ * @throws {EnvelopeError} If decoding fails (but not if predicate not found)
+ */
 export function tryOptionalObjectForPredicate<T>(
   envelope: Envelope,
   predicate: EnvelopeInput,
@@ -3031,14 +3094,16 @@ export function tryOptionalObjectForPredicate<T>(
   return extractSubject(obj, decoder);
 }
 
-/// Extracts the object for a predicate as type T, with a default value if not found.
-///
-/// @param envelope - The envelope to query
-/// @param predicate - The predicate to match
-/// @param decoder - Function to decode CBOR to type T
-/// @param defaultValue - Value to return if predicate not found
-/// @returns The decoded value of type T, or the default value
-/// @throws {EnvelopeError} If decoding fails (but not if predicate not found)
+/**
+ * Extracts the object for a predicate as type T, with a default value if not found.
+ *
+ * @param envelope - The envelope to query
+ * @param predicate - The predicate to match
+ * @param decoder - Function to decode CBOR to type T
+ * @param defaultValue - Value to return if predicate not found
+ * @returns The decoded value of type T, or the default value
+ * @throws {EnvelopeError} If decoding fails (but not if predicate not found)
+ */
 export function extractObjectForPredicateWithDefault<T>(
   envelope: Envelope,
   predicate: EnvelopeInput,
@@ -3049,13 +3114,15 @@ export function extractObjectForPredicateWithDefault<T>(
   return result ?? defaultValue;
 }
 
-/// Extracts all objects for a predicate as type T using a decoder function.
-///
-/// @param envelope - The envelope to query
-/// @param predicate - The predicate to match
-/// @param decoder - Function to decode CBOR to type T
-/// @returns Array of decoded values of type T
-/// @throws {EnvelopeError} If any decoding fails
+/**
+ * Extracts all objects for a predicate as type T using a decoder function.
+ *
+ * @param envelope - The envelope to query
+ * @param predicate - The predicate to match
+ * @param decoder - Function to decode CBOR to type T
+ * @returns Array of decoded values of type T
+ * @throws {EnvelopeError} If any decoding fails
+ */
 export function extractObjectsForPredicate<T>(
   envelope: Envelope,
   predicate: EnvelopeInput,
@@ -3065,13 +3132,15 @@ export function extractObjectsForPredicate<T>(
   return objects.map((obj) => extractSubject(obj, decoder));
 }
 
-/// Extracts all objects for a predicate as type T, returning empty array if none found.
-///
-/// @param envelope - The envelope to query
-/// @param predicate - The predicate to match
-/// @param decoder - Function to decode CBOR to type T
-/// @returns Array of decoded values of type T (empty if no matches)
-/// @throws {EnvelopeError} If any decoding fails
+/**
+ * Extracts all objects for a predicate as type T, returning empty array if none found.
+ *
+ * @param envelope - The envelope to query
+ * @param predicate - The predicate to match
+ * @param decoder - Function to decode CBOR to type T
+ * @returns Array of decoded values of type T (empty if no matches)
+ * @throws {EnvelopeError} If any decoding fails
+ */
 export function tryObjectsForPredicate<T>(
   envelope: Envelope,
   predicate: EnvelopeInput,
@@ -3145,10 +3214,12 @@ function decryptWithDigest(key: SymmetricKey, message: EncryptedMessage): Uint8A
   }
 }
 
-/// Encrypts an entire envelope as a unit, matching Rust's
-/// ObscureAction::Encrypt behavior in elide_set_with_action.
-/// Unlike encryptSubject which only encrypts a node's subject,
-/// this encrypts the entire envelope's tagged CBOR.
+/**
+ * Encrypts an entire envelope as a unit, matching Rust's
+ * ObscureAction::Encrypt behavior in elide_set_with_action.
+ * Unlike encryptSubject which only encrypts a node's subject,
+ * this encrypts the entire envelope's tagged CBOR.
+ */
 export function encryptWholeEnvelope(envelope: Envelope, key: SymmetricKey): Envelope {
   const c = envelope.case;
   if (c.type === "encrypted") {
@@ -3164,124 +3235,139 @@ export function encryptWholeEnvelope(envelope: Envelope, key: SymmetricKey): Env
   return Envelope.fromCase({ type: "encrypted", message: encryptedMessage });
 }
 
-/// A predicate-object relationship representing an assertion about a subject.
-///
-/// In Gordian Envelope, assertions are the basic building blocks for attaching
-/// information to a subject. An assertion consists of a predicate (which states
-/// what is being asserted) and an object (which provides the assertion's
-/// value).
-///
-/// Assertions can be attached to envelope subjects to form semantic statements
-/// like: "subject hasAttribute value" or "document signedBy signature".
-///
-/// Assertions are equivalent to RDF (Resource Description Framework) triples,
-/// where:
-/// - The envelope's subject is the subject of the triple
-/// - The assertion's predicate is the predicate of the triple
-/// - The assertion's object is the object of the triple
-///
-/// Generally you do not create an instance of this type directly, but
-/// instead use `Envelope.assertion()`, or the various functions
-/// on `Envelope` that create assertions.
+/**
+ * A predicate-object relationship representing an assertion about a subject.
+ *
+ * In Gordian Envelope, assertions are the basic building blocks for attaching
+ * information to a subject. An assertion consists of a predicate (which states
+ * what is being asserted) and an object (which provides the assertion's
+ * value).
+ *
+ * Assertions can be attached to envelope subjects to form semantic statements
+ * like: "subject hasAttribute value" or "document signedBy signature".
+ *
+ * Assertions are equivalent to RDF (Resource Description Framework) triples,
+ * where:
+ * - The envelope's subject is the subject of the triple
+ * - The assertion's predicate is the predicate of the triple
+ * - The assertion's object is the object of the triple
+ *
+ * Generally you do not create an instance of this type directly, but
+ * instead use `Envelope.assertion()`, or the various functions
+ * on `Envelope` that create assertions.
+ */
 export class Assertion implements DigestProvider {
   private readonly _predicate: Envelope;
   private readonly _object: Envelope;
   private readonly _digest: Digest;
 
-  /// Creates a new assertion and calculates its digest.
-  ///
-  /// This constructor takes a predicate and object, both of which are
-  /// converted to envelopes using the `ToEnvelope` trait. It then
-  /// calculates the assertion's digest by combining the digests of the
-  /// predicate and object.
-  ///
-  /// The digest is calculated according to the Gordian Envelope
-  /// specification, which ensures that semantically equivalent assertions
-  /// always produce the same digest.
-  ///
-  /// @param predicate - The predicate of the assertion, which states what is
-  ///   being asserted
-  /// @param object - The object of the assertion, which provides the assertion's
-  ///   value
-  ///
-  /// @returns A new assertion with the specified predicate, object, and calculated
-  /// digest.
-  ///
-  /// @example
-  /// ```typescript
-  /// // Direct method - create an assertion envelope
-  /// const assertionEnvelope = Envelope.assertion("name", "Alice");
-  ///
-  /// // Or create and add an assertion to a subject
-  /// const person = Envelope.from("person").addAssertion("name", "Alice");
-  /// ```
+  /**
+   * Creates a new assertion and calculates its digest.
+   *
+   * This constructor takes a predicate and object, both of which are
+   * converted to envelopes using the `ToEnvelope` trait. It then
+   * calculates the assertion's digest by combining the digests of the
+   * predicate and object.
+   *
+   * The digest is calculated according to the Gordian Envelope
+   * specification, which ensures that semantically equivalent assertions
+   * always produce the same digest.
+   *
+   * @param predicate - The predicate of the assertion, which states what is
+   *   being asserted
+   * @param object - The object of the assertion, which provides the assertion's
+   *   value
+   *
+   * @returns A new assertion with the specified predicate, object, and calculated
+   * digest.
+   *
+   * @example
+   * ```typescript
+   * // Direct method - create an assertion envelope
+   * const assertionEnvelope = Envelope.assertion("name", "Alice");
+   *
+   * // Or create and add an assertion to a subject
+   * const person = Envelope.from("person").addAssertion("name", "Alice");
+   * ```
+   */
   constructor(predicate: ToEnvelope | Envelope, object: ToEnvelope | Envelope) {
     this._predicate = predicate instanceof Envelope ? predicate : Envelope.from(predicate);
     this._object = object instanceof Envelope ? object : Envelope.from(object);
     this._digest = Digest.fromDigests([this._predicate.digest(), this._object.digest()]);
   }
 
-  /// Returns the predicate of the assertion.
-  ///
-  /// The predicate states what is being asserted about the subject. It is
-  /// typically a string or known value, but can be any envelope.
-  ///
-  /// @returns A clone of the assertion's predicate envelope.
+  /**
+   * Returns the predicate of the assertion.
+   *
+   * The predicate states what is being asserted about the subject. It is
+   * typically a string or known value, but can be any envelope.
+   *
+   * @returns A clone of the assertion's predicate envelope.
+   */
   predicate(): Envelope {
     return this._predicate;
   }
 
-  /// Returns the object of the assertion.
-  ///
-  /// The object provides the value or content of the assertion. It can be any
-  /// type that can be represented as an envelope.
-  ///
-  /// @returns A clone of the assertion's object envelope.
+  /**
+   * Returns the object of the assertion.
+   *
+   * The object provides the value or content of the assertion. It can be any
+   * type that can be represented as an envelope.
+   *
+   * @returns A clone of the assertion's object envelope.
+   */
   object(): Envelope {
     return this._object;
   }
 
-  /// Returns the digest of this assertion.
-  ///
-  /// Implementation of the DigestProvider interface.
-  ///
-  /// @returns The assertion's digest
+  /**
+   * Returns the digest of this assertion.
+   *
+   *
+   * @returns The assertion's digest
+   */
   digest(): Digest {
     return this._digest;
   }
 
-  /// Checks if two assertions are equal based on digest equality.
-  ///
-  /// Two assertions are considered equal if they have the same digest,
-  /// regardless of how they were constructed.
-  ///
-  /// @param other - The other assertion to compare with
-  /// @returns `true` if the assertions are equal, `false` otherwise
+  /**
+   * Checks if two assertions are equal based on digest equality.
+   *
+   * Two assertions are considered equal if they have the same digest,
+   * regardless of how they were constructed.
+   *
+   * @param other - The other assertion to compare with
+   * @returns `true` if the assertions are equal, `false` otherwise
+   */
   equals(other: Assertion): boolean {
     return this._digest.equals(other._digest);
   }
 
-  /// Converts this assertion to CBOR.
-  ///
-  /// The CBOR representation of an assertion is a map with a single key-value
-  /// pair, where the key is the predicate's CBOR and the value is the object's
-  /// CBOR.
-  ///
-  /// @returns A CBOR representation of this assertion
+  /**
+   * Converts this assertion to CBOR.
+   *
+   * The CBOR representation of an assertion is a map with a single key-value
+   * pair, where the key is the predicate's CBOR and the value is the object's
+   * CBOR.
+   *
+   * @returns A CBOR representation of this assertion
+   */
   toCbor(): Cbor {
     const map = new CborMap();
     map.set(this._predicate.untaggedCbor(), this._object.untaggedCbor());
     return toCborValue(map);
   }
 
-  /// Attempts to create an assertion from a CBOR value.
-  ///
-  /// The CBOR must be a map with exactly one entry, where the key represents
-  /// the predicate and the value represents the object.
-  ///
-  /// @param cbor - The CBOR value to convert
-  /// @returns A new Assertion instance
-  /// @throws {EnvelopeError} If the CBOR is not a valid assertion
+  /**
+   * Attempts to create an assertion from a CBOR value.
+   *
+   * The CBOR must be a map with exactly one entry, where the key represents
+   * the predicate and the value represents the object.
+   *
+   * @param cbor - The CBOR value to convert
+   * @returns A new Assertion instance
+   * @throws {EnvelopeError} If the CBOR is not a valid assertion
+   */
   static fromCbor(cbor: Cbor): Assertion {
     // Check if cbor is a Map
     if (!(cbor instanceof CborMap)) {
@@ -3291,15 +3377,17 @@ export class Assertion implements DigestProvider {
     return Assertion.fromCborMap(cbor);
   }
 
-  /// Attempts to create an assertion from a CBOR map.
-  ///
-  /// The map must have exactly one entry, where the key represents the
-  /// predicate and the value represents the object. This is used in
-  /// the deserialization process.
-  ///
-  /// @param map - The CBOR map to convert
-  /// @returns A new Assertion instance
-  /// @throws {EnvelopeError} If the map doesn't have exactly one entry
+  /**
+   * Attempts to create an assertion from a CBOR map.
+   *
+   * The map must have exactly one entry, where the key represents the
+   * predicate and the value represents the object. This is used in
+   * the deserialization process.
+   *
+   * @param map - The CBOR map to convert
+   * @returns A new Assertion instance
+   * @throws {EnvelopeError} If the map doesn't have exactly one entry
+   */
   static fromCborMap(map: CborMap): Assertion {
     if (map.size !== 1) {
       throw EnvelopeError.invalidAssertion();
@@ -3319,19 +3407,23 @@ export class Assertion implements DigestProvider {
     return new Assertion(predicate, object);
   }
 
-  /// Creates a string representation of this assertion for debugging.
-  ///
-  /// @returns A string representation
+  /**
+   * Creates a string representation of this assertion for debugging.
+   *
+   * @returns A string representation
+   */
   toString(): string {
     return `Assertion(${String(this._predicate)}: ${String(this._object)})`;
   }
 
-  /// Creates a copy of this assertion.
-  ///
-  /// Since assertions are immutable and envelopes are cheap to clone,
-  /// this returns the same instance.
-  ///
-  /// @returns This assertion instance
+  /**
+   * Creates a copy of this assertion.
+   *
+   * Since assertions are immutable and envelopes are cheap to clone,
+   * this returns the same instance.
+   *
+   * @returns This assertion instance
+   */
   clone(): Assertion {
     return this;
   }

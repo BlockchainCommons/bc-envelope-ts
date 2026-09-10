@@ -17,47 +17,55 @@ import { Digest } from "@blockchaincommons/components";
 // Internal modules take Digest from here; the public barrels do not re-export it.
 export { Digest };
 
-/// Trait for types that can provide a digest.
-///
-/// This is equivalent to Rust's `DigestProvider` trait. Types that
-/// implement this interface can be used in contexts where a digest
-/// is needed for identity or integrity verification.
+/**
+ * Trait for types that can provide a digest.
+ *
+ * This is equivalent to Rust's `DigestProvider` trait. Types that
+ * implement this interface can be used in contexts where a digest
+ * is needed for identity or integrity verification.
+ */
 export interface DigestProvider {
-  /// Returns the digest of this object.
-  ///
-  /// The digest uniquely identifies the semantic content of the object,
-  /// regardless of whether parts of it are elided, encrypted, or compressed.
+  /**
+   * Returns the digest of this object.
+   *
+   * The digest uniquely identifies the semantic content of the object,
+   * regardless of whether parts of it are elided, encrypted, or compressed.
+   */
   digest(): Digest;
 }
 
-/// Helper function to create a digest from a string.
-///
-/// This is a convenience function for creating digests from text strings,
-/// which are encoded as UTF-8 before hashing.
-///
-/// @param text - The text to hash
-/// @returns A new Digest instance
-///
-/// @example
-/// ```typescript
-/// const digest = digestFromString("Hello, world!");
-/// ```
+/**
+ * Helper function to create a digest from a string.
+ *
+ * This is a convenience function for creating digests from text strings,
+ * which are encoded as UTF-8 before hashing.
+ *
+ * @param text - The text to hash
+ * @returns A new Digest instance
+ *
+ * @example
+ * ```typescript
+ * const digest = digestFromString("Hello, world!");
+ * ```
+ */
 export function digestFromString(text: string): Digest {
   const encoder = new TextEncoder();
   return Digest.fromImage(encoder.encode(text));
 }
 
-/// Helper function to create a digest from a number.
-///
-/// The number is converted to a big-endian byte representation before hashing.
-///
-/// @param num - The number to hash
-/// @returns A new Digest instance
-///
-/// @example
-/// ```typescript
-/// const digest = digestFromNumber(42);
-/// ```
+/**
+ * Helper function to create a digest from a number.
+ *
+ * The number is converted to a big-endian byte representation before hashing.
+ *
+ * @param num - The number to hash
+ * @returns A new Digest instance
+ *
+ * @example
+ * ```typescript
+ * const digest = digestFromNumber(42);
+ * ```
+ */
 export function digestFromNumber(num: number): Digest {
   const buffer = new ArrayBuffer(8);
   const view = new DataView(buffer);
@@ -67,8 +75,6 @@ export function digestFromNumber(num: number): Digest {
 
 // Extend Digest with short() method for compatibility with bc-envelope-rust.
 //
-// Mirrors Rust `Digest::short_description`
-// (`bc-components-rust/src/digest.rs:133`):
 //
 //     pub fn short_description(&self) -> String { hex::encode(&self.0[0..4]) }
 //
@@ -77,8 +83,10 @@ export function digestFromNumber(num: number): Digest {
 // fixture parity against Rust output.
 declare module "@blockchaincommons/components" {
   interface Digest {
-    /// Returns the hex-encoded first 4 bytes of the digest (8 chars),
-    /// matching Rust `Digest::short_description`.
+    /**
+     * Returns the hex-encoded first 4 bytes of the digest (8 chars),
+     * matching Rust `Digest::short_description`.
+     */
     short(): string;
   }
 }
