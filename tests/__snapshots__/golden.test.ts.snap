@@ -2556,6 +2556,66 @@ linkStyle 12 stroke:cyan,stroke-width:2px
 linkStyle 13 stroke:magenta,stroke-width:2px"
 `;
 
+exports[`golden: hand corpus request:1 1`] = `
+"request(ARID(c66be27d)) [
+    'body': «add» [
+        ❰lhs❱: 2
+        ❰rhs❱: 3
+    ]
+]
+---
+ac324baa NODE
+    446b69f7 subj request(ARID(c66be27d))
+    c4f8b91d ASSERTION
+        1dd8f298 pred 'body'
+        61777eaf obj NODE
+            a40276df subj «add»
+            5b4417b6 ASSERTION
+                e66ebe24 pred ❰rhs❱
+                084fed08 obj 3
+            8dbcbaeb ASSERTION
+                fcf0d275 pred ❰lhs❱
+                dbc1b4c9 obj 2
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ac324baa"))
+    0 -- subj --> 1["request(ARID(c66be27d))<br>446b69f7"]
+    0 --> 2(["ASSERTION<br>c4f8b91d"])
+        2 -- pred --> 3[/"'body'<br>1dd8f298"/]
+        2 -- obj --> 4(("NODE<br>61777eaf"))
+            4 -- subj --> 5["«add»<br>a40276df"]
+            4 --> 6(["ASSERTION<br>5b4417b6"])
+                6 -- pred --> 7["❰rhs❱<br>e66ebe24"]
+                6 -- obj --> 8["3<br>084fed08"]
+            4 --> 9(["ASSERTION<br>8dbcbaeb"])
+                9 -- pred --> 10["❰lhs❱<br>fcf0d275"]
+                9 -- obj --> 11["2<br>dbc1b4c9"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+style 6 stroke:green,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke-width:2px
+linkStyle 6 stroke:cyan,stroke-width:2px
+linkStyle 7 stroke:magenta,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px"
+`;
+
 exports[`golden: hand corpus response:ok 1`] = `
 "response(ARID(c66be27d)) [
     'result': 5

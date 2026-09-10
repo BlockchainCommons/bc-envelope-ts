@@ -28,7 +28,7 @@ import { BODY, NOTE, DATE } from "@blockchaincommons/known-values";
 import { Envelope } from "../base/envelope";
 import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
-import { Expression, Function, type ParameterID } from "./expression";
+import { Expression, Function, type FunctionID, type ParameterID } from "./expression";
 import { formatFlat } from "../format/notation.js";
 
 /**
@@ -56,32 +56,32 @@ export interface RequestBehavior {
   /**
    * Returns the body of the request (the expression to be evaluated).
    */
-  body(): Expression;
+  readonly body: Expression;
 
   /**
    * Returns the unique identifier (ARID) of the request.
    */
-  id(): ARID;
+  readonly id: ARID;
 
   /**
    * Returns the note attached to the request, or an empty string if none exists.
    */
-  note(): string;
+  readonly note: string;
 
   /**
    * Returns the date attached to the request, if any.
    */
-  date(): Date | undefined;
+  readonly date: Date | undefined;
 
   /**
    * Returns the function of the request.
    */
-  function(): Function;
+  readonly function: Function;
 
   /**
    * Returns the expression envelope of the request.
    */
-  expressionEnvelope(): Envelope;
+  readonly expressionEnvelope: Envelope;
 
   /**
    * Converts the request to an envelope.
@@ -100,7 +100,7 @@ export interface RequestBehavior {
  * const requestId = ARID.new();
  *
  * // Create a request to execute a function with parameters
- * const request = Request.new("getBalance", requestId)
+ * const request = Request.from("getBalance", requestId)
  *   .withParameter("account", "alice")
  *   .withParameter("currency", "USD")
  *   .withNote("Monthly balance check");
@@ -123,33 +123,22 @@ export class Request implements RequestBehavior, ToEnvelope {
   }
 
   /**
-   * Creates a new request with the specified expression body and ID.
+   * A request for `func` (a `Function`, a known-function number, a name, or
+   * a ready `Expression`) identified by `id`.
    */
-  static newWithBody(body: Expression, id: ARID): Request {
+  static from(func: Function | Expression | FunctionID, id: ARID): Request {
+    const body =
+      func instanceof Expression
+        ? func
+        : new Expression(func instanceof Function ? func : Function.from(func));
     return new Request(body, id);
-  }
-
-  /**
-   * Creates a new request with a function and ID.
-   *
-   * This is a convenience method that creates an expression from the
-   * function and then creates a request with that expression.
-   */
-  static new(func: Function | string | number, id: ARID): Request {
-    const f =
-      typeof func === "string"
-        ? Function.newNamed(func)
-        : typeof func === "number"
-          ? Function.newKnown(func)
-          : func;
-    return Request.newWithBody(new Expression(f), id);
   }
 
   /**
    * Returns a human-readable summary of the request.
    */
   summary(): string {
-    return `id: ${this._id.shortDescription()}, body: ${formatFlat(this._body.envelope())}`;
+    return `id: ${this._id.shortDescription()}, body: ${formatFlat(this._body.toEnvelope())}`;
   }
 
   // RequestBehavior implementation
@@ -169,28 +158,28 @@ export class Request implements RequestBehavior, ToEnvelope {
     return this;
   }
 
-  body(): Expression {
+  get body(): Expression {
     return this._body;
   }
 
-  id(): ARID {
+  get id(): ARID {
     return this._id;
   }
 
-  note(): string {
+  get note(): string {
     return this._note;
   }
 
-  date(): Date | undefined {
+  get date(): Date | undefined {
     return this._date;
   }
 
-  function(): Function {
-    return this._body.function();
+  get function(): Function {
+    return this._body.function;
   }
 
-  expressionEnvelope(): Envelope {
-    return this._body.envelope();
+  get expressionEnvelope(): Envelope {
+    return this._body.toEnvelope();
   }
 
   /**
@@ -209,7 +198,7 @@ export class Request implements RequestBehavior, ToEnvelope {
     // of `ARID(<short>)` — observable in the GSTP byte-shape pins.
     const taggedArid = taggedValue(TAG_REQUEST, this._id.toCbor());
 
-    let envelope = Envelope.leaf(taggedArid).addAssertion(BODY, this._body.envelope());
+    let envelope = Envelope.leaf(taggedArid).addAssertion(BODY, this._body.toEnvelope());
 
     if (this._note !== "") {
       envelope = envelope.addAssertion(NOTE, this._note);
@@ -240,7 +229,7 @@ export class Request implements RequestBehavior, ToEnvelope {
     const body = Expression.fromEnvelope(bodyEnvelope);
 
     // Validate function if expected
-    if (expectedFunction !== undefined && !body.function().equals(expectedFunction)) {
+    if (expectedFunction !== undefined && !body.function.equals(expectedFunction)) {
       throw EnvelopeError.general("Request function mismatch");
     }
 

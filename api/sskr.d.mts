@@ -4,25 +4,156 @@ import { EncryptedMessage } from '@blockchaincommons/components';
 import { GroupSpec } from '@blockchaincommons/sskr';
 import { KnownValue } from '@blockchaincommons/known-values';
 import { RandomNumberGenerator } from '@blockchaincommons/rand';
+import { Salt } from '@blockchaincommons/components';
 import { Secret } from '@blockchaincommons/sskr';
 import { Spec } from '@blockchaincommons/sskr';
 import { SskrShare } from '@blockchaincommons/components/sskr';
 import { SymmetricKey } from '@blockchaincommons/components';
 import { UR } from '@blockchaincommons/uniform-resources';
 
+/** Options for `Envelope.addAssertion` and friends. */
+declare interface AddAssertionOptions {
+    /** Also salt the assertion (see `addSalt`) so its digest is not correlatable. */
+    salt?: boolean;
+}
+
+/**
+ * A predicate-object relationship representing an assertion about a subject.
+ *
+ * In Gordian Envelope, assertions are the basic building blocks for attaching
+ * information to a subject. An assertion consists of a predicate (which states
+ * what is being asserted) and an object (which provides the assertion's
+ * value).
+ *
+ * Assertions can be attached to envelope subjects to form semantic statements
+ * like: "subject hasAttribute value" or "document signedBy signature".
+ *
+ * Assertions are equivalent to RDF (Resource Description Framework) triples,
+ * where:
+ * - The envelope's subject is the subject of the triple
+ * - The assertion's predicate is the predicate of the triple
+ * - The assertion's object is the object of the triple
+ *
+ * Generally you do not create an instance of this type directly, but
+ * instead use `Envelope.assertion()`, or the various functions
+ * on `Envelope` that create assertions.
+ */
 declare class Assertion implements DigestProvider {
     private readonly _predicate;
     private readonly _object;
     private readonly _digest;
-    constructor(predicate: EnvelopeEncodable | Envelope, object: EnvelopeEncodable | Envelope);
+    /**
+     * Creates a new assertion and calculates its digest.
+     *
+     * This constructor takes a predicate and object, both of which are
+     * converted to envelopes using the `ToEnvelope` trait. It then
+     * calculates the assertion's digest by combining the digests of the
+     * predicate and object.
+     *
+     * The digest is calculated according to the Gordian Envelope
+     * specification, which ensures that semantically equivalent assertions
+     * always produce the same digest.
+     *
+     * @param predicate - The predicate of the assertion, which states what is
+     *   being asserted
+     * @param object - The object of the assertion, which provides the assertion's
+     *   value
+     *
+     * @returns A new assertion with the specified predicate, object, and calculated
+     * digest.
+     *
+     * @example
+     * ```typescript
+     * // Direct method - create an assertion envelope
+     * const assertionEnvelope = Envelope.assertion("name", "Alice");
+     *
+     * // Or create and add an assertion to a subject
+     * const person = Envelope.from("person").addAssertion("name", "Alice");
+     * ```
+     */
+    constructor(predicate: ToEnvelope | Envelope, object: ToEnvelope | Envelope);
+    /**
+     * Returns the predicate of the assertion.
+     *
+     * The predicate states what is being asserted about the subject. It is
+     * typically a string or known value, but can be any envelope.
+     *
+     * @returns A clone of the assertion's predicate envelope.
+     */
     predicate(): Envelope;
+    /**
+     * Returns the object of the assertion.
+     *
+     * The object provides the value or content of the assertion. It can be any
+     * type that can be represented as an envelope.
+     *
+     * @returns A clone of the assertion's object envelope.
+     */
     object(): Envelope;
+    /**
+     * Returns the digest of this assertion.
+     *
+     *
+     * @returns The assertion's digest
+     */
     digest(): Digest;
+    /**
+     * Checks if two assertions are equal based on digest equality.
+     *
+     * Two assertions are considered equal if they have the same digest,
+     * regardless of how they were constructed.
+     *
+     * @param other - The other assertion to compare with
+     * @returns `true` if the assertions are equal, `false` otherwise
+     */
     equals(other: Assertion): boolean;
+    /**
+     * Converts this assertion to CBOR.
+     *
+     * The CBOR representation of an assertion is a map with a single key-value
+     * pair, where the key is the predicate's CBOR and the value is the object's
+     * CBOR.
+     *
+     * @returns A CBOR representation of this assertion
+     */
     toCbor(): Cbor;
+    /**
+     * Attempts to create an assertion from a CBOR value.
+     *
+     * The CBOR must be a map with exactly one entry, where the key represents
+     * the predicate and the value represents the object.
+     *
+     * @param cbor - The CBOR value to convert
+     * @returns A new Assertion instance
+     * @throws {EnvelopeError} If the CBOR is not a valid assertion
+     */
     static fromCbor(cbor: Cbor): Assertion;
+    /**
+     * Attempts to create an assertion from a CBOR map.
+     *
+     * The map must have exactly one entry, where the key represents the
+     * predicate and the value represents the object. This is used in
+     * the deserialization process.
+     *
+     * @param map - The CBOR map to convert
+     * @returns A new Assertion instance
+     * @throws {EnvelopeError} If the map doesn't have exactly one entry
+     */
     static fromCborMap(map: CborMap): Assertion;
+    /**
+     * Creates a string representation of this assertion for debugging.
+     *
+     * @returns A string representation
+     */
     toString(): string;
+    /**
+     * Creates a copy of this assertion.
+     *
+     * Since assertions are immutable and envelopes are cheap to clone,
+     * this returns the same instance.
+     *
+     * @returns This assertion instance
+     */
     clone(): Assertion;
 }
 
@@ -594,6 +725,7 @@ declare class CborDate implements CborTagged {
     private constructor();
 }
 
+/** Type for CBOR decoder functions */
 declare type CborDecoder<T> = (cbor: Cbor) => T;
 
 /**
@@ -791,12 +923,6 @@ declare interface CborTagged {
     cborTags(): Tag[];
 }
 
-/** The pre-redesign tagged-encodable shape (replaced by dcbor's ToCbor in Phase 3). */
-declare interface CborTaggedEncodable extends CborTagged {
-    untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
-}
-
 declare interface CborTaggedType {
     readonly isCbor: true;
     readonly type: typeof MajorType.Tagged;
@@ -816,60 +942,334 @@ declare interface CborUnsignedType {
     readonly value: CborNumber;
 }
 
+/**
+ * Trait for types that can provide a digest.
+ *
+ * This is equivalent to Rust's `DigestProvider` trait. Types that
+ * implement this interface can be used in contexts where a digest
+ * is needed for identity or integrity verification.
+ */
 declare interface DigestProvider {
+    /**
+     * Returns the digest of this object.
+     *
+     * The digest uniquely identifies the semantic content of the object,
+     * regardless of whether parts of it are elided, encrypted, or compressed.
+     */
     digest(): Digest;
 }
 
-declare enum EdgeType {
-    None = "none",
-    Subject = "subject",
-    Assertion = "assertion",
-    Predicate = "predicate",
-    Object = "object",
-    Content = "content"
+/**
+ * The type of incoming edge provided to the visitor.
+ *
+ * This enum identifies how an envelope element is connected to its parent in
+ * the hierarchy during traversal. It helps the visitor function understand the
+ * semantic relationship between elements.
+ */
+declare const EdgeType: {
+    /** No incoming edge (root) */
+    readonly None: "none";
+    /** Element is the subject of a node */
+    readonly Subject: "subject";
+    /** Element is an assertion on a node */
+    readonly Assertion: "assertion";
+    /** Element is the predicate of an assertion */
+    readonly Predicate: "predicate";
+    /** Element is the object of an assertion */
+    readonly Object: "object";
+    /** Element is the content wrapped by another envelope */
+    readonly Content: "content";
+};
+
+/** One of the `EdgeType` values. */
+declare type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];
+
+/** Options for `Envelope.elide`. */
+declare interface ElideOptions {
+    /** Obscure these elements (by digest). */
+    removing?: Iterable<DigestProvider | Digest>;
+    /** Obscure everything except these elements and their ancestors. */
+    revealing?: Iterable<DigestProvider | Digest>;
+    /** What to do to the targeted elements; `"elide"` by default. */
+    action?: ObscureAction;
 }
 
 declare class Envelope implements DigestProvider {
     private readonly _case;
+    /**
+     * Private constructor. Use static factory methods to create envelopes.
+     *
+     * @param envelopeCase - The envelope case variant
+     */
     private constructor();
-    case(): EnvelopeCase;
-    static new(subject: EnvelopeEncodableValue): Envelope;
-    static newOrNull(subject: EnvelopeEncodableValue | undefined): Envelope;
-    static newOrNone(subject: EnvelopeEncodableValue | undefined): Envelope | undefined;
+    /**
+     * Returns a reference to the underlying envelope case.
+     *
+     * The `EnvelopeCase` enum represents the specific structural variant of
+     * this envelope. This method provides access to that underlying
+     * variant for operations that need to differentiate between the
+     * different envelope types.
+     *
+     * @returns The `EnvelopeCase` that defines this envelope's structure.
+     */
+    get case(): EnvelopeCase;
+    /**
+     * Creates an envelope with a subject, which can be any value that
+     * can be encoded as an envelope.
+     *
+     * @param subject - The subject value
+     * @returns A new envelope containing the subject
+     *
+     * @example
+     * ```typescript
+     * const envelope = Envelope.from("Hello, world!");
+     * const numberEnvelope = Envelope.from(42);
+     * const binaryEnvelope = Envelope.from(new Uint8Array([1, 2, 3]));
+     * ```
+     */
+    static from(subject: EnvelopeInput): Envelope;
+    /**
+     * Creates an envelope with a subject, or `undefined` if the subject is
+     * **absent** (`undefined` *or* JS `null`).
+     *
+     * **TS↔Rust note**: Rust `Envelope::new_or_none` returns
+     * `Option<Envelope>` — the `None` branch fires only on `None`. We
+     * follow the same convention as {@link Envelope.newOrNull} and treat
+     * JS `null` and `undefined` interchangeably as the absent case.
+     *
+     * @param subject - The optional subject value (`undefined` *or* `null`
+     *   triggers the absent branch).
+     * @returns A new envelope or `undefined`
+     */
+    static fromOptional(subject: EnvelopeInput | undefined): Envelope | undefined;
+    /**
+     * Creates an envelope from an EnvelopeCase.
+     *
+     * This is an internal method used by extensions to create envelopes
+     * from custom case types like compressed or encrypted.
+     *
+     * @param envelopeCase - The envelope case to wrap
+     * @returns A new envelope with the given case
+     */
     static fromCase(envelopeCase: EnvelopeCase): Envelope;
-    static newAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    static null(): Envelope;
-    static newWithUncheckedAssertions(subject: Envelope, uncheckedAssertions: Envelope[]): Envelope;
-    static newWithAssertions(subject: Envelope, assertions: Envelope[]): Envelope;
-    static newWithAssertion(assertion: Assertion): Envelope;
-    static newWithKnownValue(value: KnownValue | number | bigint): Envelope;
-    static newWithEncrypted(encryptedMessage: EncryptedMessage): Envelope;
-    static newWithCompressed(compressed: Compressed): Envelope;
-    static newElided(digest: Digest): Envelope;
-    static newLeaf(value: unknown): Envelope;
-    static newWrapped(envelope: Envelope): Envelope;
+    /**
+     * Creates an assertion envelope with a predicate and object.
+     *
+     * @param predicate - The predicate of the assertion
+     * @param object - The object of the assertion
+     * @returns A new assertion envelope
+     *
+     * @example
+     * ```typescript
+     * const assertion = Envelope.assertion("name", "Alice");
+     * ```
+     */
+    static assertion(predicate: EnvelopeInput, object: EnvelopeInput): Envelope;
+    /**
+     * Creates a null envelope (containing CBOR null).
+     *
+     * @returns A null envelope
+     */
+    static get NULL(): Envelope;
+    /**
+     * Creates an envelope with a subject and unchecked assertions.
+     *
+     * The assertions are sorted by digest and the envelope's digest is calculated.
+     *
+     * @param subject - The subject envelope
+     * @param uncheckedAssertions - The assertions to attach
+     * @returns A new node envelope
+     */
+    private static nodeUnchecked;
+    /**
+     * Creates an envelope with a subject and validated assertions.
+     *
+     * All assertions must be assertion or obscured envelopes.
+     *
+     * @param subject - The subject envelope
+     * @param assertions - The assertions to attach
+     * @returns A new node envelope
+     * @throws {EnvelopeError} If any assertion is not valid
+     */
+    static node(subject: Envelope, assertions: Envelope[], { unchecked }?: {
+        unchecked?: boolean;
+    }): Envelope;
+    /**
+     * Creates an envelope with an assertion as its subject.
+     *
+     * @param assertion - The assertion
+     * @returns A new assertion envelope
+     */
+    static fromAssertion(assertion: Assertion): Envelope;
+    /**
+     * Creates an envelope with a known value.
+     *
+     * @param value - The known value (can be a KnownValue instance or a number/bigint)
+     * @returns A new known value envelope
+     */
+    static knownValue(value: KnownValue | number | bigint): Envelope;
+    /**
+     * Creates an envelope with encrypted content.
+     *
+     * `Err(Error::MissingDigest)` when the message has no AAD digest.
+     *
+     * @param encryptedMessage - The encrypted message
+     * @returns A new encrypted envelope
+     * @throws {EnvelopeError} If the encrypted message doesn't have a digest
+     */
+    static encrypted(encryptedMessage: EncryptedMessage): Envelope;
+    /**
+     * Creates an envelope with compressed content.
+     *
+     * `Err(Error::MissingDigest)` when the compressed value has no digest.
+     *
+     * @param compressed - The compressed data
+     * @returns A new compressed envelope
+     * @throws {EnvelopeError} If the compressed data doesn't have a digest
+     */
+    static compressed(compressed: Compressed): Envelope;
+    /**
+     * Creates an elided envelope containing only a digest.
+     *
+     * @param digest - The digest of the elided content
+     * @returns A new elided envelope
+     */
+    static elided(digest: Digest): Envelope;
+    /**
+     * Creates a leaf envelope containing a CBOR value.
+     *
+     * @param value - The value to encode as CBOR
+     * @returns A new leaf envelope
+     */
+    static leaf(value: unknown): Envelope;
+    /**
+     * Creates a wrapped envelope.
+     *
+     * @param envelope - The envelope to wrap
+     * @returns A new wrapped envelope
+     */
+    static wrap(envelope: Envelope): Envelope;
+    /**
+     * Returns the digest of this envelope.
+     *
+     *
+     * @returns The envelope's digest
+     */
     digest(): Digest;
+    /**
+     * Returns the subject of this envelope.
+     *
+     * For different envelope cases:
+     * - Node: Returns the subject envelope
+     * - Other cases: Returns the envelope itself
+     *
+     * @returns The subject envelope
+     */
     subject(): Envelope;
+    /**
+     * Checks if the envelope's subject is an assertion.
+     *
+     * @returns `true` if the subject is an assertion, `false` otherwise
+     */
     isSubjectAssertion(): boolean;
+    /**
+     * Checks if the envelope's subject is obscured (elided, encrypted, or compressed).
+     *
+     * @returns `true` if the subject is obscured, `false` otherwise
+     */
     isSubjectObscured(): boolean;
+    /**
+     * Converts a value to CBOR.
+     *
+     * @param value - The value to convert
+     * @returns A CBOR representation
+     */
     private static valueToCbor;
+    /**
+     * Converts CBOR to bytes.
+     *
+     * @param cbor - The CBOR value
+     * @returns Byte representation
+     */
     private static cborToBytes;
+    /**
+     * Returns the untagged CBOR representation of this envelope.
+     *
+     * @returns The untagged CBOR
+     */
     untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
+    /**
+     * Returns the tagged CBOR representation of this envelope.
+     *
+     * All envelopes are tagged with TAG_ENVELOPE (200).
+     *
+     * @returns The tagged CBOR
+     */
+    toCbor(): Cbor;
+    /** Tagged-CBOR codec; `decode` also accepts the untagged form. */
+    static get codec(): CborCodec<Envelope>;
+    cborTags(): Tag[];
+    /** As `ur:envelope/…`. */
+    toUR(): UR;
+    /**
+     * Decodes an envelope from its tagged CBOR (tag 200).
+     *
+     * @throws {EnvelopeError} If the CBOR is not a tagged envelope
+     */
+    static fromCbor(cbor: Cbor): Envelope;
+    /**
+     * Decodes an envelope from tagged CBOR bytes.
+     *
+     * @throws {EnvelopeError} If the data is not valid CBOR or not an envelope
+     */
+    static fromBytes(data: Uint8Array): Envelope;
+    /**
+     * Creates an envelope from untagged CBOR.
+     *
+     * @param cbor - The untagged CBOR value
+     * @returns A new envelope
+     */
     static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    addAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    addAssertionEnvelope(assertion: Envelope): Envelope;
+    /**
+     * Creates an envelope from tagged CBOR.
+     *
+     * @param cbor - The tagged CBOR value (should have TAG_ENVELOPE)
+     * @returns A new envelope
+     * Adds an assertion to this envelope.
+     *
+     * @param predicate - The assertion predicate
+     * @param object - The assertion object
+     * @returns A new envelope with the assertion added
+     *
+     * @example
+     * ```typescript
+     * const person = Envelope.from("Alice")
+     *     .addAssertion("age", 30)
+     *     .addAssertion("city", "Boston");
+     * ```
+     */
+    addAssertion(predicate: EnvelopeInput, object: EnvelopeInput, options?: AddAssertionOptions): Envelope;
+    /**
+     * Adds an assertion envelope to this envelope.
+     *
+     * @param assertion - The assertion envelope
+     * @returns A new envelope with the assertion added
+     */
+    addAssertionEnvelope(assertion: Envelope, { salt }?: AddAssertionOptions): Envelope;
+    /**
+     * Creates a string representation of this envelope.
+     *
+     * @returns A string representation
+     */
     toString(): string;
-    clone(): Envelope;
     /**
      * Implementation of static false()
      */
-    static false(): Envelope;
+    static get FALSE(): Envelope;
     /**
      * Implementation of static true()
      */
-    static true(): Envelope;
+    static get TRUE(): Envelope;
     /**
      * Implementation of static unit()
      * Unit envelopes have the known value ''. They represent a position
@@ -878,16 +1278,7 @@ declare class Envelope implements DigestProvider {
      * position where no meaningful data currently exists, but could exist in
      * the future.
      */
-    static unit(): Envelope;
-    /**
-     * Implementation of fromUrString
-     */
-    static fromUrString(urString: string): Envelope;
-    static fromURString(urString: string): Envelope;
-    /**
-     * Implementation of fromUR
-     */
-    static fromUR(ur: UR): Envelope;
+    static get UNIT(): Envelope;
     /**
      * Implementation of addAssertionEnvelopes
      */
@@ -895,15 +1286,29 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of addOptionalAssertionEnvelope
      */
-    addOptionalAssertionEnvelope(assertion: Envelope | undefined): Envelope;
+    addOptionalAssertionEnvelope(assertion: Envelope | undefined, { salt }?: AddAssertionOptions): Envelope;
     /**
      * Implementation of addOptionalAssertion
      */
-    addOptionalAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue | undefined): Envelope;
+    addOptionalAssertion(predicate: EnvelopeInput, object: EnvelopeInput | undefined, options?: AddAssertionOptions): Envelope;
+    /**
+     * Adds a `salt` assertion of random bytes so that this envelope's digest
+     * cannot be correlated with another envelope of the same content.
+     *
+     * By default the salt length is proportional to the envelope's size
+     * (5–25 %, at least 8 bytes); give `length`, a `range`, or the exact
+     * `salt` instead. `rng` overrides the secure default.
+     */
+    addSalt({ salt, length, range, rng }?: SaltOptions): Envelope;
+    /**
+     * Applies `fn` to this envelope: `e.pipe(sign, key).pipe(encryptSubject, k)`
+     * chains the subpath functions without the `/all` facade.
+     */
+    pipe<A extends unknown[], R>(fn: (envelope: Envelope, ...args: A) => R, ...args: A): R;
     /**
      * Implementation of addNonemptyStringAssertion
      */
-    addNonemptyStringAssertion(predicate: EnvelopeEncodableValue, str: string): Envelope;
+    addNonemptyStringAssertion(predicate: EnvelopeInput, str: string): Envelope;
     /**
      * Implementation of addAssertions
      */
@@ -911,7 +1316,7 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of addAssertionIf
      */
-    addAssertionIf(condition: boolean, predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
+    addAssertionIf(condition: boolean, predicate: EnvelopeInput, object: EnvelopeInput): Envelope;
     /**
      * Implementation of addAssertionEnvelopeIf
      */
@@ -965,10 +1370,6 @@ declare class Envelope implements DigestProvider {
      */
     isNull(): boolean;
     /**
-     * Implementation of tryByteString()
-     */
-    tryByteString(): Uint8Array;
-    /**
      * Implementation of asBytes()
      */
     asBytes(): Uint8Array | undefined;
@@ -995,7 +1396,7 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryKnownValue()
      */
-    tryKnownValue(): KnownValue;
+    expectKnownValue(): KnownValue;
     /**
      * Implementation of isKnownValue()
      */
@@ -1019,7 +1420,7 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryAssertion()
      */
-    tryAssertion(): Envelope;
+    expectAssertion(): Envelope;
     /**
      * Implementation of asPredicate()
      */
@@ -1027,7 +1428,7 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryPredicate()
      */
-    tryPredicate(): Envelope;
+    expectPredicate(): Envelope;
     /**
      * Implementation of asObject()
      */
@@ -1035,7 +1436,7 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryObject()
      */
-    tryObject(): Envelope;
+    expectObject(): Envelope;
     /**
      * Implementation of isAssertion()
      */
@@ -1067,27 +1468,27 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of assertionsWithPredicate()
      */
-    assertionsWithPredicate(predicate: EnvelopeEncodableValue): Envelope[];
+    assertionsWithPredicate(predicate: EnvelopeInput): Envelope[];
     /**
      * Implementation of assertionWithPredicate()
      */
-    assertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    assertionWithPredicate(predicate: EnvelopeInput): Envelope;
     /**
      * Implementation of optionalAssertionWithPredicate()
      */
-    optionalAssertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    optionalAssertionWithPredicate(predicate: EnvelopeInput): Envelope | undefined;
     /**
      * Implementation of objectForPredicate()
      */
-    objectForPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    objectForPredicate(predicate: EnvelopeInput): Envelope;
     /**
      * Implementation of optionalObjectForPredicate()
      */
-    optionalObjectForPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    optionalObjectForPredicate(predicate: EnvelopeInput): Envelope | undefined;
     /**
      * Implementation of objectsForPredicate()
      */
-    objectsForPredicate(predicate: EnvelopeEncodableValue): Envelope[];
+    objectsForPredicate(predicate: EnvelopeInput): Envelope[];
     /**
      * Implementation of elementsCount()
      */
@@ -1123,10 +1524,6 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryUnwrap()
      */
-    tryUnwrap(): Envelope;
-    /**
-     * Implementation of unwrap() - alias for tryUnwrap()
-     */
     unwrap(): Envelope;
     /**
      * Implementation of walk()
@@ -1137,7 +1534,6 @@ declare class Envelope implements DigestProvider {
      *
      * Returns the set of digests in the envelope, down to the specified level.
      *
-     * Mirrors Rust `Envelope::digests` (`bc-envelope-rust/src/base/digest.rs:103-119`).
      * Rust uses `HashSet<Digest>` which dedupes by content; native JS `Set`
      * dedupes by reference, so we route inserts through a hex-keyed `Map`
      * before materialising the final `Set`. That keeps the public signature
@@ -1158,8 +1554,6 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of structuralDigest()
      *
-     * Mirrors Rust `Envelope::structural_digest`
-     * (`bc-envelope-rust/src/base/digest.rs:241-261`). Walks every node in
      * structure mode, building an image:
      *
      * - Each obscured case prepends a 1-byte discriminator: `0` for Encrypted,
@@ -1185,69 +1579,28 @@ declare class Envelope implements DigestProvider {
      */
     predicate(): Envelope;
     /**
-     * Implementation of toCbor() - alias for taggedCbor()
+     * Elide this envelope, or with options elide (or encrypt or compress)
+     * parts of it: `removing` obscures the elements whose digests are listed,
+     * `revealing` obscures everything but the listed elements and their
+     * ancestors. `action` defaults to `"elide"`.
      */
-    toCbor(): unknown;
-    /**
-     * Implementation of expectLeaf() - returns the leaf CBOR value or throws
-     */
-    expectLeaf(): unknown;
+    elide(options?: ElideOptions): Envelope;
     /**
      * Implementation of elide()
      */
-    elide(): Envelope;
+    private elideAll;
     /**
      * Implementation of elideRemovingSetWithAction
      */
-    elideRemovingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
+    private elideRemovingWith;
     /**
      * Implementation of elideSetWithAction (for revealing mode)
      */
     elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     /**
-     * Implementation of elideRemovingSet
-     */
-    elideRemovingSet(target: Set<Digest>): Envelope;
-    /**
-     * Implementation of elideRemovingArrayWithAction
-     */
-    elideRemovingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRemovingArray
-     */
-    elideRemovingArray(target: DigestProvider[]): Envelope;
-    /**
-     * Implementation of elideRemovingTargetWithAction
-     */
-    elideRemovingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRemovingTarget
-     */
-    elideRemovingTarget(target: DigestProvider): Envelope;
-    /**
      * Implementation of elideRevealingSetWithAction
      */
-    elideRevealingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRevealingSet
-     */
-    elideRevealingSet(target: Set<Digest>): Envelope;
-    /**
-     * Implementation of elideRevealingArrayWithAction
-     */
-    elideRevealingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRevealingArray
-     */
-    elideRevealingArray(target: DigestProvider[]): Envelope;
-    /**
-     * Implementation of elideRevealingTargetWithAction
-     */
-    elideRevealingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRevealingTarget
-     */
-    elideRevealingTarget(target: DigestProvider): Envelope;
+    private elideRevealingWith;
     /**
      * Implementation of unelide
      */
@@ -1255,7 +1608,6 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of nodesMatching
      *
-     * Mirrors Rust `Envelope::nodes_matching`. The TS public signature is
      * `Set<Digest>` for backward compatibility with callers, but the
      * underlying dedup is by **hex content** (via a hex-keyed Map) so two
      * `Digest` instances that represent the same hash bytes count once,
@@ -1276,14 +1628,11 @@ declare class Envelope implements DigestProvider {
      * Two envelopes are equivalent if they have the same digest (semantic equivalence).
      * This is a weaker comparison than `isIdenticalTo` which also checks the case type.
      *
-     * Equivalent to Rust's `is_equivalent_to()` in `src/base/digest.rs`.
      */
     isEquivalentTo(other: Envelope): boolean;
     /**
      * Implementation of isIdenticalTo
      *
-     * Mirrors Rust `Envelope::is_identical_to`
-     * (`bc-envelope-rust/src/base/digest.rs:344-349`):
      * short-circuit on a *semantic* mismatch (different `digest()`), then fall
      * through to a {@link Envelope.structuralDigest} comparison. Two envelopes
      * whose digests match but whose structures differ — e.g. an envelope and a
@@ -1292,9 +1641,6 @@ declare class Envelope implements DigestProvider {
     isIdenticalTo(other: Envelope): boolean;
     /**
      * Implementation of walkDecrypt
-     *
-     * Mirrors Rust `Envelope::walk_decrypt`
-     * (`bc-envelope-rust/src/base/elide.rs:963-1019`).
      *
      * Recursively walks the envelope and decrypts every encrypted node it
      * can. For an Encrypted node, each provided key is tried in order; the
@@ -1311,9 +1657,6 @@ declare class Envelope implements DigestProvider {
     /**
      * Implementation of walkDecompress
      *
-     * Mirrors Rust `Envelope::walk_decompress`
-     * (`bc-envelope-rust/src/base/elide.rs:1067-1135`).
-     *
      * Recursively walks the envelope and decompresses any compressed node
      * whose digest is in `targetDigests` (or every compressed node if
      * `targetDigests` is undefined). Decompression failures are tolerated —
@@ -1326,51 +1669,39 @@ declare class Envelope implements DigestProvider {
      *
      * This extracts the leaf CBOR value from an envelope.
      */
-    tryLeaf(): Cbor;
+    expectLeaf(): Cbor;
     /**
      * Add extraction convenience methods to Envelope prototype
      */
-    extractString(): string;
-    extractNumber(): number;
-    extractBoolean(): boolean;
-    extractBytes(): Uint8Array;
-    extractNull(): null;
+    expectString(): string;
+    expectNumber(): number;
+    expectBoolean(): boolean;
+    expectBytes(): Uint8Array;
+    expectNull(): null;
     /**
      * Add extractSubject method to Envelope prototype
      */
-    extractSubject<T>(decoder: CborDecoder<T>): T;
+    expectSubject<T>(decoder: CborDecoder<T>): T;
     /**
      * Add tryObjectForPredicate method to Envelope prototype
      */
-    tryObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+    expectObjectForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T;
     /**
      * Add tryOptionalObjectForPredicate method to Envelope prototype
      */
-    tryOptionalObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
+    optionalObjectForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T | undefined;
     /**
      * Add extractObjectForPredicateWithDefault method to Envelope prototype
      */
-    extractObjectForPredicateWithDefault<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
+    objectForPredicateOr<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>, defaultValue: T): T;
     /**
      * Add extractObjectsForPredicate method to Envelope prototype
      */
-    extractObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+    expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     /**
      * Add tryObjectsForPredicate method to Envelope prototype
      */
-    tryObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-    /**
-     * Implementation of urString
-     */
-    urString(): string;
-    /**
-     * Implementation of ur
-     */
-    ur(): UR;
-    /**
-     * Implementation of taggedCborData (alias for cborBytes)
-     */
-    taggedCborData(): Uint8Array;
+    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     encryptSubject(key: SymmetricKey): Envelope;
     /**
      * Implementation of decryptSubject()
@@ -1407,42 +1738,77 @@ declare class Envelope implements DigestProvider {
     isCompressed(): boolean;
 }
 
+/**
+ * The core structural variants of a Gordian Envelope.
+ *
+ * Each variant represents a different structural form that an
+ * envelope can take, as defined in the Gordian Envelope IETF Internet Draft.
+ * The different cases provide different capabilities and serve different
+ * purposes in the envelope ecosystem.
+ *
+ * The `EnvelopeCase` is the internal representation of an envelope's
+ * structure. While each case has unique properties, they all maintain a digest
+ * that ensures the integrity of the envelope.
+ *
+ * It is advised to use the other Envelope APIs for most uses. Please see the
+ * queries module for more information on how to interact with envelopes.
+ */
 declare type EnvelopeCase = {
     type: "node";
+    /** The subject of the node */
     subject: Envelope;
+    /** The assertions attached to the subject */
     assertions: Envelope[];
+    /** The digest of the node */
     digest: Digest;
 } | {
     type: "leaf";
+    /** The CBOR value contained in the leaf */
     cbor: Cbor;
+    /** The digest of the leaf */
     digest: Digest;
 } | {
     type: "wrapped";
+    /** The envelope being wrapped */
     envelope: Envelope;
+    /** The digest of the wrapped envelope */
     digest: Digest;
 } | {
     type: "assertion";
+    /** The assertion */
     assertion: Assertion;
 } | {
     type: "elided";
+    /** The digest of the elided content */
     digest: Digest;
 } | {
     type: "knownValue";
+    /** The known value instance */
     value: KnownValue;
+    /** The digest of the known value */
     digest: Digest;
 } | {
     type: "encrypted";
+    /** The encrypted message */
     message: EncryptedMessage;
 } | {
     type: "compressed";
+    /** The compressed data */
     value: Compressed;
 };
 
-declare interface EnvelopeEncodable {
-    intoEnvelope(): Envelope;
-}
-
-declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
+/**
+ * Helper type for values that can be encoded as envelopes.
+ *
+ * This includes:
+ * - Types that directly implement ToEnvelope
+ * - Primitive types (string, number, boolean)
+ * - Uint8Array (for binary data)
+ * - null and undefined
+ *
+ * The Envelope class will handle conversion of these types automatically.
+ */
+declare type EnvelopeInput = ToEnvelope | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | ToCbor;
 
 export { GroupSpec }
 
@@ -1464,22 +1830,39 @@ declare interface MapEntry {
     readonly value: Cbor;
 }
 
-declare type ObscureAction = {
-    type: "elide";
-} | {
-    type: "encrypt";
-    key: unknown;
-} | {
-    type: "compress";
+/**
+ * Actions that can be performed on parts of an envelope to obscure them.
+ *
+ * Gordian Envelope supports several ways to obscure parts of an envelope while
+ * maintaining its semantic integrity and digest tree.
+ */
+declare type ObscureAction = "elide" | "compress" | {
+    encrypt: SymmetricKey;
 };
 
-declare enum ObscureType {
-    Elided = "elided",
-    Encrypted = "encrypted",
-    Compressed = "compressed"
-}
+/** How an obscured element was obscured. */
+declare const ObscureType: {
+    readonly Elided: "elided";
+    readonly Encrypted: "encrypted";
+    readonly Compressed: "compressed";
+};
 
-export declare const registerSskrExtension: () => void;
+declare type ObscureType = (typeof ObscureType)[keyof typeof ObscureType];
+
+/** Options for `Envelope.addSalt`. */
+declare interface SaltOptions {
+    /** Use exactly this salt (at least 8 bytes). */
+    salt?: Salt | Uint8Array;
+    /** Random salt of exactly this many bytes (at least 8). */
+    length?: number;
+    /** Random salt of a length in this inclusive range. */
+    range?: {
+        min: number;
+        max: number;
+    };
+    /** Randomness source; secure by default. */
+    rng?: RandomNumberGenerator;
+}
 
 export { Secret }
 
@@ -1516,11 +1899,15 @@ export declare function sskrJoin(envelopes: Envelope[]): Envelope;
 
 export { SskrShare }
 
-export declare function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey): Envelope[][];
-
-export declare function sskrSplitFlattened(envelope: Envelope, spec: Spec, contentKey: SymmetricKey): Envelope[];
-
-export declare function sskrSplitUsing(envelope: Envelope, spec: Spec, contentKey: SymmetricKey, rng: RandomNumberGenerator): Envelope[][];
+/**
+ * Splits `contentKey` into SSKR shares per `spec` and returns one copy of
+ * the envelope per share, each carrying its share as an `sskrShare`
+ * assertion, grouped as the spec groups them. `sskrJoin` recovers the
+ * envelope from a quorum.
+ */
+export declare function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey, { rng }?: {
+    rng?: RandomNumberGenerator;
+}): Envelope[][];
 
 /**
  * A CBOR tag with an optional name.
@@ -1581,6 +1968,62 @@ declare interface ToCbor {
     toCbor(): Cbor;
 }
 
+/**
+ * A trait for types that can be encoded as a Gordian Envelope.
+ *
+ * This interface defines the contract for converting a value into an envelope.
+ * Types implementing this interface can be used directly with envelope
+ * construction functions without explicit conversion.
+ *
+ * There are numerous built-in implementations for common types including:
+ * - Primitive types (numbers, strings, booleans)
+ * - CBOR values
+ * - Cryptographic types (digests, keys, etc.)
+ * - Assertions
+ * - Other envelopes
+ *
+ * @example
+ * ```typescript
+ * // String implements ToEnvelope
+ * const e1 = Envelope.from("Hello");
+ *
+ * // Numbers implement ToEnvelope
+ * const e2 = Envelope.from(42);
+ *
+ * // Using in envelope construction
+ * const envelope = Envelope.from("subject")
+ *     .addAssertion("name", "Alice")  // Uses ToEnvelope for both predicate and object
+ *     .addAssertion("age", 30);       // Uses ToEnvelope for the numeric object
+ * ```
+ */
+declare interface ToEnvelope {
+    /**
+     * Converts this value into a Gordian Envelope.
+     *
+     * This is the core method of the interface, converting the implementing type
+     * into an envelope representation. Most implementations will convert the
+     * value to a leaf envelope containing the value.
+     *
+     * @returns A new envelope containing the value.
+     */
+    toEnvelope(): Envelope;
+}
+
+/**
+ * A visitor function that is called for each element in the envelope.
+ *
+ * The visitor function takes the following parameters:
+ * - `envelope`: The current envelope element being visited
+ * - `level`: The depth level in the hierarchy (0 for root)
+ * - `incomingEdge`: The type of edge connecting this element to its parent
+ * - `state`: Optional context passed down from the parent's visitor call
+ *
+ * The visitor returns a tuple of:
+ * - The state that will be passed to child elements
+ * - A boolean indicating whether to stop traversal (true = stop)
+ *
+ * This enables accumulating state or passing context during traversal.
+ */
 declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
 
 export { }

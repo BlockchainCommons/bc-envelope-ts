@@ -20,7 +20,7 @@ differs from the Rust reference. It has three kinds of entry:
 Every entry below is checked by `tests/rust-validation`, a Rust program that
 pins `bc-envelope = 0.43.0` and replays `tests/vectors/vectors.json` through
 the reference, building each recipe with the reference's own API. The
-current run: **149 vectors — 136 match, 13 expected divergences, 0
+current run: **150 vectors — 137 match, 13 expected divergences, 0
 mismatches.**
 
 ## 1. True behavioral divergences
@@ -58,6 +58,11 @@ reference and shown whole here. ASCII text is identical.
 - **P2, tag-1 dates not summarised (1 vector).** The same registration
   installs dcbor's standard-tag summarisers, so a `date` assertion prints
   `2022-07-11T04:00:00Z` as the reference does. Tombstone T3.
+- **P3, well-known expression names.** The format context now carries the
+  functions and parameters stores, so a request for known function 1 with
+  known parameters 2 and 3 prints `«add» [ ❰lhs❱: 2 ❰rhs❱: 3 ]` as the
+  reference does (it printed the ids). Pinned by the `request:1` vector;
+  tombstone T4.
 
 ## 2. JS-only input domain
 

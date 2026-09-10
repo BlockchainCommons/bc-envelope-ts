@@ -75,7 +75,7 @@ describe("Signature Extension", () => {
     it("should add signature with metadata and double-sign", () => {
       const alice = SigningPrivateKey.random();
       const alicePub = alice.publicKey();
-      const metadata = SignatureMetadata.new()
+      const metadata = SignatureMetadata.from()
         .withAssertion(NOTE, "Signed by Alice")
         .withAssertion("timestamp", "2024-01-15T10:30:00Z")
         .withAssertion("purpose", "Contract approval");
@@ -101,7 +101,7 @@ describe("Signature Extension", () => {
     it("should verify and return metadata envelope", () => {
       const alice = SigningPrivateKey.random();
       const alicePub = alice.publicKey();
-      const metadata = SignatureMetadata.new()
+      const metadata = SignatureMetadata.from()
         .withAssertion(NOTE, "Alice signed this.")
         .withAssertion("date", "2024-04-02");
 
@@ -123,7 +123,7 @@ describe("Signature Extension", () => {
     it("should reject metadata signature from wrong key", () => {
       const alice = SigningPrivateKey.random();
       const bob = SigningPrivateKey.random();
-      const metadata = SignatureMetadata.new().withAssertion(NOTE, "Signed by Alice");
+      const metadata = SignatureMetadata.from().withAssertion(NOTE, "Signed by Alice");
 
       const document = Envelope.from("Secret");
       const signedWithMetadata = document.addSignature(alice, { metadata: metadata });

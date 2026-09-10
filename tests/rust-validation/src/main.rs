@@ -186,7 +186,12 @@ fn build_env(e: &J) -> Result<Envelope, String> {
                 _ => panic!("func"),
             };
             for p in e["params"].as_array().unwrap() {
-                req = req.with_parameter(Parameter::new_named(p[0].as_str().unwrap()), build_env(&p[1])?);
+                let param = match &p[0] {
+                    J::String(s) => Parameter::new_named(s.as_str()),
+                    J::Number(n) => Parameter::new_known(n.as_u64().unwrap(), None),
+                    _ => panic!("param"),
+                };
+                req = req.with_parameter(param, build_env(&p[1])?);
             }
             if let Some(note) = e.get("note").and_then(|n| n.as_str()) {
                 req = req.with_note(note);

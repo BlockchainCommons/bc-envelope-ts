@@ -60,6 +60,19 @@ const TOMBSTONES: {
       return a.includes("1(") && DATE.test(b) && norm(a) === norm(b);
     },
   },
+  {
+    // W7 (D4): the format context carries the functions and parameters
+    // stores, so well-known ids print by name («add», ❰lhs❱) as the
+    // reference does; the baseline printed the ids («1», ❰2❱).
+    id: "T4-expression-names",
+    landed: true,
+    matches: (r, a, b) => {
+      if (r.e.k !== "request" || typeof r.e.func !== "number") return false;
+      const A = stripTagNames(a);
+      const B = stripTagNames(b);
+      return A !== B && A.replace(/«\d+»|❰\d+❱/g, "") === B.replace(/«\w+»|❰\w+❱/g, "");
+    },
+  },
 ];
 
 const DATE = /\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ/;

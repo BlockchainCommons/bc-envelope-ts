@@ -8,80 +8,72 @@ import { Compressed } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
 import { EncryptedMessage } from '@blockchaincommons/components';
 import { KnownValue } from '@blockchaincommons/known-values';
+import { RandomNumberGenerator } from '@blockchaincommons/rand';
+import { Salt } from '@blockchaincommons/components';
 import { SymmetricKey } from '@blockchaincommons/components';
 import { UR } from '@blockchaincommons/uniform-resources';
 
-// @public (undocumented)
+// @public
 export class Assertion implements DigestProvider {
-    constructor(predicate: EnvelopeEncodable | Envelope, object: EnvelopeEncodable | Envelope);
-    // (undocumented)
+    constructor(predicate: ToEnvelope | Envelope, object: ToEnvelope | Envelope);
     clone(): Assertion;
-    // (undocumented)
     digest(): Digest;
-    // (undocumented)
     equals(other: Assertion): boolean;
-    // (undocumented)
     static fromCbor(cbor: Cbor): Assertion;
     // Warning: (ae-forgotten-export) The symbol "CborMap" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     static fromCborMap(map: CborMap): Assertion;
-    // (undocumented)
     object(): Envelope;
-    // (undocumented)
     predicate(): Envelope;
     // Warning: (ae-forgotten-export) The symbol "Cbor" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     toCbor(): Cbor;
-    // (undocumented)
     toString(): string;
 }
 
-// @public (undocumented)
+// @public
 export type CborDecoder<T> = (cbor: Cbor) => T;
 
-// @public (undocumented)
+// @public
 export interface DigestProvider {
-    // (undocumented)
     digest(): Digest;
 }
 
-// @public (undocumented)
+// @public
 export function edgeLabel(edgeType: EdgeType): string | undefined;
 
-// @public (undocumented)
-export enum EdgeType {
-    // (undocumented)
-    Assertion = "assertion",
-    // (undocumented)
-    Content = "content",
-    // (undocumented)
-    None = "none",
-    // (undocumented)
-    Object = "object",
-    // (undocumented)
-    Predicate = "predicate",
-    // (undocumented)
-    Subject = "subject"
+// @public
+export const EdgeType: {
+    readonly None: "none";
+    readonly Subject: "subject";
+    readonly Assertion: "assertion";
+    readonly Predicate: "predicate";
+    readonly Object: "object";
+    readonly Content: "content";
+};
+
+// @public
+export type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];
+
+// @public
+export interface ElideOptions {
+    action?: ObscureAction;
+    removing?: Iterable<DigestProvider | Digest>;
+    revealing?: Iterable<DigestProvider | Digest>;
 }
 
 // @public (undocumented)
-export function elideAction(): ObscureAction;
-
-// @public (undocumented)
 export class Envelope implements DigestProvider {
-    // (undocumented)
-    addAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    // (undocumented)
-    addAssertionEnvelope(assertion: Envelope): Envelope;
+    // Warning: (ae-forgotten-export) The symbol "AddAssertionOptions" needs to be exported by the entry point index.d.ts
+    addAssertion(predicate: EnvelopeInput, object: EnvelopeInput, options?: AddAssertionOptions): Envelope;
+    addAssertionEnvelope(assertion: Envelope, input?: AddAssertionOptions): Envelope;
     addAssertionEnvelopeIf(condition: boolean, assertionEnvelope: Envelope): Envelope;
     addAssertionEnvelopes(assertions: Envelope[]): Envelope;
-    addAssertionIf(condition: boolean, predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
+    addAssertionIf(condition: boolean, predicate: EnvelopeInput, object: EnvelopeInput): Envelope;
     addAssertions(envelopes: Envelope[]): Envelope;
-    addNonemptyStringAssertion(predicate: EnvelopeEncodableValue, str: string): Envelope;
-    addOptionalAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue | undefined): Envelope;
-    addOptionalAssertionEnvelope(assertion: Envelope | undefined): Envelope;
+    addNonemptyStringAssertion(predicate: EnvelopeInput, str: string): Envelope;
+    addOptionalAssertion(predicate: EnvelopeInput, object: EnvelopeInput | undefined, options?: AddAssertionOptions): Envelope;
+    addOptionalAssertionEnvelope(assertion: Envelope | undefined, input?: AddAssertionOptions): Envelope;
+    // Warning: (ae-forgotten-export) The symbol "SaltOptions" needs to be exported by the entry point index.d.ts
+    addSalt(input?: SaltOptions): Envelope;
     asArray(): readonly Cbor[] | undefined;
     asAssertion(): Envelope | undefined;
     asBytes(): Uint8Array | undefined;
@@ -90,68 +82,63 @@ export class Envelope implements DigestProvider {
     asMap(): CborMap | undefined;
     asObject(): Envelope | undefined;
     asPredicate(): Envelope | undefined;
+    static assertion(predicate: EnvelopeInput, object: EnvelopeInput): Envelope;
     assertions(): Envelope[];
-    assertionsWithPredicate(predicate: EnvelopeEncodableValue): Envelope[];
-    assertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    assertionsWithPredicate(predicate: EnvelopeInput): Envelope[];
+    assertionWithPredicate(predicate: EnvelopeInput): Envelope;
     asText(): string | undefined;
+    get case(): EnvelopeCase;
+    // Warning: (ae-forgotten-export) The symbol "Tag" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    case(): EnvelopeCase;
+    cborTags(): Tag[];
     checkSubjectUnit(): Envelope;
-    // (undocumented)
-    clone(): Envelope;
+    // Warning: (ae-forgotten-export) The symbol "CborCodec" needs to be exported by the entry point index.d.ts
+    static get codec(): CborCodec<Envelope>;
     // (undocumented)
     compress(): Envelope;
+    static compressed(compressed: Compressed): Envelope;
     compressSubject(): Envelope;
     decompress(): Envelope;
     decompressSubject(): Envelope;
     decrypt(key: SymmetricKey): Envelope;
     decryptSubject(key: SymmetricKey): Envelope;
     deepDigests(): Set<Digest>;
-    // (undocumented)
     digest(): Digest;
     digests(levelLimit: number): Set<Digest>;
     elementsCount(): number;
-    elide(): Envelope;
-    elideRemovingArray(target: DigestProvider[]): Envelope;
-    elideRemovingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
-    elideRemovingSet(target: Set<Digest>): Envelope;
-    elideRemovingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
-    elideRemovingTarget(target: DigestProvider): Envelope;
-    elideRemovingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
-    elideRevealingArray(target: DigestProvider[]): Envelope;
-    elideRevealingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
-    elideRevealingSet(target: Set<Digest>): Envelope;
-    elideRevealingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
-    elideRevealingTarget(target: DigestProvider): Envelope;
-    elideRevealingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
+    elide(options?: ElideOptions): Envelope;
+    static elided(digest: Digest): Envelope;
     elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     encrypt(key: SymmetricKey): Envelope;
+    static encrypted(encryptedMessage: EncryptedMessage): Envelope;
     // (undocumented)
     encryptSubject(key: SymmetricKey): Envelope;
-    expectLeaf(): unknown;
+    expectAssertion(): Envelope;
     // (undocumented)
-    extractBoolean(): boolean;
+    expectBoolean(): boolean;
     // (undocumented)
-    extractBytes(): Uint8Array;
+    expectBytes(): Uint8Array;
+    expectKnownValue(): KnownValue;
+    expectLeaf(): Cbor;
     // (undocumented)
-    extractNull(): null;
+    expectNull(): null;
     // (undocumented)
-    extractNumber(): number;
-    extractObjectForPredicateWithDefault<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
-    extractObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-    extractString(): string;
-    extractSubject<T>(decoder: CborDecoder<T>): T;
-    static false(): Envelope;
-    // (undocumented)
+    expectNumber(): number;
+    expectObject(): Envelope;
+    expectObjectForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T;
+    expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
+    expectPredicate(): Envelope;
+    expectString(): string;
+    expectSubject<T>(decoder: CborDecoder<T>): T;
+    static get FALSE(): Envelope;
+    static from(subject: EnvelopeInput): Envelope;
+    static fromAssertion(assertion: Assertion): Envelope;
+    static fromBytes(data: Uint8Array): Envelope;
     static fromCase(envelopeCase: EnvelopeCase): Envelope;
-    // (undocumented)
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    // (undocumented)
+    static fromCbor(cbor: Cbor): Envelope;
+    static fromOptional(subject: EnvelopeInput | undefined): Envelope | undefined;
     static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromUR(ur: UR): Envelope;
-    // (undocumented)
-    static fromURString(urString: string): Envelope;
-    static fromUrString(urString: string): Envelope;
     hasAssertions(): boolean;
     isAssertion(): boolean;
     isBool(): boolean;
@@ -169,52 +156,32 @@ export class Envelope implements DigestProvider {
     isNull(): boolean;
     isNumber(): boolean;
     isObscured(): boolean;
-    // (undocumented)
     isSubjectAssertion(): boolean;
     isSubjectCompressed(): boolean;
     isSubjectElided(): boolean;
     isSubjectEncrypted(): boolean;
     isSubjectNaN(): boolean;
     isSubjectNumber(): boolean;
-    // (undocumented)
     isSubjectObscured(): boolean;
     isSubjectUnit(): boolean;
     isTrue(): boolean;
     isWrapped(): boolean;
-    // (undocumented)
-    static new(subject: EnvelopeEncodableValue): Envelope;
-    // (undocumented)
-    static newAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    // (undocumented)
-    static newElided(digest: Digest): Envelope;
-    // (undocumented)
-    static newLeaf(value: unknown): Envelope;
-    // (undocumented)
-    static newOrNone(subject: EnvelopeEncodableValue | undefined): Envelope | undefined;
-    // (undocumented)
-    static newOrNull(subject: EnvelopeEncodableValue | undefined): Envelope;
-    // (undocumented)
-    static newWithAssertion(assertion: Assertion): Envelope;
-    // (undocumented)
-    static newWithAssertions(subject: Envelope, assertions: Envelope[]): Envelope;
-    // (undocumented)
-    static newWithCompressed(compressed: Compressed): Envelope;
-    // (undocumented)
-    static newWithEncrypted(encryptedMessage: EncryptedMessage): Envelope;
-    // (undocumented)
-    static newWithKnownValue(value: KnownValue | number | bigint): Envelope;
-    // (undocumented)
-    static newWithUncheckedAssertions(subject: Envelope, uncheckedAssertions: Envelope[]): Envelope;
-    // (undocumented)
-    static newWrapped(envelope: Envelope): Envelope;
+    static knownValue(value: KnownValue | number | bigint): Envelope;
+    static leaf(value: unknown): Envelope;
+    static node(subject: Envelope, assertions: Envelope[], input?: {
+        unchecked?: boolean;
+    }): Envelope;
     nodesMatching(targetDigests: Set<Digest> | undefined, obscureTypes: ObscureType[]): Set<Digest>;
-    // (undocumented)
-    static null(): Envelope;
+    static get NULL(): Envelope;
     object(): Envelope;
-    objectForPredicate(predicate: EnvelopeEncodableValue): Envelope;
-    objectsForPredicate(predicate: EnvelopeEncodableValue): Envelope[];
-    optionalAssertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
-    optionalObjectForPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    objectForPredicate(predicate: EnvelopeInput): Envelope;
+    objectForPredicateOr<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>, defaultValue: T): T;
+    objectsForPredicate(predicate: EnvelopeInput): Envelope[];
+    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
+    optionalAssertionWithPredicate(predicate: EnvelopeInput): Envelope | undefined;
+    optionalObjectForPredicate(predicate: EnvelopeInput): Envelope | undefined;
+    optionalObjectForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T | undefined;
+    pipe<A extends unknown[], R>(fn: (envelope: Envelope, ...args: A) => R, ...args: A): R;
     position(): number;
     predicate(): Envelope;
     removeAssertion(target: Envelope): Envelope;
@@ -224,41 +191,25 @@ export class Envelope implements DigestProvider {
     setPosition(position: number): Envelope;
     shallowDigests(): Set<Digest>;
     structuralDigest(): Digest;
-    // (undocumented)
     subject(): Envelope;
-    // (undocumented)
-    taggedCbor(): Cbor;
-    taggedCborData(): Uint8Array;
-    toCbor(): unknown;
-    // (undocumented)
+    toCbor(): Cbor;
     toString(): string;
-    static true(): Envelope;
-    tryAssertion(): Envelope;
-    tryByteString(): Uint8Array;
-    tryKnownValue(): KnownValue;
-    tryLeaf(): Cbor;
-    tryObject(): Envelope;
-    tryObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
-    tryObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-    tryOptionalObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
-    tryPredicate(): Envelope;
-    tryUnwrap(): Envelope;
+    toUR(): UR;
+    static get TRUE(): Envelope;
     unelide(envelope: Envelope): Envelope;
-    static unit(): Envelope;
-    // (undocumented)
+    static get UNIT(): Envelope;
     untaggedCbor(): Cbor;
     unwrap(): Envelope;
-    ur(): UR;
-    urString(): string;
     walk<State>(hideNodes: boolean, state: State, visit: Visitor<State>): void;
     walkDecompress(targetDigests?: Set<Digest>): Envelope;
     walkDecrypt(keys: SymmetricKey[]): Envelope;
     walkReplace(target: Set<Digest>, replacement: Envelope): Envelope;
     walkUnelide(envelopes: Envelope[]): Envelope;
+    static wrap(envelope: Envelope): Envelope;
     wrap(): Envelope;
 }
 
-// @public (undocumented)
+// @public
 export type EnvelopeCase = {
     type: "node";
     subject: Envelope;
@@ -290,329 +241,143 @@ export type EnvelopeCase = {
     value: Compressed;
 };
 
-// Warning: (ae-forgotten-export) The symbol "CborTagged" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export class EnvelopeCBORTagged implements CborTagged {
-    // Warning: (ae-forgotten-export) The symbol "tagsForValues" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    cborTags(): ReturnType<typeof tagsForValues>;
-    // (undocumented)
-    static cborTags(): number[];
-}
-
-// Warning: (ae-forgotten-export) The symbol "CborTaggedDecodable" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDecodable<T> {
-    // (undocumented)
-    cborTags(): ReturnType<typeof tagsForValues>;
-    // (undocumented)
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    // (undocumented)
-    fromTaggedCbor(cbor: Cbor): T;
-    // (undocumented)
-    static fromUntaggedCbor(cbor: Cbor): Envelope;
-    // (undocumented)
-    fromUntaggedCbor(cbor: Cbor): T;
-}
-
-// Warning: (ae-forgotten-export) The symbol "CborTaggedEncodable" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export class EnvelopeCBORTaggedEncodable implements CborTaggedEncodable {
-    constructor(envelope: Envelope);
-    // (undocumented)
-    cborTags(): ReturnType<typeof tagsForValues>;
-    // (undocumented)
-    taggedCbor(): Cbor;
-    // (undocumented)
-    untaggedCbor(): Cbor;
-}
-
-// @public (undocumented)
-export class EnvelopeDecoder {
-    // (undocumented)
-    static tryFromCbor(cbor: Cbor): Envelope;
-    // (undocumented)
-    static tryFromCborData(data: Uint8Array): Envelope;
-}
-
-// @public (undocumented)
-export interface EnvelopeEncodable {
-    // (undocumented)
-    intoEnvelope(): Envelope;
-}
-
-// Warning: (ae-forgotten-export) The symbol "ToCbor" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
-
 // @public (undocumented)
 export class EnvelopeError extends Error {
-    constructor(code: ErrorCode, message: string, cause?: Error);
-    // (undocumented)
+    constructor(code: EnvelopeErrorCode, message: string, cause?: Error);
     static alreadyCompressed(): EnvelopeError;
-    // (undocumented)
     static alreadyElided(): EnvelopeError;
-    // (undocumented)
     static alreadyEncrypted(): EnvelopeError;
-    // (undocumented)
     static ambiguousAttachment(): EnvelopeError;
-    // (undocumented)
     static ambiguousEdge(): EnvelopeError;
-    // (undocumented)
     static ambiguousPredicate(): EnvelopeError;
-    // (undocumented)
     static ambiguousType(): EnvelopeError;
     // (undocumented)
     readonly cause?: Error;
-    // (undocumented)
     static cbor(message: string, cause?: Error): EnvelopeError;
     // (undocumented)
-    readonly code: ErrorCode;
-    // (undocumented)
+    readonly code: EnvelopeErrorCode;
     static components(message: string, cause?: Error): EnvelopeError;
-    // (undocumented)
     static edgeDuplicateIsA(): EnvelopeError;
-    // (undocumented)
     static edgeDuplicateSource(): EnvelopeError;
-    // (undocumented)
     static edgeDuplicateTarget(): EnvelopeError;
-    // (undocumented)
     static edgeMissingIsA(): EnvelopeError;
-    // (undocumented)
     static edgeMissingSource(): EnvelopeError;
-    // (undocumented)
     static edgeMissingTarget(): EnvelopeError;
-    // (undocumented)
     static edgeUnexpectedAssertion(): EnvelopeError;
-    // (undocumented)
     static general(message: string, cause?: Error): EnvelopeError;
-    // (undocumented)
     static invalidAssertion(): EnvelopeError;
-    // (undocumented)
     static invalidAttachment(message?: string): EnvelopeError;
-    // (undocumented)
     static invalidDigest(): EnvelopeError;
-    // (undocumented)
     static invalidFormat(): EnvelopeError;
-    // (undocumented)
     static invalidInnerSignatureType(): EnvelopeError;
-    // (undocumented)
     static invalidOuterSignatureType(): EnvelopeError;
-    // (undocumented)
     static invalidResponse(): EnvelopeError;
-    // (undocumented)
     static invalidShares(): EnvelopeError;
-    // (undocumented)
     static invalidSignatureType(): EnvelopeError;
-    // (undocumented)
     static invalidType(): EnvelopeError;
-    // (undocumented)
     static missingDigest(): EnvelopeError;
-    // (undocumented)
     static msg(message: string): EnvelopeError;
-    // (undocumented)
     static nonexistentAttachment(): EnvelopeError;
-    // (undocumented)
     static nonexistentEdge(): EnvelopeError;
-    // (undocumented)
     static nonexistentPredicate(): EnvelopeError;
-    // (undocumented)
     static notAssertion(): EnvelopeError;
-    // (undocumented)
     static notCompressed(): EnvelopeError;
-    // (undocumented)
     static notEncrypted(): EnvelopeError;
-    // (undocumented)
     static notKnownValue(): EnvelopeError;
-    // (undocumented)
     static notLeaf(): EnvelopeError;
-    // (undocumented)
     static notWrapped(): EnvelopeError;
-    // (undocumented)
     static sskr(message: string, cause?: Error): EnvelopeError;
-    // (undocumented)
     static subjectNotUnit(): EnvelopeError;
-    // (undocumented)
     static unexpectedResponseId(): EnvelopeError;
-    // (undocumented)
     static unknownRecipient(): EnvelopeError;
-    // (undocumented)
     static unknownSecret(): EnvelopeError;
-    // (undocumented)
     static unverifiedInnerSignature(): EnvelopeError;
-    // (undocumented)
     static unverifiedSignature(): EnvelopeError;
 }
 
-// @public (undocumented)
-export function envelopeFromBytes(bytes: Uint8Array): Envelope;
-
-// @public (undocumented)
-export function envelopeFromCbor(cbor: Cbor): Envelope;
-
-// @public (undocumented)
-export function envelopeToBytes(envelope: Envelope): Uint8Array;
-
-// @public (undocumented)
-export function envelopeToCbor(envelope: Envelope): Cbor;
+// @public
+export const EnvelopeErrorCode: {
+    readonly AlreadyElided: "AlreadyElided";
+    readonly AmbiguousPredicate: "AmbiguousPredicate";
+    readonly InvalidDigest: "InvalidDigest";
+    readonly InvalidFormat: "InvalidFormat";
+    readonly MissingDigest: "MissingDigest";
+    readonly NonexistentPredicate: "NonexistentPredicate";
+    readonly NotWrapped: "NotWrapped";
+    readonly NotLeaf: "NotLeaf";
+    readonly NotAssertion: "NotAssertion";
+    readonly InvalidAssertion: "InvalidAssertion";
+    readonly InvalidAttachment: "InvalidAttachment";
+    readonly NonexistentAttachment: "NonexistentAttachment";
+    readonly AmbiguousAttachment: "AmbiguousAttachment";
+    readonly EdgeMissingIsA: "EdgeMissingIsA";
+    readonly EdgeMissingSource: "EdgeMissingSource";
+    readonly EdgeMissingTarget: "EdgeMissingTarget";
+    readonly EdgeDuplicateIsA: "EdgeDuplicateIsA";
+    readonly EdgeDuplicateSource: "EdgeDuplicateSource";
+    readonly EdgeDuplicateTarget: "EdgeDuplicateTarget";
+    readonly EdgeUnexpectedAssertion: "EdgeUnexpectedAssertion";
+    readonly NonexistentEdge: "NonexistentEdge";
+    readonly AmbiguousEdge: "AmbiguousEdge";
+    readonly AlreadyCompressed: "AlreadyCompressed";
+    readonly NotCompressed: "NotCompressed";
+    readonly AlreadyEncrypted: "AlreadyEncrypted";
+    readonly NotEncrypted: "NotEncrypted";
+    readonly NotKnownValue: "NotKnownValue";
+    readonly UnknownRecipient: "UnknownRecipient";
+    readonly UnknownSecret: "UnknownSecret";
+    readonly UnverifiedSignature: "UnverifiedSignature";
+    readonly InvalidOuterSignatureType: "InvalidOuterSignatureType";
+    readonly InvalidInnerSignatureType: "InvalidInnerSignatureType";
+    readonly UnverifiedInnerSignature: "UnverifiedInnerSignature";
+    readonly InvalidSignatureType: "InvalidSignatureType";
+    readonly InvalidShares: "InvalidShares";
+    readonly Sskr: "Sskr";
+    readonly InvalidType: "InvalidType";
+    readonly AmbiguousType: "AmbiguousType";
+    readonly SubjectNotUnit: "SubjectNotUnit";
+    readonly UnexpectedResponseId: "UnexpectedResponseId";
+    readonly InvalidResponse: "InvalidResponse";
+    readonly Cbor: "Cbor";
+    readonly Components: "Components";
+    readonly General: "General";
+};
 
 // @public
-export enum ErrorCode {
-    // (undocumented)
-    ALREADY_COMPRESSED = "ALREADY_COMPRESSED",
-    // (undocumented)
-    ALREADY_ELIDED = "ALREADY_ELIDED",
-    // (undocumented)
-    ALREADY_ENCRYPTED = "ALREADY_ENCRYPTED",
-    // (undocumented)
-    AMBIGUOUS_ATTACHMENT = "AMBIGUOUS_ATTACHMENT",
-    // (undocumented)
-    AMBIGUOUS_EDGE = "AMBIGUOUS_EDGE",
-    // (undocumented)
-    AMBIGUOUS_PREDICATE = "AMBIGUOUS_PREDICATE",
-    // (undocumented)
-    AMBIGUOUS_TYPE = "AMBIGUOUS_TYPE",
-    // (undocumented)
-    CBOR = "CBOR",
-    // (undocumented)
-    COMPONENTS = "COMPONENTS",
-    // (undocumented)
-    EDGE_DUPLICATE_IS_A = "EDGE_DUPLICATE_IS_A",
-    // (undocumented)
-    EDGE_DUPLICATE_SOURCE = "EDGE_DUPLICATE_SOURCE",
-    // (undocumented)
-    EDGE_DUPLICATE_TARGET = "EDGE_DUPLICATE_TARGET",
-    // (undocumented)
-    EDGE_MISSING_IS_A = "EDGE_MISSING_IS_A",
-    // (undocumented)
-    EDGE_MISSING_SOURCE = "EDGE_MISSING_SOURCE",
-    // (undocumented)
-    EDGE_MISSING_TARGET = "EDGE_MISSING_TARGET",
-    // (undocumented)
-    EDGE_UNEXPECTED_ASSERTION = "EDGE_UNEXPECTED_ASSERTION",
-    // (undocumented)
-    GENERAL = "GENERAL",
-    // (undocumented)
-    INVALID_ASSERTION = "INVALID_ASSERTION",
-    // (undocumented)
-    INVALID_ATTACHMENT = "INVALID_ATTACHMENT",
-    // (undocumented)
-    INVALID_DIGEST = "INVALID_DIGEST",
-    // (undocumented)
-    INVALID_FORMAT = "INVALID_FORMAT",
-    // (undocumented)
-    INVALID_INNER_SIGNATURE_TYPE = "INVALID_INNER_SIGNATURE_TYPE",
-    // (undocumented)
-    INVALID_OUTER_SIGNATURE_TYPE = "INVALID_OUTER_SIGNATURE_TYPE",
-    // (undocumented)
-    INVALID_RESPONSE = "INVALID_RESPONSE",
-    // (undocumented)
-    INVALID_SHARES = "INVALID_SHARES",
-    // (undocumented)
-    INVALID_SIGNATURE_TYPE = "INVALID_SIGNATURE_TYPE",
-    // (undocumented)
-    INVALID_TYPE = "INVALID_TYPE",
-    // (undocumented)
-    MISSING_DIGEST = "MISSING_DIGEST",
-    // (undocumented)
-    NONEXISTENT_ATTACHMENT = "NONEXISTENT_ATTACHMENT",
-    // (undocumented)
-    NONEXISTENT_EDGE = "NONEXISTENT_EDGE",
-    // (undocumented)
-    NONEXISTENT_PREDICATE = "NONEXISTENT_PREDICATE",
-    // (undocumented)
-    NOT_ASSERTION = "NOT_ASSERTION",
-    // (undocumented)
-    NOT_COMPRESSED = "NOT_COMPRESSED",
-    // (undocumented)
-    NOT_ENCRYPTED = "NOT_ENCRYPTED",
-    // (undocumented)
-    NOT_KNOWN_VALUE = "NOT_KNOWN_VALUE",
-    // (undocumented)
-    NOT_LEAF = "NOT_LEAF",
-    // (undocumented)
-    NOT_WRAPPED = "NOT_WRAPPED",
-    // (undocumented)
-    SSKR = "SSKR",
-    // (undocumented)
-    SUBJECT_NOT_UNIT = "SUBJECT_NOT_UNIT",
-    // (undocumented)
-    UNEXPECTED_RESPONSE_ID = "UNEXPECTED_RESPONSE_ID",
-    // (undocumented)
-    UNKNOWN_RECIPIENT = "UNKNOWN_RECIPIENT",
-    // (undocumented)
-    UNKNOWN_SECRET = "UNKNOWN_SECRET",
-    // (undocumented)
-    UNVERIFIED_INNER_SIGNATURE = "UNVERIFIED_INNER_SIGNATURE",
-    // (undocumented)
-    UNVERIFIED_SIGNATURE = "UNVERIFIED_SIGNATURE"
-}
+export type EnvelopeErrorCode = (typeof EnvelopeErrorCode)[keyof typeof EnvelopeErrorCode];
 
-// @public (undocumented)
-export function extractBoolean(envelope: Envelope): boolean;
-
-// @public (undocumented)
-export function extractBytes(envelope: Envelope): Uint8Array;
-
-// @public (undocumented)
-export function extractNull(envelope: Envelope): null;
-
-// @public (undocumented)
-export function extractNumber(envelope: Envelope): number;
-
-// @public (undocumented)
-export function extractObjectForPredicateWithDefault<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
-
-// @public (undocumented)
-export function extractObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-// @public (undocumented)
-export function extractString(envelope: Envelope): string;
-
-// @public (undocumented)
-export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T;
+// Warning: (ae-forgotten-export) The symbol "ToCbor" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type EnvelopeInput = ToEnvelope | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | ToCbor;
 
 // @public
 export function flanked(str: string, left: string, right: string): string;
 
-// @public (undocumented)
-export function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable;
+// @public
+export function isToEnvelope(value: unknown): value is ToEnvelope;
 
-// @public (undocumented)
-export type ObscureAction = {
-    type: "elide";
-} | {
-    type: "encrypt";
-    key: unknown;
-} | {
-    type: "compress";
+// @public
+export type ObscureAction = "elide" | "compress" | {
+    encrypt: SymmetricKey;
+};
+
+// @public
+export const ObscureType: {
+    readonly Elided: "elided";
+    readonly Encrypted: "encrypted";
+    readonly Compressed: "compressed";
 };
 
 // @public (undocumented)
-export enum ObscureType {
-    // (undocumented)
-    Compressed = "compressed",
-    // (undocumented)
-    Elided = "elided",
-    // (undocumented)
-    Encrypted = "encrypted"
+export type ObscureType = (typeof ObscureType)[keyof typeof ObscureType];
+
+// @public
+export interface ToEnvelope {
+    toEnvelope(): Envelope;
 }
 
-// @public (undocumented)
-export function tryObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
-
-// @public (undocumented)
-export function tryObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-// @public (undocumented)
-export function tryOptionalObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
-
-// @public (undocumented)
+// @public
 export type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
 
 // (No @packageDocumentation comment for this package)

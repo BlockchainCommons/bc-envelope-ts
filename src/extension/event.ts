@@ -48,22 +48,22 @@ export interface EventBehavior<T extends EnvelopeInput> {
   /**
    * Returns the content of the event.
    */
-  content(): T;
+  readonly content: T;
 
   /**
    * Returns the unique identifier (ARID) of the event.
    */
-  id(): ARID;
+  readonly id: ARID;
 
   /**
    * Returns the note attached to the event, or an empty string if none exists.
    */
-  note(): string;
+  readonly note: string;
 
   /**
    * Returns the date attached to the event, if any.
    */
-  date(): Date | undefined;
+  readonly date: Date | undefined;
 
   /**
    * Converts the event to an envelope.
@@ -82,7 +82,7 @@ export interface EventBehavior<T extends EnvelopeInput> {
  * const eventId = ARID.new();
  * const timestamp = new Date("2024-08-15T13:45:30Z");
  *
- * const statusEvent = Event.new("System online", eventId)
+ * const statusEvent = Event.from("System online", eventId)
  *   .withNote("Regular status update")
  *   .withDate(timestamp);
  *
@@ -108,7 +108,7 @@ export class Event<T extends EnvelopeInput> implements EventBehavior<T>, ToEnvel
   /**
    * Creates a new event with the specified content and ID.
    */
-  static new<T extends EnvelopeInput>(content: T, id: ARID): Event<T> {
+  static from<T extends EnvelopeInput>(content: T, id: ARID): Event<T> {
     return new Event(content, id);
   }
 
@@ -132,19 +132,19 @@ export class Event<T extends EnvelopeInput> implements EventBehavior<T>, ToEnvel
     return this;
   }
 
-  content(): T {
+  get content(): T {
     return this._content;
   }
 
-  id(): ARID {
+  get id(): ARID {
     return this._id;
   }
 
-  note(): string {
+  get note(): string {
     return this._note;
   }
 
-  date(): Date | undefined {
+  get date(): Date | undefined {
     return this._date;
   }
 
@@ -241,13 +241,6 @@ export class Event<T extends EnvelopeInput> implements EventBehavior<T>, ToEnvel
     }
 
     return new Event(content, id, note, date);
-  }
-
-  /**
-   * Creates a string event from an envelope.
-   */
-  static stringFromEnvelope(envelope: Envelope): Event<string> {
-    return Event.fromEnvelope<string>(envelope, (env) => env.asText() ?? "");
   }
 
   /**

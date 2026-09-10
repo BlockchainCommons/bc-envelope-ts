@@ -61,7 +61,7 @@ export type E =
       k: "request";
       func: string | number;
       id: string;
-      params: [string, E][];
+      params: [string | number, E][];
       note?: string;
       date?: number;
     }

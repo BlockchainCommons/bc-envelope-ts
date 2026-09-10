@@ -243,7 +243,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
     it("should add signature with metadata and double-sign", () => {
       const alice = alicePrivateKey();
       const alicePub = alice.publicKey();
-      const metadata = SignatureMetadata.new()
+      const metadata = SignatureMetadata.from()
         .withAssertion(NOTE, "Signed by Alice")
         .withAssertion("timestamp", "2024-01-15T10:30:00Z");
 
@@ -274,7 +274,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
     it("should reject metadata signature from wrong key", () => {
       const alice = alicePrivateKey();
       const carol = carolPrivateKey();
-      const metadata = SignatureMetadata.new().withAssertion(NOTE, "Signed by Alice");
+      const metadata = SignatureMetadata.from().withAssertion(NOTE, "Signed by Alice");
 
       const signedWithMetadata = helloEnvelope().addSignature(alice, { metadata: metadata });
 

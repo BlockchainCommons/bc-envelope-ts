@@ -27,6 +27,14 @@ import {
   CborError,
 } from "@blockchaincommons/dcbor";
 import {
+  Function,
+  FunctionsStore,
+  GLOBAL_FUNCTIONS,
+  GLOBAL_PARAMETERS,
+  Parameter,
+  ParametersStore,
+} from "../extension/expression";
+import {
   type KnownValuesStore,
   KnownValuesStore as KnownValuesStoreClass,
   KnownValue,
@@ -122,13 +130,34 @@ export function resolveFormatContext(opt: FormatContextOpt = "global"): FormatCo
 export class FormatContext implements ReadonlyTagsStore {
   private readonly _tags: TagsStore;
   private readonly _knownValues: KnownValuesStore;
+  private readonly _functions: FunctionsStore;
+  private readonly _parameters: ParametersStore;
 
   constructor({
     tags = new TagsStoreClass(),
     knownValues = new KnownValuesStoreClass(),
-  }: { tags?: TagsStore; knownValues?: KnownValuesStore } = {}) {
+    functions = new FunctionsStore(),
+    parameters = new ParametersStore(),
+  }: {
+    tags?: TagsStore;
+    knownValues?: KnownValuesStore;
+    functions?: FunctionsStore;
+    parameters?: ParametersStore;
+  } = {}) {
     this._tags = tags;
     this._knownValues = knownValues;
+    this._functions = functions;
+    this._parameters = parameters;
+  }
+
+  /** Names for well-known expression functions (`«add»`). */
+  get functions(): FunctionsStore {
+    return this._functions;
+  }
+
+  /** Names for well-known expression parameters (`❰lhs❱`). */
+  get parameters(): ParametersStore {
+    return this._parameters;
   }
 
   /** The CBOR tags registry (names and summarisers). */
@@ -170,7 +199,12 @@ export class FormatContext implements ReadonlyTagsStore {
   clone(): FormatContext {
     // Note: This creates a shallow copy - tags and knownValues are shared
     // For a full deep copy, we would need to clone the stores
-    return new FormatContext({ tags: this._tags, knownValues: this._knownValues });
+    return new FormatContext({
+      tags: this._tags,
+      knownValues: this._knownValues,
+      functions: this._functions,
+      parameters: this._parameters,
+    });
   }
 }
 
@@ -193,7 +227,12 @@ export const getGlobalFormatContext = (): FormatContext => {
     registerBcTags(tags);
     const knownValues = getGlobalKnownValuesStore();
 
-    _globalFormatContextInstance = new FormatContext({ tags, knownValues });
+    _globalFormatContextInstance = new FormatContext({
+      tags,
+      knownValues,
+      functions: GLOBAL_FUNCTIONS.get(),
+      parameters: GLOBAL_PARAMETERS.get(),
+    });
     isInitialized = true;
 
     // Set up known value summarizer
@@ -550,17 +589,13 @@ const setupComponentSummarizers = (context: FormatContext): void => {
     }
   });
 
-  // Function: «name» / «id» / «"named"» — mirrors Rust
-  // `format_context.rs:367-377` (function summarizer).
+  // Function: «name» for a known function the context names, «id» for
+  // one it does not, «"name"» for a named function.
   tags.setSummarizer(TAG_FUNCTION.value, (cbor, _flat) => {
     try {
-      // The untagged content is either an unsigned int (well-known
-      // function id) or a text (named function). We don't have a
-      // FunctionsStore lookup here at this layer — rendering by id
-      // is sufficient for parity with Rust's `name_for_function`
-      // fallback.
       if (isNumber(cbor)) {
-        return { ok: true, value: `«${expectNumber(cbor)}»` };
+        const name = context.functions.nameOf(Function.known(Number(expectNumber(cbor))));
+        return { ok: true, value: `«${name}»` };
       }
       if (isText(cbor)) {
         return { ok: true, value: `«"${expectText(cbor)}"»` };
@@ -571,12 +606,12 @@ const setupComponentSummarizers = (context: FormatContext): void => {
     }
   });
 
-  // Parameter: ❰name❱ / ❰id❱ / ❰"named"❱ — mirrors Rust
-  // `format_context.rs:379-389` (parameter summarizer).
+  // Parameter: ❰name❱ / ❰id❱ / ❰"name"❱, likewise.
   tags.setSummarizer(TAG_PARAMETER.value, (cbor, _flat) => {
     try {
       if (isNumber(cbor)) {
-        return { ok: true, value: `❰${expectNumber(cbor)}❱` };
+        const name = context.parameters.nameOf(Parameter.known(Number(expectNumber(cbor))));
+        return { ok: true, value: `❰${name}❱` };
       }
       if (isText(cbor)) {
         return { ok: true, value: `❰"${expectText(cbor)}"❱` };

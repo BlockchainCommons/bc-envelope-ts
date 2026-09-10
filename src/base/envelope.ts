@@ -232,7 +232,7 @@ export class Envelope implements DigestProvider {
     // `toEnvelope()` so structured types (e.g. `ProvenanceMarkGenerator`,
     // `Permissions`) build the same envelope shape Rust produces via
     // its `ToEnvelope` blanket impl. Tagged-CBOR primitives
-    // (those whose `toEnvelope` is just `Envelope::new(self.tagged_cbor())`)
+    // (those whose `toEnvelope` is just `Envelope.from(this.toCbor())`)
     // still resolve to the same leaf — Rust collapses the two paths
     // identically. Skip this branch for `Uint8Array`, which is a
     // built-in encodable but should produce a byte-string leaf, not be
@@ -3193,7 +3193,7 @@ function encryptWithDigest(
 /**
  * Decrypts an {@link EncryptedMessage} using the AAD bytes the message
  * already carries. The AAD must parse as a CBOR-encoded tagged
- * {@link Digest}; the recovered digest is what callers compare against
+ * `Digest`; the recovered digest is what callers compare against
  * `Envelope::digest()`.
  */
 function decryptWithDigest(key: SymmetricKey, message: EncryptedMessage): Uint8Array {

@@ -24,29 +24,31 @@ import { SymmetricKey } from '@blockchaincommons/components';
 import { UR } from '@blockchaincommons/uniform-resources';
 import { Verifier } from '@blockchaincommons/components';
 
+/** Standard arithmetic and logical functions */
 export declare const ADD: Function_2;
 
-export declare function add(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates an addition expression: lhs + rhs */
+export declare function add(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
+/** Raw value constants (matching Rust's _VALUE suffix constants) */
 export declare const ADD_VALUE: number;
 
-export declare function addAssertionEnvelopeSalted(envelope: Envelope, assertionEnvelope: Envelope, salted: boolean): Envelope;
-
-export declare function addAssertionSalted(envelope: Envelope, predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue, salted: boolean): Envelope;
+/** Options for `Envelope.addAssertion` and friends. */
+declare interface AddAssertionOptions {
+    /** Also salt the assertion (see `addSalt`) so its digest is not correlatable. */
+    salt?: boolean;
+}
 
 /**
  * Adds an attachment to an envelope.
  */
-export declare function addAttachment(envelope: Envelope, payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string): Envelope;
+export declare function addAttachment(envelope: Envelope, payload: EnvelopeInput, vendor: string, conformsTo?: string): Envelope;
 
 /**
  * Returns a new envelope with an added `'edge': <edge>` assertion.
  *
- * Equivalent to Rust's `Envelope::add_edge_envelope()`.
  */
 export declare function addEdgeEnvelope(envelope: Envelope, edge: Envelope): Envelope;
-
-export declare function addOptionalAssertionEnvelopeSalted(envelope: Envelope, assertionEnvelope: Envelope | undefined, salted: boolean): Envelope;
 
 /**
  * Adds a recipient assertion to this envelope.
@@ -61,66 +63,165 @@ export declare function addOptionalAssertionEnvelopeSalted(envelope: Envelope, a
  */
 export declare function addRecipient(envelope: Envelope, recipient: Encrypter, contentKey: SymmetricKey, testNonce?: Nonce): Envelope;
 
-export declare function addSalt(envelope: Envelope): Envelope;
-
-export declare function addSaltBytes(envelope: Envelope, saltBytes: Uint8Array): Envelope;
-
-export declare function addSaltInRange(envelope: Envelope, min: number, max: number): Envelope;
-
-export declare function addSaltInRangeUsing(envelope: Envelope, min: number, max: number, rng: RandomNumberGenerator): Envelope;
-
-export declare function addSaltInstance(envelope: Envelope, salt: Salt): Envelope;
-
-export declare function addSaltUsing(envelope: Envelope, rng: RandomNumberGenerator): Envelope;
-
-export declare function addSaltWithLen(envelope: Envelope, count: number): Envelope;
-
-export declare function addSaltWithLength(envelope: Envelope, count: number): Envelope;
-
-export declare function addSaltWithLenUsing(envelope: Envelope, count: number, rng: RandomNumberGenerator): Envelope;
-
 export declare function addSecret(envelope: Envelope, method: KeyDerivationMethod, secret: Uint8Array, contentKey: SymmetricKey): Envelope;
 
-export declare function addSignature(envelope: Envelope, signer: Signer): Envelope;
+/**
+ * Adds a `signed` assertion: a signature over the subject's digest, with
+ * `metadata` bound to it when given.
+ */
+export declare function addSignature(envelope: Envelope, signer: Signer, { signing: options, metadata }?: SignOptions): Envelope;
 
-export declare function addSignatureOpt(envelope: Envelope, signer: Signer, options?: SigningOptions, metadata?: SignatureMetadata): Envelope;
-
-export declare function addSignatures(envelope: Envelope, signers: Signer[]): Envelope;
-
-export declare function addSignaturesOpt(envelope: Envelope, signersWithOptions: {
+/** `addSignature` for each signer, each with its own options when given as `{ signer, ...options }`. */
+export declare function addSignatures(envelope: Envelope, signers: readonly (Signer | ({
     signer: Signer;
-    options?: SigningOptions;
-    metadata?: SignatureMetadata;
-}[]): Envelope;
+} & SignOptions))[]): Envelope;
 
-export declare function addSignaturesWithMetadata(envelope: Envelope, signersWithMetadata: {
-    signer: Signer;
-    metadata?: SignatureMetadata;
-}[]): Envelope;
-
-export declare function addSignatureWithMetadata(envelope: Envelope, signer: Signer, metadata?: SignatureMetadata): Envelope;
-
-export declare function addType(envelope: Envelope, object: EnvelopeEncodableValue): Envelope;
+export declare function addType(envelope: Envelope, object: EnvelopeInput): Envelope;
 
 export declare const AND: Function_2;
 
-export declare function and(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a logical AND expression: lhs && rhs */
+export declare function and(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const AND_VALUE: number;
 
+/**
+ * A predicate-object relationship representing an assertion about a subject.
+ *
+ * In Gordian Envelope, assertions are the basic building blocks for attaching
+ * information to a subject. An assertion consists of a predicate (which states
+ * what is being asserted) and an object (which provides the assertion's
+ * value).
+ *
+ * Assertions can be attached to envelope subjects to form semantic statements
+ * like: "subject hasAttribute value" or "document signedBy signature".
+ *
+ * Assertions are equivalent to RDF (Resource Description Framework) triples,
+ * where:
+ * - The envelope's subject is the subject of the triple
+ * - The assertion's predicate is the predicate of the triple
+ * - The assertion's object is the object of the triple
+ *
+ * Generally you do not create an instance of this type directly, but
+ * instead use `Envelope.assertion()`, or the various functions
+ * on `Envelope` that create assertions.
+ */
 export declare class Assertion implements DigestProvider {
     private readonly _predicate;
     private readonly _object;
     private readonly _digest;
-    constructor(predicate: EnvelopeEncodable | Envelope, object: EnvelopeEncodable | Envelope);
+    /**
+     * Creates a new assertion and calculates its digest.
+     *
+     * This constructor takes a predicate and object, both of which are
+     * converted to envelopes using the `ToEnvelope` trait. It then
+     * calculates the assertion's digest by combining the digests of the
+     * predicate and object.
+     *
+     * The digest is calculated according to the Gordian Envelope
+     * specification, which ensures that semantically equivalent assertions
+     * always produce the same digest.
+     *
+     * @param predicate - The predicate of the assertion, which states what is
+     *   being asserted
+     * @param object - The object of the assertion, which provides the assertion's
+     *   value
+     *
+     * @returns A new assertion with the specified predicate, object, and calculated
+     * digest.
+     *
+     * @example
+     * ```typescript
+     * // Direct method - create an assertion envelope
+     * const assertionEnvelope = Envelope.assertion("name", "Alice");
+     *
+     * // Or create and add an assertion to a subject
+     * const person = Envelope.from("person").addAssertion("name", "Alice");
+     * ```
+     */
+    constructor(predicate: ToEnvelope | Envelope, object: ToEnvelope | Envelope);
+    /**
+     * Returns the predicate of the assertion.
+     *
+     * The predicate states what is being asserted about the subject. It is
+     * typically a string or known value, but can be any envelope.
+     *
+     * @returns A clone of the assertion's predicate envelope.
+     */
     predicate(): Envelope;
+    /**
+     * Returns the object of the assertion.
+     *
+     * The object provides the value or content of the assertion. It can be any
+     * type that can be represented as an envelope.
+     *
+     * @returns A clone of the assertion's object envelope.
+     */
     object(): Envelope;
+    /**
+     * Returns the digest of this assertion.
+     *
+     *
+     * @returns The assertion's digest
+     */
     digest(): Digest;
+    /**
+     * Checks if two assertions are equal based on digest equality.
+     *
+     * Two assertions are considered equal if they have the same digest,
+     * regardless of how they were constructed.
+     *
+     * @param other - The other assertion to compare with
+     * @returns `true` if the assertions are equal, `false` otherwise
+     */
     equals(other: Assertion): boolean;
+    /**
+     * Converts this assertion to CBOR.
+     *
+     * The CBOR representation of an assertion is a map with a single key-value
+     * pair, where the key is the predicate's CBOR and the value is the object's
+     * CBOR.
+     *
+     * @returns A CBOR representation of this assertion
+     */
     toCbor(): Cbor;
+    /**
+     * Attempts to create an assertion from a CBOR value.
+     *
+     * The CBOR must be a map with exactly one entry, where the key represents
+     * the predicate and the value represents the object.
+     *
+     * @param cbor - The CBOR value to convert
+     * @returns A new Assertion instance
+     * @throws {EnvelopeError} If the CBOR is not a valid assertion
+     */
     static fromCbor(cbor: Cbor): Assertion;
+    /**
+     * Attempts to create an assertion from a CBOR map.
+     *
+     * The map must have exactly one entry, where the key represents the
+     * predicate and the value represents the object. This is used in
+     * the deserialization process.
+     *
+     * @param map - The CBOR map to convert
+     * @returns A new Assertion instance
+     * @throws {EnvelopeError} If the map doesn't have exactly one entry
+     */
     static fromCborMap(map: CborMap): Assertion;
+    /**
+     * Creates a string representation of this assertion for debugging.
+     *
+     * @returns A string representation
+     */
     toString(): string;
+    /**
+     * Creates a copy of this assertion.
+     *
+     * Since assertions are immutable and envelopes are cheap to clone,
+     * this returns the same instance.
+     *
+     * @returns This assertion instance
+     */
     clone(): Assertion;
 }
 
@@ -130,9 +231,25 @@ export declare class Assertion implements DigestProvider {
 export declare const ATTACHMENT: KnownValue;
 
 /**
+ * Creates a new attachment envelope.
+ */
+export declare function attachment(payload: EnvelopeInput, vendor: string, conformsTo?: string): Envelope;
+
+/**
  * Returns the conformsTo of an attachment envelope.
  */
 export declare function attachmentConformsTo(envelope: Envelope): string | undefined;
+
+/**
+ * Returns all attachment assertions.
+ */
+/** Which attachments `attachments` and `expectAttachment` select. */
+export declare interface AttachmentFilter {
+    /** Only attachments from this vendor. */
+    vendor?: string;
+    /** Only attachments whose `conformsTo` equals this. */
+    conformsTo?: string;
+}
 
 /**
  * Returns the payload of an attachment envelope.
@@ -158,7 +275,7 @@ export declare class Attachments {
      * @param vendor - A string identifying the entity that defined the attachment format
      * @param conformsTo - Optional URI identifying the structure the payload conforms to
      */
-    add(payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string): void;
+    add(payload: EnvelopeInput, vendor: string, conformsTo?: string): void;
     /**
      * Adds a pre-constructed attachment envelope directly.
      *
@@ -215,36 +332,18 @@ export declare class Attachments {
     static fromEnvelope(envelope: Envelope): Attachments;
 }
 
-/**
- * Returns all attachment assertions.
- */
-export declare function attachments(envelope: Envelope): Envelope[];
-
-/**
- * Returns attachments matching vendor and/or conformsTo.
- */
-export declare function attachmentsWithVendorAndConformsTo(envelope: Envelope, vendor?: string, conformsTo?: string): Envelope[];
+/** The envelope's attachments, optionally only those matching `filter`. */
+export declare function attachments(envelope: Envelope, filter?: AttachmentFilter): Envelope[];
 
 /**
  * Returns the vendor of an attachment envelope.
  */
 export declare function attachmentVendor(envelope: Envelope): string;
 
-/**
- * Finds a single attachment matching the given vendor and conformsTo.
- *
- * Unlike `attachmentsWithVendorAndConformsTo` which returns an array,
- * this method requires exactly one attachment to match.
- *
- * @param vendor - Optional vendor identifier to match
- * @param conformsTo - Optional conformsTo URI to match
- * @returns The matching attachment envelope
- * @throws EnvelopeError if not exactly one attachment matches
- */
-export declare function attachmentWithVendorAndConformsTo(envelope: Envelope, vendor?: string, conformsTo?: string): Envelope;
-
+/** Standard parameters */
 export declare const BLANK: Parameter;
 
+/** Raw value constants */
 export declare const BLANK_VALUE: number;
 
 /**
@@ -439,12 +538,16 @@ declare class ByteString {
  */
 declare type Cbor = (CborUnsignedType | CborNegativeType | CborByteStringType | CborTextType | CborArrayType | CborMapType | CborTaggedType | CborSimpleType) & CborMethods;
 
+/** CBOR tag for function identifiers */
 export declare const CBOR_TAG_FUNCTION = 40006;
 
+/** CBOR tag for parameter identifiers */
 export declare const CBOR_TAG_PARAMETER = 40007;
 
+/** CBOR tag for placeholder identifiers */
 export declare const CBOR_TAG_PLACEHOLDER = 40008;
 
+/** CBOR tag for replacement identifiers */
 export declare const CBOR_TAG_REPLACEMENT = 40009;
 
 declare interface CborArrayType {
@@ -452,8 +555,6 @@ declare interface CborArrayType {
     readonly type: typeof MajorType.Array;
     readonly value: readonly Cbor[];
 }
-
-export declare function cborBytes(envelope: Envelope): Uint8Array;
 
 declare interface CborByteStringType {
     readonly isCbor: true;
@@ -825,8 +926,10 @@ declare class CborDate implements CborTagged {
     private constructor();
 }
 
+/** Type for CBOR decoder functions */
 export declare type CborDecoder<T> = (cbor: Cbor) => T;
 
+/** Generate an envelope summary for a CBOR value. */
 declare const cborEnvelopeSummary: (cbor: Cbor, maxLength: number, context: FormatContextOpt) => string;
 export { cborEnvelopeSummary }
 export { cborEnvelopeSummary as envelopeSummary }
@@ -1190,18 +1293,6 @@ declare interface CborTagged {
     cborTags(): Tag[];
 }
 
-/** The pre-redesign tagged-decodable shape (replaced by a codec in Phase 3). */
-declare interface CborTaggedDecodable<T> extends CborTagged {
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
-/** The pre-redesign tagged-encodable shape (replaced by dcbor's ToCbor in Phase 3). */
-declare interface CborTaggedEncodable extends CborTagged {
-    untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
-}
-
 declare interface CborTaggedType {
     readonly isCbor: true;
     readonly type: typeof MajorType.Tagged;
@@ -1220,10 +1311,6 @@ declare interface CborUnsignedType {
     readonly type: typeof MajorType.Unsigned;
     readonly value: CborNumber;
 }
-
-export declare function checkType(envelope: Envelope, t: EnvelopeEncodableValue): void;
-
-export declare function checkTypeValue(envelope: Envelope, t: KnownValue): void;
 
 /**
  * Known value for the 'conformsTo' predicate.
@@ -1255,43 +1342,70 @@ export declare function decryptSubjectToRecipient(envelope: Envelope, recipient:
  */
 export declare function decryptToRecipient(envelope: Envelope, recipient: Decrypter): Envelope;
 
-export declare const defaultFormatOpts: () => EnvelopeFormatOpts;
+/** The envelope's CBOR in diagnostic notation. */
+export declare function diagnostic(envelope: Envelope, { annotate, context }?: DiagnosticOptions): string;
 
-export declare const defaultMermaidOpts: () => MermaidFormatOpts;
-
-export declare function diagnostic(envelope: Envelope): string;
-
-export declare function diagnosticAnnotated(envelope: Envelope, context?: FormatContext): string;
+/**
+ * diagnostic.rs:27`):
+ *
+ *     pub fn diagnostic(&self) -> String { diagnostic(self.tagged_cbor()) }
+ *
+ * Plain CBOR diagnostic notation, no tag-name annotations. The annotated
+ * variant lives on `diagnosticAnnotated()` below.
+ */
+/** Options for `diagnostic`. */
+export declare interface DiagnosticOptions {
+    /** Comment each item with its tag name and summary (off by default). */
+    annotate?: boolean;
+    /** Names for tags; the global context by default. */
+    context?: FormatContextOpt;
+}
 
 /**
  * Specifies the format for displaying envelope digests in tree output.
  *
- * Ported from bc-envelope-rust/src/format/tree/format/digest.rs
  */
-export declare enum DigestDisplayFormat {
+export declare const DigestDisplayFormat: {
     /**
      * Short format: hex-encoded first 4 bytes of the digest (8 chars),
      * matching Rust `Digest::short_description`.
      * This is the default format.
      */
-    Short = "short",
+    readonly Short: "short";
     /**
      * Full format: complete 64 hex character digest.
      */
-    Full = "full",
+    readonly Full: "full";
     /**
      * UR format: digest encoded as a UR string.
      */
-    UR = "ur"
-}
+    readonly UR: "ur";
+};
 
+/** One of the `DigestDisplayFormat` values. */
+export declare type DigestDisplayFormat = (typeof DigestDisplayFormat)[keyof typeof DigestDisplayFormat];
+
+/**
+ * Trait for types that can provide a digest.
+ *
+ * This is equivalent to Rust's `DigestProvider` trait. Types that
+ * implement this interface can be used in contexts where a digest
+ * is needed for identity or integrity verification.
+ */
 export declare interface DigestProvider {
+    /**
+     * Returns the digest of this object.
+     *
+     * The digest uniquely identifies the semantic content of the object,
+     * regardless of whether parts of it are elided, encrypted, or compressed.
+     */
     digest(): Digest;
 }
 
 export declare const DIV: Function_2;
 
-export declare function div(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a division expression: lhs / rhs */
+export declare function div(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const DIV_VALUE: number;
 
@@ -1302,7 +1416,6 @@ export declare const DIV_VALUE: number;
  * Types implementing this interface can store and retrieve edge envelopes
  * representing verifiable claims as defined in BCR-2026-003.
  *
- * Equivalent to Rust's `Edgeable` trait in `src/extension/edge/edges.rs`.
  */
 export declare interface Edgeable {
     /** Returns a reference to the edges container. */
@@ -1324,10 +1437,19 @@ export declare interface Edgeable {
 /**
  * Extracts the `'isA'` assertion object from an edge envelope.
  *
- * Equivalent to Rust's `Envelope::edge_is_a()`.
  */
 export declare function edgeIsA(envelope: Envelope): Envelope;
 
+/**
+ * Returns a short text label for the edge type, or undefined if no label is
+ * needed.
+ *
+ * This is primarily used for tree formatting to identify relationships
+ * between elements.
+ *
+ * @param edgeType - The edge type
+ * @returns A short label or undefined
+ */
 export declare function edgeLabel(edgeType: EdgeType): string | undefined;
 
 /**
@@ -1337,7 +1459,6 @@ export declare function edgeLabel(edgeType: EdgeType): string | undefined;
  * mirroring the `Attachments` container but for edges as defined in
  * BCR-2026-003.
  *
- * Equivalent to Rust's `Edges` struct in `src/extension/edge/edges.rs`.
  */
 export declare class Edges {
     private readonly _envelopes;
@@ -1395,8 +1516,6 @@ export declare class Edges {
     /**
      * Extracts edges from an envelope's `'edge'` assertions.
      *
-     * Equivalent to Rust's `Edges::try_from_envelope()`.
-     *
      * @param envelope - The envelope to extract edges from
      * @returns A new Edges container with the envelope's edges
      */
@@ -1406,7 +1525,6 @@ export declare class Edges {
 /**
  * Returns all edge object envelopes (assertions with predicate `'edge'`).
  *
- * Equivalent to Rust's `Envelope::edges()`.
  */
 export declare function edges(envelope: Envelope): Envelope[];
 
@@ -1415,8 +1533,6 @@ export declare function edges(envelope: Envelope): Envelope[];
  *
  * Each parameter is optional. When provided, only edges matching
  * all specified criteria are returned.
- *
- * Equivalent to Rust's `Envelope::edges_matching()`.
  *
  * @param isA - Optional `'isA'` envelope to match
  * @param source - Optional `'source'` envelope to match
@@ -1429,34 +1545,55 @@ export declare function edgesMatching(envelope: Envelope, isA?: Envelope, source
 /**
  * Extracts the `'source'` assertion object from an edge envelope.
  *
- * Equivalent to Rust's `Envelope::edge_source()`.
  */
 export declare function edgeSource(envelope: Envelope): Envelope;
 
 /**
  * Extracts the edge's subject identifier (the inner envelope's subject).
  *
- * Equivalent to Rust's `Envelope::edge_subject()`.
  */
 export declare function edgeSubject(envelope: Envelope): Envelope;
 
 /**
  * Extracts the `'target'` assertion object from an edge envelope.
  *
- * Equivalent to Rust's `Envelope::edge_target()`.
  */
 export declare function edgeTarget(envelope: Envelope): Envelope;
 
-export declare enum EdgeType {
-    None = "none",
-    Subject = "subject",
-    Assertion = "assertion",
-    Predicate = "predicate",
-    Object = "object",
-    Content = "content"
-}
+/**
+ * The type of incoming edge provided to the visitor.
+ *
+ * This enum identifies how an envelope element is connected to its parent in
+ * the hierarchy during traversal. It helps the visitor function understand the
+ * semantic relationship between elements.
+ */
+export declare const EdgeType: {
+    /** No incoming edge (root) */
+    readonly None: "none";
+    /** Element is the subject of a node */
+    readonly Subject: "subject";
+    /** Element is an assertion on a node */
+    readonly Assertion: "assertion";
+    /** Element is the predicate of an assertion */
+    readonly Predicate: "predicate";
+    /** Element is the object of an assertion */
+    readonly Object: "object";
+    /** Element is the content wrapped by another envelope */
+    readonly Content: "content";
+};
 
-export declare function elideAction(): ObscureAction;
+/** One of the `EdgeType` values. */
+export declare type EdgeType = (typeof EdgeType)[keyof typeof EdgeType];
+
+/** Options for `Envelope.elide`. */
+export declare interface ElideOptions {
+    /** Obscure these elements (by digest). */
+    removing?: Iterable<DigestProvider | Digest>;
+    /** Obscure everything except these elements and their ancestors. */
+    revealing?: Iterable<DigestProvider | Digest>;
+    /** What to do to the targeted elements; `"elide"` by default. */
+    action?: ObscureAction;
+}
 
 /**
  * Encrypts the envelope's subject and adds a recipient assertion.
@@ -1491,45 +1628,280 @@ export declare function encryptToRecipients(envelope: Envelope, recipients: Encr
 
 export declare class Envelope implements DigestProvider {
     private readonly _case;
+    /**
+     * Private constructor. Use static factory methods to create envelopes.
+     *
+     * @param envelopeCase - The envelope case variant
+     */
     private constructor();
-    case(): EnvelopeCase;
-    static new(subject: EnvelopeEncodableValue): Envelope;
-    static newOrNull(subject: EnvelopeEncodableValue | undefined): Envelope;
-    static newOrNone(subject: EnvelopeEncodableValue | undefined): Envelope | undefined;
+    /**
+     * Returns a reference to the underlying envelope case.
+     *
+     * The `EnvelopeCase` enum represents the specific structural variant of
+     * this envelope. This method provides access to that underlying
+     * variant for operations that need to differentiate between the
+     * different envelope types.
+     *
+     * @returns The `EnvelopeCase` that defines this envelope's structure.
+     */
+    get case(): EnvelopeCase;
+    /**
+     * Creates an envelope with a subject, which can be any value that
+     * can be encoded as an envelope.
+     *
+     * @param subject - The subject value
+     * @returns A new envelope containing the subject
+     *
+     * @example
+     * ```typescript
+     * const envelope = Envelope.from("Hello, world!");
+     * const numberEnvelope = Envelope.from(42);
+     * const binaryEnvelope = Envelope.from(new Uint8Array([1, 2, 3]));
+     * ```
+     */
+    static from(subject: EnvelopeInput): Envelope;
+    /**
+     * Creates an envelope with a subject, or `undefined` if the subject is
+     * **absent** (`undefined` *or* JS `null`).
+     *
+     * **TS↔Rust note**: Rust `Envelope::new_or_none` returns
+     * `Option<Envelope>` — the `None` branch fires only on `None`. We
+     * follow the same convention as {@link Envelope.newOrNull} and treat
+     * JS `null` and `undefined` interchangeably as the absent case.
+     *
+     * @param subject - The optional subject value (`undefined` *or* `null`
+     *   triggers the absent branch).
+     * @returns A new envelope or `undefined`
+     */
+    static fromOptional(subject: EnvelopeInput | undefined): Envelope | undefined;
+    /**
+     * Creates an envelope from an EnvelopeCase.
+     *
+     * This is an internal method used by extensions to create envelopes
+     * from custom case types like compressed or encrypted.
+     *
+     * @param envelopeCase - The envelope case to wrap
+     * @returns A new envelope with the given case
+     */
     static fromCase(envelopeCase: EnvelopeCase): Envelope;
-    static newAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    static null(): Envelope;
-    static newWithUncheckedAssertions(subject: Envelope, uncheckedAssertions: Envelope[]): Envelope;
-    static newWithAssertions(subject: Envelope, assertions: Envelope[]): Envelope;
-    static newWithAssertion(assertion: Assertion): Envelope;
-    static newWithKnownValue(value: KnownValue | number | bigint): Envelope;
-    static newWithEncrypted(encryptedMessage: EncryptedMessage): Envelope;
-    static newWithCompressed(compressed: Compressed): Envelope;
-    static newElided(digest: Digest): Envelope;
-    static newLeaf(value: unknown): Envelope;
-    static newWrapped(envelope: Envelope): Envelope;
+    /**
+     * Creates an assertion envelope with a predicate and object.
+     *
+     * @param predicate - The predicate of the assertion
+     * @param object - The object of the assertion
+     * @returns A new assertion envelope
+     *
+     * @example
+     * ```typescript
+     * const assertion = Envelope.assertion("name", "Alice");
+     * ```
+     */
+    static assertion(predicate: EnvelopeInput, object: EnvelopeInput): Envelope;
+    /**
+     * Creates a null envelope (containing CBOR null).
+     *
+     * @returns A null envelope
+     */
+    static get NULL(): Envelope;
+    /**
+     * Creates an envelope with a subject and unchecked assertions.
+     *
+     * The assertions are sorted by digest and the envelope's digest is calculated.
+     *
+     * @param subject - The subject envelope
+     * @param uncheckedAssertions - The assertions to attach
+     * @returns A new node envelope
+     */
+    private static nodeUnchecked;
+    /**
+     * Creates an envelope with a subject and validated assertions.
+     *
+     * All assertions must be assertion or obscured envelopes.
+     *
+     * @param subject - The subject envelope
+     * @param assertions - The assertions to attach
+     * @returns A new node envelope
+     * @throws {EnvelopeError} If any assertion is not valid
+     */
+    static node(subject: Envelope, assertions: Envelope[], { unchecked }?: {
+        unchecked?: boolean;
+    }): Envelope;
+    /**
+     * Creates an envelope with an assertion as its subject.
+     *
+     * @param assertion - The assertion
+     * @returns A new assertion envelope
+     */
+    static fromAssertion(assertion: Assertion): Envelope;
+    /**
+     * Creates an envelope with a known value.
+     *
+     * @param value - The known value (can be a KnownValue instance or a number/bigint)
+     * @returns A new known value envelope
+     */
+    static knownValue(value: KnownValue | number | bigint): Envelope;
+    /**
+     * Creates an envelope with encrypted content.
+     *
+     * `Err(Error::MissingDigest)` when the message has no AAD digest.
+     *
+     * @param encryptedMessage - The encrypted message
+     * @returns A new encrypted envelope
+     * @throws {EnvelopeError} If the encrypted message doesn't have a digest
+     */
+    static encrypted(encryptedMessage: EncryptedMessage): Envelope;
+    /**
+     * Creates an envelope with compressed content.
+     *
+     * `Err(Error::MissingDigest)` when the compressed value has no digest.
+     *
+     * @param compressed - The compressed data
+     * @returns A new compressed envelope
+     * @throws {EnvelopeError} If the compressed data doesn't have a digest
+     */
+    static compressed(compressed: Compressed): Envelope;
+    /**
+     * Creates an elided envelope containing only a digest.
+     *
+     * @param digest - The digest of the elided content
+     * @returns A new elided envelope
+     */
+    static elided(digest: Digest): Envelope;
+    /**
+     * Creates a leaf envelope containing a CBOR value.
+     *
+     * @param value - The value to encode as CBOR
+     * @returns A new leaf envelope
+     */
+    static leaf(value: unknown): Envelope;
+    /**
+     * Creates a wrapped envelope.
+     *
+     * @param envelope - The envelope to wrap
+     * @returns A new wrapped envelope
+     */
+    static wrap(envelope: Envelope): Envelope;
+    /**
+     * Returns the digest of this envelope.
+     *
+     *
+     * @returns The envelope's digest
+     */
     digest(): Digest;
+    /**
+     * Returns the subject of this envelope.
+     *
+     * For different envelope cases:
+     * - Node: Returns the subject envelope
+     * - Other cases: Returns the envelope itself
+     *
+     * @returns The subject envelope
+     */
     subject(): Envelope;
+    /**
+     * Checks if the envelope's subject is an assertion.
+     *
+     * @returns `true` if the subject is an assertion, `false` otherwise
+     */
     isSubjectAssertion(): boolean;
+    /**
+     * Checks if the envelope's subject is obscured (elided, encrypted, or compressed).
+     *
+     * @returns `true` if the subject is obscured, `false` otherwise
+     */
     isSubjectObscured(): boolean;
+    /**
+     * Converts a value to CBOR.
+     *
+     * @param value - The value to convert
+     * @returns A CBOR representation
+     */
     private static valueToCbor;
+    /**
+     * Converts CBOR to bytes.
+     *
+     * @param cbor - The CBOR value
+     * @returns Byte representation
+     */
     private static cborToBytes;
+    /**
+     * Returns the untagged CBOR representation of this envelope.
+     *
+     * @returns The untagged CBOR
+     */
     untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
+    /**
+     * Returns the tagged CBOR representation of this envelope.
+     *
+     * All envelopes are tagged with TAG_ENVELOPE (200).
+     *
+     * @returns The tagged CBOR
+     */
+    toCbor(): Cbor;
+    /** Tagged-CBOR codec; `decode` also accepts the untagged form. */
+    static get codec(): CborCodec<Envelope>;
+    cborTags(): Tag[];
+    /** As `ur:envelope/…`. */
+    toUR(): UR;
+    /**
+     * Decodes an envelope from its tagged CBOR (tag 200).
+     *
+     * @throws {EnvelopeError} If the CBOR is not a tagged envelope
+     */
+    static fromCbor(cbor: Cbor): Envelope;
+    /**
+     * Decodes an envelope from tagged CBOR bytes.
+     *
+     * @throws {EnvelopeError} If the data is not valid CBOR or not an envelope
+     */
+    static fromBytes(data: Uint8Array): Envelope;
+    /**
+     * Creates an envelope from untagged CBOR.
+     *
+     * @param cbor - The untagged CBOR value
+     * @returns A new envelope
+     */
     static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    addAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    addAssertionEnvelope(assertion: Envelope): Envelope;
+    /**
+     * Creates an envelope from tagged CBOR.
+     *
+     * @param cbor - The tagged CBOR value (should have TAG_ENVELOPE)
+     * @returns A new envelope
+     * Adds an assertion to this envelope.
+     *
+     * @param predicate - The assertion predicate
+     * @param object - The assertion object
+     * @returns A new envelope with the assertion added
+     *
+     * @example
+     * ```typescript
+     * const person = Envelope.from("Alice")
+     *     .addAssertion("age", 30)
+     *     .addAssertion("city", "Boston");
+     * ```
+     */
+    addAssertion(predicate: EnvelopeInput, object: EnvelopeInput, options?: AddAssertionOptions): Envelope;
+    /**
+     * Adds an assertion envelope to this envelope.
+     *
+     * @param assertion - The assertion envelope
+     * @returns A new envelope with the assertion added
+     */
+    addAssertionEnvelope(assertion: Envelope, { salt }?: AddAssertionOptions): Envelope;
+    /**
+     * Creates a string representation of this envelope.
+     *
+     * @returns A string representation
+     */
     toString(): string;
-    clone(): Envelope;
     /**
      * Implementation of static false()
      */
-    static false(): Envelope;
+    static get FALSE(): Envelope;
     /**
      * Implementation of static true()
      */
-    static true(): Envelope;
+    static get TRUE(): Envelope;
     /**
      * Implementation of static unit()
      * Unit envelopes have the known value ''. They represent a position
@@ -1538,16 +1910,7 @@ export declare class Envelope implements DigestProvider {
      * position where no meaningful data currently exists, but could exist in
      * the future.
      */
-    static unit(): Envelope;
-    /**
-     * Implementation of fromUrString
-     */
-    static fromUrString(urString: string): Envelope;
-    static fromURString(urString: string): Envelope;
-    /**
-     * Implementation of fromUR
-     */
-    static fromUR(ur: UR): Envelope;
+    static get UNIT(): Envelope;
     /**
      * Implementation of addAssertionEnvelopes
      */
@@ -1555,15 +1918,29 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of addOptionalAssertionEnvelope
      */
-    addOptionalAssertionEnvelope(assertion: Envelope | undefined): Envelope;
+    addOptionalAssertionEnvelope(assertion: Envelope | undefined, { salt }?: AddAssertionOptions): Envelope;
     /**
      * Implementation of addOptionalAssertion
      */
-    addOptionalAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue | undefined): Envelope;
+    addOptionalAssertion(predicate: EnvelopeInput, object: EnvelopeInput | undefined, options?: AddAssertionOptions): Envelope;
+    /**
+     * Adds a `salt` assertion of random bytes so that this envelope's digest
+     * cannot be correlated with another envelope of the same content.
+     *
+     * By default the salt length is proportional to the envelope's size
+     * (5–25 %, at least 8 bytes); give `length`, a `range`, or the exact
+     * `salt` instead. `rng` overrides the secure default.
+     */
+    addSalt({ salt, length, range, rng }?: SaltOptions): Envelope;
+    /**
+     * Applies `fn` to this envelope: `e.pipe(sign, key).pipe(encryptSubject, k)`
+     * chains the subpath functions without the `/all` facade.
+     */
+    pipe<A extends unknown[], R>(fn: (envelope: Envelope, ...args: A) => R, ...args: A): R;
     /**
      * Implementation of addNonemptyStringAssertion
      */
-    addNonemptyStringAssertion(predicate: EnvelopeEncodableValue, str: string): Envelope;
+    addNonemptyStringAssertion(predicate: EnvelopeInput, str: string): Envelope;
     /**
      * Implementation of addAssertions
      */
@@ -1571,7 +1948,7 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of addAssertionIf
      */
-    addAssertionIf(condition: boolean, predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
+    addAssertionIf(condition: boolean, predicate: EnvelopeInput, object: EnvelopeInput): Envelope;
     /**
      * Implementation of addAssertionEnvelopeIf
      */
@@ -1625,10 +2002,6 @@ export declare class Envelope implements DigestProvider {
      */
     isNull(): boolean;
     /**
-     * Implementation of tryByteString()
-     */
-    tryByteString(): Uint8Array;
-    /**
      * Implementation of asBytes()
      */
     asBytes(): Uint8Array | undefined;
@@ -1655,7 +2028,7 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryKnownValue()
      */
-    tryKnownValue(): KnownValue;
+    expectKnownValue(): KnownValue;
     /**
      * Implementation of isKnownValue()
      */
@@ -1679,7 +2052,7 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryAssertion()
      */
-    tryAssertion(): Envelope;
+    expectAssertion(): Envelope;
     /**
      * Implementation of asPredicate()
      */
@@ -1687,7 +2060,7 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryPredicate()
      */
-    tryPredicate(): Envelope;
+    expectPredicate(): Envelope;
     /**
      * Implementation of asObject()
      */
@@ -1695,7 +2068,7 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryObject()
      */
-    tryObject(): Envelope;
+    expectObject(): Envelope;
     /**
      * Implementation of isAssertion()
      */
@@ -1727,27 +2100,27 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of assertionsWithPredicate()
      */
-    assertionsWithPredicate(predicate: EnvelopeEncodableValue): Envelope[];
+    assertionsWithPredicate(predicate: EnvelopeInput): Envelope[];
     /**
      * Implementation of assertionWithPredicate()
      */
-    assertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    assertionWithPredicate(predicate: EnvelopeInput): Envelope;
     /**
      * Implementation of optionalAssertionWithPredicate()
      */
-    optionalAssertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    optionalAssertionWithPredicate(predicate: EnvelopeInput): Envelope | undefined;
     /**
      * Implementation of objectForPredicate()
      */
-    objectForPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    objectForPredicate(predicate: EnvelopeInput): Envelope;
     /**
      * Implementation of optionalObjectForPredicate()
      */
-    optionalObjectForPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    optionalObjectForPredicate(predicate: EnvelopeInput): Envelope | undefined;
     /**
      * Implementation of objectsForPredicate()
      */
-    objectsForPredicate(predicate: EnvelopeEncodableValue): Envelope[];
+    objectsForPredicate(predicate: EnvelopeInput): Envelope[];
     /**
      * Implementation of elementsCount()
      */
@@ -1783,10 +2156,6 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of tryUnwrap()
      */
-    tryUnwrap(): Envelope;
-    /**
-     * Implementation of unwrap() - alias for tryUnwrap()
-     */
     unwrap(): Envelope;
     /**
      * Implementation of walk()
@@ -1797,7 +2166,6 @@ export declare class Envelope implements DigestProvider {
      *
      * Returns the set of digests in the envelope, down to the specified level.
      *
-     * Mirrors Rust `Envelope::digests` (`bc-envelope-rust/src/base/digest.rs:103-119`).
      * Rust uses `HashSet<Digest>` which dedupes by content; native JS `Set`
      * dedupes by reference, so we route inserts through a hex-keyed `Map`
      * before materialising the final `Set`. That keeps the public signature
@@ -1818,8 +2186,6 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of structuralDigest()
      *
-     * Mirrors Rust `Envelope::structural_digest`
-     * (`bc-envelope-rust/src/base/digest.rs:241-261`). Walks every node in
      * structure mode, building an image:
      *
      * - Each obscured case prepends a 1-byte discriminator: `0` for Encrypted,
@@ -1845,69 +2211,28 @@ export declare class Envelope implements DigestProvider {
      */
     predicate(): Envelope;
     /**
-     * Implementation of toCbor() - alias for taggedCbor()
+     * Elide this envelope, or with options elide (or encrypt or compress)
+     * parts of it: `removing` obscures the elements whose digests are listed,
+     * `revealing` obscures everything but the listed elements and their
+     * ancestors. `action` defaults to `"elide"`.
      */
-    toCbor(): unknown;
-    /**
-     * Implementation of expectLeaf() - returns the leaf CBOR value or throws
-     */
-    expectLeaf(): unknown;
+    elide(options?: ElideOptions): Envelope;
     /**
      * Implementation of elide()
      */
-    elide(): Envelope;
+    private elideAll;
     /**
      * Implementation of elideRemovingSetWithAction
      */
-    elideRemovingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
+    private elideRemovingWith;
     /**
      * Implementation of elideSetWithAction (for revealing mode)
      */
     elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     /**
-     * Implementation of elideRemovingSet
-     */
-    elideRemovingSet(target: Set<Digest>): Envelope;
-    /**
-     * Implementation of elideRemovingArrayWithAction
-     */
-    elideRemovingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRemovingArray
-     */
-    elideRemovingArray(target: DigestProvider[]): Envelope;
-    /**
-     * Implementation of elideRemovingTargetWithAction
-     */
-    elideRemovingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRemovingTarget
-     */
-    elideRemovingTarget(target: DigestProvider): Envelope;
-    /**
      * Implementation of elideRevealingSetWithAction
      */
-    elideRevealingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRevealingSet
-     */
-    elideRevealingSet(target: Set<Digest>): Envelope;
-    /**
-     * Implementation of elideRevealingArrayWithAction
-     */
-    elideRevealingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRevealingArray
-     */
-    elideRevealingArray(target: DigestProvider[]): Envelope;
-    /**
-     * Implementation of elideRevealingTargetWithAction
-     */
-    elideRevealingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
-    /**
-     * Implementation of elideRevealingTarget
-     */
-    elideRevealingTarget(target: DigestProvider): Envelope;
+    private elideRevealingWith;
     /**
      * Implementation of unelide
      */
@@ -1915,7 +2240,6 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of nodesMatching
      *
-     * Mirrors Rust `Envelope::nodes_matching`. The TS public signature is
      * `Set<Digest>` for backward compatibility with callers, but the
      * underlying dedup is by **hex content** (via a hex-keyed Map) so two
      * `Digest` instances that represent the same hash bytes count once,
@@ -1936,14 +2260,11 @@ export declare class Envelope implements DigestProvider {
      * Two envelopes are equivalent if they have the same digest (semantic equivalence).
      * This is a weaker comparison than `isIdenticalTo` which also checks the case type.
      *
-     * Equivalent to Rust's `is_equivalent_to()` in `src/base/digest.rs`.
      */
     isEquivalentTo(other: Envelope): boolean;
     /**
      * Implementation of isIdenticalTo
      *
-     * Mirrors Rust `Envelope::is_identical_to`
-     * (`bc-envelope-rust/src/base/digest.rs:344-349`):
      * short-circuit on a *semantic* mismatch (different `digest()`), then fall
      * through to a {@link Envelope.structuralDigest} comparison. Two envelopes
      * whose digests match but whose structures differ — e.g. an envelope and a
@@ -1952,9 +2273,6 @@ export declare class Envelope implements DigestProvider {
     isIdenticalTo(other: Envelope): boolean;
     /**
      * Implementation of walkDecrypt
-     *
-     * Mirrors Rust `Envelope::walk_decrypt`
-     * (`bc-envelope-rust/src/base/elide.rs:963-1019`).
      *
      * Recursively walks the envelope and decrypts every encrypted node it
      * can. For an Encrypted node, each provided key is tried in order; the
@@ -1971,9 +2289,6 @@ export declare class Envelope implements DigestProvider {
     /**
      * Implementation of walkDecompress
      *
-     * Mirrors Rust `Envelope::walk_decompress`
-     * (`bc-envelope-rust/src/base/elide.rs:1067-1135`).
-     *
      * Recursively walks the envelope and decompresses any compressed node
      * whose digest is in `targetDigests` (or every compressed node if
      * `targetDigests` is undefined). Decompression failures are tolerated —
@@ -1986,51 +2301,39 @@ export declare class Envelope implements DigestProvider {
      *
      * This extracts the leaf CBOR value from an envelope.
      */
-    tryLeaf(): Cbor;
+    expectLeaf(): Cbor;
     /**
      * Add extraction convenience methods to Envelope prototype
      */
-    extractString(): string;
-    extractNumber(): number;
-    extractBoolean(): boolean;
-    extractBytes(): Uint8Array;
-    extractNull(): null;
+    expectString(): string;
+    expectNumber(): number;
+    expectBoolean(): boolean;
+    expectBytes(): Uint8Array;
+    expectNull(): null;
     /**
      * Add extractSubject method to Envelope prototype
      */
-    extractSubject<T>(decoder: CborDecoder<T>): T;
+    expectSubject<T>(decoder: CborDecoder<T>): T;
     /**
      * Add tryObjectForPredicate method to Envelope prototype
      */
-    tryObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+    expectObjectForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T;
     /**
      * Add tryOptionalObjectForPredicate method to Envelope prototype
      */
-    tryOptionalObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
+    optionalObjectForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T | undefined;
     /**
      * Add extractObjectForPredicateWithDefault method to Envelope prototype
      */
-    extractObjectForPredicateWithDefault<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
+    objectForPredicateOr<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>, defaultValue: T): T;
     /**
      * Add extractObjectsForPredicate method to Envelope prototype
      */
-    extractObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+    expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     /**
      * Add tryObjectsForPredicate method to Envelope prototype
      */
-    tryObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-    /**
-     * Implementation of urString
-     */
-    urString(): string;
-    /**
-     * Implementation of ur
-     */
-    ur(): UR;
-    /**
-     * Implementation of taggedCborData (alias for cborBytes)
-     */
-    taggedCborData(): Uint8Array;
+    objectsForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     encryptSubject(key: SymmetricKey): Envelope;
     /**
      * Implementation of decryptSubject()
@@ -2067,210 +2370,381 @@ export declare class Envelope implements DigestProvider {
     isCompressed(): boolean;
 }
 
+/**
+ * The core structural variants of a Gordian Envelope.
+ *
+ * Each variant represents a different structural form that an
+ * envelope can take, as defined in the Gordian Envelope IETF Internet Draft.
+ * The different cases provide different capabilities and serve different
+ * purposes in the envelope ecosystem.
+ *
+ * The `EnvelopeCase` is the internal representation of an envelope's
+ * structure. While each case has unique properties, they all maintain a digest
+ * that ensures the integrity of the envelope.
+ *
+ * It is advised to use the other Envelope APIs for most uses. Please see the
+ * queries module for more information on how to interact with envelopes.
+ */
 export declare type EnvelopeCase = {
     type: "node";
+    /** The subject of the node */
     subject: Envelope;
+    /** The assertions attached to the subject */
     assertions: Envelope[];
+    /** The digest of the node */
     digest: Digest;
 } | {
     type: "leaf";
+    /** The CBOR value contained in the leaf */
     cbor: Cbor;
+    /** The digest of the leaf */
     digest: Digest;
 } | {
     type: "wrapped";
+    /** The envelope being wrapped */
     envelope: Envelope;
+    /** The digest of the wrapped envelope */
     digest: Digest;
 } | {
     type: "assertion";
+    /** The assertion */
     assertion: Assertion;
 } | {
     type: "elided";
+    /** The digest of the elided content */
     digest: Digest;
 } | {
     type: "knownValue";
+    /** The known value instance */
     value: KnownValue;
+    /** The digest of the known value */
     digest: Digest;
 } | {
     type: "encrypted";
+    /** The encrypted message */
     message: EncryptedMessage;
 } | {
     type: "compressed";
+    /** The compressed data */
     value: Compressed;
 };
 
-export declare class EnvelopeCBORTagged implements CborTagged {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static cborTags(): number[];
-}
-
-export declare class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDecodable<T> {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
-export declare class EnvelopeCBORTaggedEncodable implements CborTaggedEncodable {
-    private readonly envelope;
-    constructor(envelope: Envelope);
-    cborTags(): ReturnType<typeof tagsForValues>;
-    untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
-}
-
-export declare class EnvelopeDecoder {
-    static tryFromCbor(cbor: Cbor): Envelope;
-    static tryFromCborData(data: Uint8Array): Envelope;
-}
-
-export declare interface EnvelopeEncodable {
-    intoEnvelope(): Envelope;
-}
-
-export declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
-
 export declare class EnvelopeError extends Error {
-    readonly code: ErrorCode;
+    readonly code: EnvelopeErrorCode;
     readonly cause?: Error;
-    constructor(code: ErrorCode, message: string, cause?: Error);
+    constructor(code: EnvelopeErrorCode, message: string, cause?: Error);
+    /**
+     * Returned when attempting to compress or encrypt an envelope that has
+     * already been elided.
+     *
+     * This error occurs because an elided envelope only contains a digest
+     * reference and no longer has a subject that can be compressed or
+     * encrypted.
+     */
     static alreadyElided(): EnvelopeError;
+    /**
+     * Returned when attempting to retrieve an assertion by predicate, but
+     * multiple matching assertions exist.
+     *
+     * For queries that expect a single result (like `objectForPredicate`),
+     * having multiple matching assertions is ambiguous and requires more
+     * specific targeting.
+     */
     static ambiguousPredicate(): EnvelopeError;
+    /**
+     * Returned when a digest validation fails.
+     *
+     * This can occur when unwrapping an envelope, verifying signatures, or
+     * other operations that rely on the integrity of envelope digests.
+     */
     static invalidDigest(): EnvelopeError;
+    /**
+     * Returned when an envelope's format is invalid.
+     *
+     * This typically occurs during parsing or decoding of an envelope from
+     * CBOR.
+     */
     static invalidFormat(): EnvelopeError;
+    /**
+     * Returned when a digest is expected but not found.
+     *
+     * This can occur when working with envelope structures that require digest
+     * information, such as when working with elided envelopes.
+     */
     static missingDigest(): EnvelopeError;
+    /**
+     * Returned when attempting to retrieve an assertion by predicate, but no
+     * matching assertion exists.
+     *
+     * This error occurs with functions like `objectForPredicate` when the
+     * specified predicate doesn't match any assertion in the envelope.
+     */
     static nonexistentPredicate(): EnvelopeError;
+    /**
+     * Returned when attempting to unwrap an envelope that wasn't wrapped.
+     *
+     * This error occurs when calling `Envelope.tryUnwrap` on an
+     * envelope that doesn't have the wrapped format.
+     */
     static notWrapped(): EnvelopeError;
+    /**
+     * Returned when expecting an envelope's subject to be a leaf, but it
+     * isn't.
+     *
+     * This error occurs when calling methods that require access to a leaf
+     * value but the envelope's subject is an assertion, node, or elided.
+     */
     static notLeaf(): EnvelopeError;
+    /**
+     * Returned when expecting an envelope's subject to be an assertion, but it
+     * isn't.
+     *
+     * This error occurs when calling methods that require an assertion
+     * structure but the envelope's subject has a different format.
+     */
     static notAssertion(): EnvelopeError;
+    /** Returned when assertion is invalid */
     static invalidAssertion(): EnvelopeError;
+    /**
+     * Returned when an attachment's format is invalid.
+     *
+     * This error occurs when an envelope contains an attachment with an
+     * invalid structure according to the Envelope Attachment specification
+     * (BCR-2023-006).
+     */
     static invalidAttachment(message?: string): EnvelopeError;
+    /**
+     * Returned when an attachment is requested but does not exist.
+     *
+     * This error occurs when attempting to retrieve an attachment by ID that
+     * doesn't exist in the envelope.
+     */
     static nonexistentAttachment(): EnvelopeError;
+    /**
+     * Returned when multiple attachments match a single query.
+     *
+     * This error occurs when multiple attachments have the same ID, making
+     * it ambiguous which attachment should be returned.
+     */
     static ambiguousAttachment(): EnvelopeError;
+    /** Returned when an edge is missing the required `'isA'` assertion. */
     static edgeMissingIsA(): EnvelopeError;
+    /** Returned when an edge is missing the required `'source'` assertion. */
     static edgeMissingSource(): EnvelopeError;
+    /** Returned when an edge is missing the required `'target'` assertion. */
     static edgeMissingTarget(): EnvelopeError;
+    /** Returned when an edge has duplicate `'isA'` assertions. */
     static edgeDuplicateIsA(): EnvelopeError;
+    /** Returned when an edge has duplicate `'source'` assertions. */
     static edgeDuplicateSource(): EnvelopeError;
+    /** Returned when an edge has duplicate `'target'` assertions. */
     static edgeDuplicateTarget(): EnvelopeError;
+    /** Returned when an edge has an unexpected assertion (per BCR-2026-003). */
     static edgeUnexpectedAssertion(): EnvelopeError;
+    /** Returned when an edge is requested but does not exist. */
     static nonexistentEdge(): EnvelopeError;
+    /** Returned when multiple edges match a single query. */
     static ambiguousEdge(): EnvelopeError;
+    /**
+     * Returned when attempting to compress an envelope that is already
+     * compressed.
+     *
+     * This error occurs when calling compression functions on an envelope that
+     * already has compressed content, as defined in BCR-2023-005.
+     */
     static alreadyCompressed(): EnvelopeError;
+    /**
+     * Returned when attempting to decompress an envelope that is not
+     * compressed.
+     *
+     * This error occurs when calling decompression functions on an envelope
+     * that doesn't contain compressed content.
+     */
     static notCompressed(): EnvelopeError;
+    /**
+     * Returned when attempting to encrypt an envelope that is already
+     * encrypted or compressed.
+     *
+     * This error occurs to prevent multiple layers of encryption or encryption
+     * of compressed data, which could reduce security, as defined in
+     * BCR-2023-004.
+     */
     static alreadyEncrypted(): EnvelopeError;
+    /**
+     * Returned when attempting to decrypt an envelope that is not encrypted.
+     *
+     * This error occurs when calling decryption functions on an envelope that
+     * doesn't contain encrypted content.
+     */
     static notEncrypted(): EnvelopeError;
+    /**
+     * Returned when expecting an envelope's subject to be a known value, but
+     * it isn't.
+     *
+     * This error occurs when calling methods that require a known value (as
+     * defined in BCR-2023-003) but the envelope's subject is a different
+     * type.
+     */
     static notKnownValue(): EnvelopeError;
+    /**
+     * Returned when attempting to decrypt an envelope with a recipient that
+     * doesn't match.
+     *
+     * This error occurs when trying to use a private key to decrypt an
+     * envelope that wasn't encrypted for the corresponding public key.
+     */
     static unknownRecipient(): EnvelopeError;
+    /**
+     * Returned when attempting to decrypt an envelope with a secret that
+     * doesn't match.
+     *
+     * This error occurs when trying to use a secret that does not correspond
+     * to the expected recipient, preventing successful decryption.
+     */
     static unknownSecret(): EnvelopeError;
+    /**
+     * Returned when a signature verification fails.
+     *
+     * This error occurs when a signature does not validate against its
+     * purported public key.
+     */
     static unverifiedSignature(): EnvelopeError;
+    /** Returned when the outer signature object type is not `Signature`. */
     static invalidOuterSignatureType(): EnvelopeError;
+    /** Returned when the inner signature object type is not `Signature`. */
     static invalidInnerSignatureType(): EnvelopeError;
+    /**
+     * Returned when the inner signature is not made with the same key as the
+     * outer signature.
+     */
     static unverifiedInnerSignature(): EnvelopeError;
+    /** Returned when the signature object is not a `Signature`. */
     static invalidSignatureType(): EnvelopeError;
+    /**
+     * Returned when SSKR shares are invalid or insufficient for
+     * reconstruction.
+     *
+     * This error occurs when attempting to join SSKR shares that are
+     * malformed, from different splits, or insufficient to meet the
+     * recovery threshold.
+     */
     static invalidShares(): EnvelopeError;
+    /** SSKR error wrapper */
     static sskr(message: string, cause?: Error): EnvelopeError;
+    /**
+     * Returned when an envelope contains an invalid type.
+     *
+     * This error occurs when an envelope's type information doesn't match
+     * the expected format or value.
+     */
     static invalidType(): EnvelopeError;
+    /**
+     * Returned when an envelope contains ambiguous type information.
+     *
+     * This error occurs when multiple type assertions exist that conflict
+     * with each other or create ambiguity about the envelope's type.
+     */
     static ambiguousType(): EnvelopeError;
+    /** Returned when the subject is expected to be the unit value but isn't. */
     static subjectNotUnit(): EnvelopeError;
+    /**
+     * Returned when a response envelope has an unexpected ID.
+     *
+     * This error occurs when processing a response envelope and the ID doesn't
+     * match the expected request ID, as defined in BCR-2023-012.
+     */
     static unexpectedResponseId(): EnvelopeError;
+    /** Returned when a response envelope is invalid. */
     static invalidResponse(): EnvelopeError;
+    /** dcbor error wrapper */
     static cbor(message: string, cause?: Error): EnvelopeError;
+    /** Components error wrapper */
     static components(message: string, cause?: Error): EnvelopeError;
+    /** General error wrapper */
     static general(message: string, cause?: Error): EnvelopeError;
+    /** Create error with custom message (equivalent to Rust's Error::msg) */
     static msg(message: string): EnvelopeError;
 }
-
-export declare type EnvelopeFormatItem = {
-    type: "begin";
-    value: string;
-} | {
-    type: "end";
-    value: string;
-} | {
-    type: "item";
-    value: string;
-} | {
-    type: "separator";
-} | {
-    type: "list";
-    items: EnvelopeFormatItem[];
-};
-
-export declare interface EnvelopeFormatOpts {
-    flat: boolean;
-    context: FormatContextOpt;
-}
-
-export declare function envelopeFromBytes(bytes: Uint8Array): Envelope;
-
-export declare function envelopeFromCbor(cbor: Cbor): Envelope;
-
-export declare interface EnvelopeSummary {
-    envelopeSummary(maxLength: number, context: FormatContextOpt): string;
-}
-
-export declare function envelopeToBytes(envelope: Envelope): Uint8Array;
-
-export declare function envelopeToCbor(envelope: Envelope): Cbor;
-
-export declare const EQ: Function_2;
-
-export declare function eq(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-export declare const EQ_VALUE: number;
 
 /**
  * Copyright © 2023-2026 Blockchain Commons, LLC
  * Copyright © 2025-2026 Parity Technologies
  *
  */
-export declare enum ErrorCode {
-    ALREADY_ELIDED = "ALREADY_ELIDED",
-    AMBIGUOUS_PREDICATE = "AMBIGUOUS_PREDICATE",
-    INVALID_DIGEST = "INVALID_DIGEST",
-    INVALID_FORMAT = "INVALID_FORMAT",
-    MISSING_DIGEST = "MISSING_DIGEST",
-    NONEXISTENT_PREDICATE = "NONEXISTENT_PREDICATE",
-    NOT_WRAPPED = "NOT_WRAPPED",
-    NOT_LEAF = "NOT_LEAF",
-    NOT_ASSERTION = "NOT_ASSERTION",
-    INVALID_ASSERTION = "INVALID_ASSERTION",
-    INVALID_ATTACHMENT = "INVALID_ATTACHMENT",
-    NONEXISTENT_ATTACHMENT = "NONEXISTENT_ATTACHMENT",
-    AMBIGUOUS_ATTACHMENT = "AMBIGUOUS_ATTACHMENT",
-    EDGE_MISSING_IS_A = "EDGE_MISSING_IS_A",
-    EDGE_MISSING_SOURCE = "EDGE_MISSING_SOURCE",
-    EDGE_MISSING_TARGET = "EDGE_MISSING_TARGET",
-    EDGE_DUPLICATE_IS_A = "EDGE_DUPLICATE_IS_A",
-    EDGE_DUPLICATE_SOURCE = "EDGE_DUPLICATE_SOURCE",
-    EDGE_DUPLICATE_TARGET = "EDGE_DUPLICATE_TARGET",
-    EDGE_UNEXPECTED_ASSERTION = "EDGE_UNEXPECTED_ASSERTION",
-    NONEXISTENT_EDGE = "NONEXISTENT_EDGE",
-    AMBIGUOUS_EDGE = "AMBIGUOUS_EDGE",
-    ALREADY_COMPRESSED = "ALREADY_COMPRESSED",
-    NOT_COMPRESSED = "NOT_COMPRESSED",
-    ALREADY_ENCRYPTED = "ALREADY_ENCRYPTED",
-    NOT_ENCRYPTED = "NOT_ENCRYPTED",
-    NOT_KNOWN_VALUE = "NOT_KNOWN_VALUE",
-    UNKNOWN_RECIPIENT = "UNKNOWN_RECIPIENT",
-    UNKNOWN_SECRET = "UNKNOWN_SECRET",
-    UNVERIFIED_SIGNATURE = "UNVERIFIED_SIGNATURE",
-    INVALID_OUTER_SIGNATURE_TYPE = "INVALID_OUTER_SIGNATURE_TYPE",
-    INVALID_INNER_SIGNATURE_TYPE = "INVALID_INNER_SIGNATURE_TYPE",
-    UNVERIFIED_INNER_SIGNATURE = "UNVERIFIED_INNER_SIGNATURE",
-    INVALID_SIGNATURE_TYPE = "INVALID_SIGNATURE_TYPE",
-    INVALID_SHARES = "INVALID_SHARES",
-    SSKR = "SSKR",
-    INVALID_TYPE = "INVALID_TYPE",
-    AMBIGUOUS_TYPE = "AMBIGUOUS_TYPE",
-    SUBJECT_NOT_UNIT = "SUBJECT_NOT_UNIT",
-    UNEXPECTED_RESPONSE_ID = "UNEXPECTED_RESPONSE_ID",
-    INVALID_RESPONSE = "INVALID_RESPONSE",
-    CBOR = "CBOR",
-    COMPONENTS = "COMPONENTS",
-    GENERAL = "GENERAL"
+export declare const EnvelopeErrorCode: {
+    readonly AlreadyElided: "AlreadyElided";
+    readonly AmbiguousPredicate: "AmbiguousPredicate";
+    readonly InvalidDigest: "InvalidDigest";
+    readonly InvalidFormat: "InvalidFormat";
+    readonly MissingDigest: "MissingDigest";
+    readonly NonexistentPredicate: "NonexistentPredicate";
+    readonly NotWrapped: "NotWrapped";
+    readonly NotLeaf: "NotLeaf";
+    readonly NotAssertion: "NotAssertion";
+    readonly InvalidAssertion: "InvalidAssertion";
+    readonly InvalidAttachment: "InvalidAttachment";
+    readonly NonexistentAttachment: "NonexistentAttachment";
+    readonly AmbiguousAttachment: "AmbiguousAttachment";
+    readonly EdgeMissingIsA: "EdgeMissingIsA";
+    readonly EdgeMissingSource: "EdgeMissingSource";
+    readonly EdgeMissingTarget: "EdgeMissingTarget";
+    readonly EdgeDuplicateIsA: "EdgeDuplicateIsA";
+    readonly EdgeDuplicateSource: "EdgeDuplicateSource";
+    readonly EdgeDuplicateTarget: "EdgeDuplicateTarget";
+    readonly EdgeUnexpectedAssertion: "EdgeUnexpectedAssertion";
+    readonly NonexistentEdge: "NonexistentEdge";
+    readonly AmbiguousEdge: "AmbiguousEdge";
+    readonly AlreadyCompressed: "AlreadyCompressed";
+    readonly NotCompressed: "NotCompressed";
+    readonly AlreadyEncrypted: "AlreadyEncrypted";
+    readonly NotEncrypted: "NotEncrypted";
+    readonly NotKnownValue: "NotKnownValue";
+    readonly UnknownRecipient: "UnknownRecipient";
+    readonly UnknownSecret: "UnknownSecret";
+    readonly UnverifiedSignature: "UnverifiedSignature";
+    readonly InvalidOuterSignatureType: "InvalidOuterSignatureType";
+    readonly InvalidInnerSignatureType: "InvalidInnerSignatureType";
+    readonly UnverifiedInnerSignature: "UnverifiedInnerSignature";
+    readonly InvalidSignatureType: "InvalidSignatureType";
+    readonly InvalidShares: "InvalidShares";
+    readonly Sskr: "Sskr";
+    readonly InvalidType: "InvalidType";
+    readonly AmbiguousType: "AmbiguousType";
+    readonly SubjectNotUnit: "SubjectNotUnit";
+    readonly UnexpectedResponseId: "UnexpectedResponseId";
+    readonly InvalidResponse: "InvalidResponse";
+    readonly Cbor: "Cbor";
+    readonly Components: "Components";
+    readonly General: "General";
+};
+
+/** One of the `EnvelopeErrorCode` values. */
+export declare type EnvelopeErrorCode = (typeof EnvelopeErrorCode)[keyof typeof EnvelopeErrorCode];
+
+/**
+ * Helper type for values that can be encoded as envelopes.
+ *
+ * This includes:
+ * - Types that directly implement ToEnvelope
+ * - Primitive types (string, number, boolean)
+ * - Uint8Array (for binary data)
+ * - null and undefined
+ *
+ * The Envelope class will handle conversion of these types automatically.
+ */
+export declare type EnvelopeInput = ToEnvelope | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | ToCbor;
+
+/** Types that render their own one-line summary. */
+export declare interface EnvelopeSummary {
+    envelopeSummary(maxLength: number, context: FormatContextOpt): string;
 }
+
+export declare const EQ: Function_2;
+
+/** Creates an equality expression: lhs == rhs */
+export declare function eq(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
+
+export declare const EQ_VALUE: number;
 
 /**
  * An Event represents a notification or message that doesn't expect a response.
@@ -2293,7 +2767,7 @@ export declare enum ErrorCode {
  *
  * @typeParam T - The type of content this event carries
  */
-declare class Event_2<T extends EnvelopeEncodableValue> implements EventBehavior<T>, EnvelopeEncodable {
+declare class Event_2<T extends EnvelopeInput> implements EventBehavior<T>, ToEnvelope {
     private readonly _content;
     private readonly _id;
     private _note;
@@ -2302,7 +2776,7 @@ declare class Event_2<T extends EnvelopeEncodableValue> implements EventBehavior
     /**
      * Creates a new event with the specified content and ID.
      */
-    static new<T extends EnvelopeEncodableValue>(content: T, id: ARID): Event_2<T>;
+    static new<T extends EnvelopeInput>(content: T, id: ARID): Event_2<T>;
     /**
      * Returns a human-readable summary of the event.
      */
@@ -2322,15 +2796,11 @@ declare class Event_2<T extends EnvelopeEncodableValue> implements EventBehavior
      */
     toEnvelope(): Envelope;
     /**
-     * Converts this event into an envelope (EnvelopeEncodable implementation).
-     */
-    intoEnvelope(): Envelope;
-    /**
      * Creates an event from an envelope.
      *
      * @typeParam T - The type to extract the content as
      */
-    static fromEnvelope<T extends EnvelopeEncodableValue>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
+    static fromEnvelope<T extends EnvelopeInput>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
     /**
      * Creates a string event from an envelope.
      */
@@ -2349,7 +2819,7 @@ export { Event_2 as Event }
 /**
  * Interface that defines the behavior of an event.
  */
-export declare interface EventBehavior<T extends EnvelopeEncodableValue> {
+export declare interface EventBehavior<T extends EnvelopeInput> {
     /**
      * Adds a note to the event.
      */
@@ -2380,40 +2850,88 @@ export declare interface EventBehavior<T extends EnvelopeEncodableValue> {
     toEnvelope(): Envelope;
 }
 
-export declare class Expression implements EnvelopeEncodable {
+/**
+ * Finds a single attachment matching the given vendor and conformsTo.
+ *
+ * Unlike `attachments` which returns an array,
+ * this method requires exactly one attachment to match.
+ *
+ * @param vendor - Optional vendor identifier to match
+ * @param conformsTo - Optional conformsTo URI to match
+ * @returns The matching attachment envelope
+ * @throws EnvelopeError if not exactly one attachment matches
+ */
+export declare function expectAttachment(envelope: Envelope, filter?: AttachmentFilter): Envelope;
+
+export declare function expectType(envelope: Envelope, t: EnvelopeInput): void;
+
+/**
+ * Throws {@link EnvelopeError.invalidType} if the envelope does not
+ * carry the supplied KnownValue as its type.
+ */
+export declare function expectTypeValue(envelope: Envelope, t: KnownValue): void;
+
+/**
+ * Represents a complete expression with function and parameters.
+ *
+ * Parameters are stored as an *append-only array*, mirroring Rust
+ * `bc-envelope`'s `Expression` which adds each parameter as a fresh
+ * envelope assertion (multiple values per parameter ID are valid —
+ * e.g. GSTP DKG invites carry multiple `participant` parameters).
+ * Earlier the TS port used `Map<string, Parameter>`, which silently
+ * overwrote previous values with the same parameter ID. The
+ * resulting envelope had only the last `participant`, breaking
+ * `objectsForParameter("participant")` decoders downstream
+ * (`frost-hubert/group-invite.ts:383`).
+ */
+export declare class Expression implements ToEnvelope {
     private readonly _function;
     private readonly _parameters;
     private _envelope;
     constructor(func: Function_2);
+    /** Returns the function. */
     function(): Function_2;
+    /** Returns all parameters. */
     parameters(): Parameter[];
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression;
-    withParameters(params: Record<string, EnvelopeEncodableValue>): Expression;
+    /** Adds a parameter to the expression. */
+    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    /** Adds multiple parameters at once. */
+    withParameters(params: Record<string, EnvelopeInput>): Expression;
+    /** Returns true if the parameter ID matches the one stored on a Parameter. */
     private static parameterIdMatches;
+    /**
+     * Gets the first parameter value with the given ID.
+     *
+     * For multi-valued parameters (e.g. several `participant` assertions),
+     * use {@link objectsForParameter} to retrieve all matching values.
+     */
     getParameter(param: ParameterID): Envelope | undefined;
+    /**
+     * Returns all parameter values matching the given ID.
+     *
+     * to `Envelope::objects_for_predicate` and returns a `Vec<Envelope>`.
+     */
     objectsForParameter(param: ParameterID): Envelope[];
+    /** Checks if a parameter exists. */
     hasParameter(param: ParameterID): boolean;
+    /** Converts the expression to an envelope. */
     envelope(): Envelope;
-    intoEnvelope(): Envelope;
+    /** Converts this expression into an envelope (ToEnvelope implementation). */
+    toEnvelope(): Envelope;
+    /**
+     * Creates an expression from an envelope.
+     *
+     * The function and each parameter are read as **tagged CBOR**
+     * (tag 40006 / tag 40007). Earlier the TS port stored these as
+     * pre-formatted display strings (e.g. `«"test"»`, `❰"param1"❱`)
+     * and parsed them by string matching; that diverged from Rust
+     * (which stores tag-40006/40007 leaves) and prevented the
+     * TAG_FUNCTION / TAG_PARAMETER format summarizers from firing.
+     */
     static fromEnvelope(envelope: Envelope): Expression;
+    /** Returns a string representation for display. */
     toString(): string;
 }
-
-export declare function extractBoolean(envelope: Envelope): boolean;
-
-export declare function extractBytes(envelope: Envelope): Uint8Array;
-
-export declare function extractNull(envelope: Envelope): null;
-
-export declare function extractNumber(envelope: Envelope): number;
-
-export declare function extractObjectForPredicateWithDefault<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
-
-export declare function extractObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-export declare function extractString(envelope: Envelope): string;
-
-export declare function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T;
 
 /**
  * Copyright © 2023-2026 Blockchain Commons, LLC
@@ -2441,82 +2959,136 @@ export declare function extractSubject<T>(envelope: Envelope, decoder: CborDecod
  */
 export declare function flanked(str: string, left: string, right: string): string;
 
-export declare const flatFormatOpts: () => EnvelopeFormatOpts;
+/**
+ * Envelope notation: the subject followed by its assertions in brackets,
+ * nested and indented (or on one line with `flat`).
+ */
+export declare function format(envelope: Envelope, options?: FormatOptions): string;
 
-export declare function format(envelope: Envelope): string;
-
-export declare const formatAssertion: (assertion: Assertion, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
-
-export declare const formatBegin: (value: string) => EnvelopeFormatItem;
-
-export declare const formatCbor: (cbor: Cbor, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
-
+/**
+ * Context object for formatting Gordian Envelopes with annotations.
+ *
+ * The FormatContext provides information about CBOR tags, known values,
+ * functions, and parameters that are used to annotate the output of envelope
+ * formatting functions.
+ */
 declare class FormatContext implements ReadonlyTagsStore {
     private readonly _tags;
     private readonly _knownValues;
-    constructor(tags?: TagsStore, knownValues?: KnownValuesStore);
-    tags(): TagsStore;
-    knownValues(): KnownValuesStore;
+    constructor({ tags, knownValues }?: {
+        tags?: TagsStore;
+        knownValues?: KnownValuesStore;
+    });
+    /** The CBOR tags registry (names and summarisers). */
+    get tags(): TagsStore;
+    /** The known values registry. */
+    get knownValues(): KnownValuesStore;
     assignedNameForTag(tag: Tag): string | undefined;
     nameForTag(tag: Tag): string;
     tagForValue(value: CborNumber): Tag | undefined;
     tagForName(name: string): Tag | undefined;
     nameForValue(value: CborNumber): string;
     summarizer(tag: CborNumber): CborSummarizer | undefined;
-    registerTag(value: number | bigint, name: string): void;
+    /** Create a clone of this context */
     clone(): FormatContext;
 }
 
-declare type FormatContextOpt = {
-    type: "none";
-} | {
-    type: "global";
-} | {
-    type: "custom";
-    context: FormatContext;
-};
+/**
+ * Which format context a formatter uses: a specific one, the global one
+ * (`"global"`, the default), or none (`"none"`: no tag names, no known-value
+ * names).
+ */
+declare type FormatContextOpt = FormatContext | "global" | "none";
 
-export declare const formatEnd: (value: string) => EnvelopeFormatItem;
+/** `format` on one line. */
+export declare function formatFlat(envelope: Envelope, options?: Omit<FormatOptions, "flat">): string;
 
-export declare const formatEnvelope: (envelope: Envelope, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
+/** Options for envelope notation formatting. */
+export declare interface FormatOptions {
+    /** Format as a single line without indentation. */
+    flat?: boolean;
+    /** Names for tags and known values; the global context by default. */
+    context?: FormatContextOpt;
+}
 
-export declare function formatFlat(envelope: Envelope): string;
-
-export declare const formatItem: (value: string) => EnvelopeFormatItem;
-
-export declare const formatList: (items: EnvelopeFormatItem[]) => EnvelopeFormatItem;
-
-export declare function formatOpt(envelope: Envelope, opts: EnvelopeFormatOpts): string;
-
-export declare const formatSeparator: () => EnvelopeFormatItem;
-
-declare class Function_2 implements EnvelopeEncodable {
+/**
+ * Represents a function identifier in an expression.
+ *
+ * In Gordian Envelope, a function appears as the subject of an expression
+ * envelope, with its parameters as assertions on that envelope.
+ *
+ * Functions can be identified in two ways:
+ * 1. By a numeric ID (for well-known functions) - Known variant
+ * 2. By a string name (for application-specific functions) - Named variant
+ *
+ * When encoded in CBOR, functions are tagged with #6.40006.
+ */
+declare class Function_2 implements ToEnvelope {
     private readonly _variant;
     private readonly _value;
     private readonly _name;
     private constructor();
+    /** Creates a new known function with a numeric ID and optional name. */
     static newKnown(value: number, name?: string): Function_2;
+    /** Creates a new named function identified by a string. */
     static newNamed(name: string): Function_2;
+    /** Creates a function from a numeric ID (convenience method). */
     static fromNumeric(id: number): Function_2;
+    /** Creates a function from a string name (convenience method). */
     static fromString(name: string): Function_2;
+    /** Returns true if this is a known (numeric) function. */
     isKnown(): boolean;
+    /** Returns true if this is a named (string) function. */
     isNamed(): boolean;
+    /** Returns the numeric value for known functions. */
     value(): number | undefined;
+    /** Returns the function identifier (number for known, string for named). */
     id(): FunctionID;
+    /**
+     * Returns the display name of the function.
+     *
+     * For known functions with a name, returns the name.
+     * For known functions without a name, returns the numeric ID as a string.
+     * For named functions, returns the name enclosed in quotes.
+     */
     name(): string;
+    /** Returns the raw name for named functions, or undefined for known functions. */
     namedName(): string | undefined;
+    /** Returns the assigned name if present (for known functions only). */
     assignedName(): string | undefined;
+    /** Returns true if this is a numeric function ID (legacy compatibility). */
     isNumeric(): boolean;
+    /** Returns true if this is a string function ID (legacy compatibility). */
     isString(): boolean;
+    /**
+     * Creates an expression envelope with this function as the subject.
+     *
+     * which calls `Envelope::new_leaf(self)` — that goes through
+     * `From<Function> for CBOR = self.tagged_cbor()` which produces
+     * `tag(40006, untagged)` where untagged is `uint(N)` for Known
+     * or `text(name)` for Named.
+     *
+     * The earlier TS port pre-formatted the display string into a
+     * text leaf (`Envelope.from("«\"name\"»")`), which breaks the
+     * TAG_FUNCTION summarizer (it never fires because the leaf is
+     * not tagged), so format() rendered the leaf as a quoted string
+     * instead of `«"name"»`.
+     */
     envelope(): Envelope;
-    intoEnvelope(): Envelope;
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression;
+    /** Converts this function into an envelope (ToEnvelope implementation). */
+    toEnvelope(): Envelope;
+    /** Creates an expression with a parameter. */
+    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    /** Checks equality based on value (for known) or name (for named). */
     equals(other: Function_2): boolean;
+    /** Returns a hash code for this function. */
     hashCode(): number;
+    /** Returns a string representation for display. */
     toString(): string;
 }
 export { Function_2 as Function }
 
+/** Well-known function identifiers (numeric) */
 export declare const FUNCTION_IDS: {
     readonly ADD: 1;
     readonly SUB: 2;
@@ -2535,34 +3107,56 @@ export declare const FUNCTION_IDS: {
     readonly NOT: 15;
 };
 
+/** Type for function identifier (number or string) */
 export declare type FunctionID = number | string;
 
+/**
+ * A store that maps functions to their assigned names.
+ *
+ * FunctionsStore maintains a registry of functions and their human-readable
+ * names, which is useful for displaying and debugging expression functions.
+ */
 export declare class FunctionsStore {
     private readonly _dict;
+    /** Creates a new FunctionsStore with the given functions. */
     constructor(functions?: Iterable<Function_2>);
+    /** Inserts a function into the store. */
     insert(func: Function_2): void;
+    /** Returns the assigned name for a function, if it exists in the store. */
     assignedName(func: Function_2): string | undefined;
+    /** Returns the name for a function, either from this store or from the function itself. */
     name(func: Function_2): string;
+    /** Static method that returns the name of a function, using an optional store. */
     static nameForFunction(func: Function_2, store?: FunctionsStore): string;
 }
 
 export declare const GE: Function_2;
 
-export declare function ge(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a greater-than-or-equal expression: lhs >= rhs */
+export declare function ge(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const GE_VALUE: number;
 
+/**
+ * returns the single type if there is exactly one, otherwise raises
+ * `Error::AmbiguousType`. Earlier revisions of this port returned
+ * `InvalidType` when the count was 0 — Rust uses the same
+ * `AmbiguousType` variant for both 0 and >1 cases.
+ */
 export declare function getType(envelope: Envelope): Envelope;
 
+/** The global shared store of known functions. */
 export declare const GLOBAL_FUNCTIONS: LazyStore<FunctionsStore>;
 
+/** The global shared store of known parameters. */
 export declare const GLOBAL_PARAMETERS: LazyStore<ParametersStore>;
 
 export { GroupSpec }
 
 export declare const GT: Function_2;
 
-export declare function gt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a greater-than expression: lhs > rhs */
+export declare function gt(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const GT_VALUE: number;
 
@@ -2572,30 +3166,69 @@ export declare const GT_VALUE: number;
  */
 export declare const HAS_RECIPIENT: KnownValue;
 
+/**
+ * Returns whether the envelope's subject has a valid signature from the
+ * given public key.
+ */
 export declare function hasSignatureFrom(envelope: Envelope, verifier: Verifier): boolean;
 
+/**
+ * Returns the signature metadata envelope if the given verifier has signed
+ * this envelope, or undefined if no matching signature is found.
+ *
+ * Handles both simple signatures and wrapped (double-signed) signatures
+ * with metadata.
+ */
 export declare function hasSignatureFromReturningMetadata(envelope: Envelope, verifier: Verifier): Envelope | undefined;
 
+/**
+ * Returns whether the envelope's subject has a valid signature from all
+ * the given public keys.
+ */
 export declare function hasSignaturesFrom(envelope: Envelope, verifiers: Verifier[]): boolean;
 
+/** Returns whether the envelope's subject has some threshold of signatures. */
 export declare function hasSignaturesFromThreshold(envelope: Envelope, verifiers: Verifier[], threshold?: number): boolean;
 
-export declare function hasType(envelope: Envelope, t: EnvelopeEncodableValue): boolean;
+export declare function hasType(envelope: Envelope, t: EnvelopeInput): boolean;
 
+/**
+ * Specialised counterpart to {@link Envelope.hasType} for checking
+ * against registered KnownValue types (e.g. `SEED_TYPE`).
+ */
 export declare function hasTypeValue(envelope: Envelope, t: KnownValue): boolean;
 
-export declare function hex(envelope: Envelope): string;
+/** The envelope's CBOR as hex, annotated line by line unless `annotate` is false. */
+export declare function hex(envelope: Envelope, { annotate, context }?: HexOptions): string;
 
-export declare function hexOpt(envelope: Envelope, annotate: boolean, context?: FormatContext): string;
-
-export declare function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable;
+/**
+ * multi-line dump because that's the call most consumers expect when
+ * they ask for a debuggable hex view of an envelope.
+ */
+/** Options for `hex`. */
+export declare interface HexOptions {
+    /** Annotate each CBOR item with its type and tag name (on by default). */
+    annotate?: boolean;
+    /** Names for tags; the global context by default. */
+    context?: FormatContextOpt;
+}
 
 export declare function isLockedWithPassword(envelope: Envelope): boolean;
 
 export declare function isLockedWithSshAgent(envelope: Envelope): boolean;
 
+/**
+ * Type guard to check if a value implements ToEnvelope.
+ *
+ * @param value - The value to check
+ * @returns `true` if the value implements ToEnvelope, `false` otherwise
+ */
+export declare function isToEnvelope(value: unknown): value is ToEnvelope;
+
+/** Returns whether the given signature is valid. */
 export declare function isVerifiedSignature(envelope: Envelope, signature: Signature, verifier: Verifier): boolean;
 
+/** Lazy initialization helper for global stores */
 export declare class LazyStore<T> {
     private _store;
     private readonly _initializer;
@@ -2605,7 +3238,8 @@ export declare class LazyStore<T> {
 
 export declare const LE: Function_2;
 
-export declare function le(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a less-than-or-equal expression: lhs <= rhs */
+export declare function le(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const LE_VALUE: number;
 
@@ -2619,7 +3253,8 @@ export declare function lockSubject(envelope: Envelope, method: KeyDerivationMet
 
 export declare const LT: Function_2;
 
-export declare function lt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a less-than expression: lhs < rhs */
+export declare function lt(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const LT_VALUE: number;
 
@@ -2636,6 +3271,7 @@ declare const MajorType: {
 
 declare type MajorType = (typeof MajorType)[keyof typeof MajorType];
 
+/** Convenience constructor for a `'signed': Signature` assertion envelope. */
 export declare function makeSignedAssertion(_envelope: Envelope, signature: Signature, note?: string): Envelope;
 
 declare interface MapEntry {
@@ -2643,59 +3279,71 @@ declare interface MapEntry {
     readonly value: Cbor;
 }
 
-export declare function mermaidFormat(envelope: Envelope): string;
+/** A Mermaid flowchart of the envelope's digest tree. */
+export declare function mermaidFormat(envelope: Envelope, opts?: MermaidFormatOptions): string;
 
-export declare function mermaidFormatOpt(envelope: Envelope, opts: MermaidFormatOpts): string;
-
-export declare interface MermaidFormatOpts {
+/** Options for Mermaid diagram formatting. */
+export declare interface MermaidFormatOptions {
+    /** Whether to hide NODE identifiers in the diagram (default: false) */
     hideNodes?: boolean;
+    /** Whether to use monochrome colors (default: false) */
     monochrome?: boolean;
+    /** The theme for the diagram (default: Default) */
     theme?: MermaidTheme;
+    /** The orientation of the diagram (default: LeftToRight) */
     orientation?: MermaidOrientation;
+    /** Set of digests to highlight in the diagram */
     highlightingTarget?: Set<Digest>;
 }
 
-export declare enum MermaidOrientation {
-    LeftToRight = "LR",
-    TopToBottom = "TB",
-    RightToLeft = "RL",
-    BottomToTop = "BT"
-}
+/** The orientation of the Mermaid flowchart. */
+export declare const MermaidOrientation: {
+    readonly LeftToRight: "LR";
+    readonly TopToBottom: "TB";
+    readonly RightToLeft: "RL";
+    readonly BottomToTop: "BT";
+};
 
-export declare enum MermaidTheme {
-    Default = "default",
-    Neutral = "neutral",
-    Dark = "dark",
-    Forest = "forest",
-    Base = "base"
-}
+/** One of the `MermaidOrientation` values. */
+export declare type MermaidOrientation = (typeof MermaidOrientation)[keyof typeof MermaidOrientation];
+
+/** The theme for the Mermaid flowchart. */
+export declare const MermaidTheme: {
+    readonly Default: "default";
+    readonly Neutral: "neutral";
+    readonly Dark: "dark";
+    readonly Forest: "forest";
+    readonly Base: "base";
+};
+
+/** One of the `MermaidTheme` values. */
+export declare type MermaidTheme = (typeof MermaidTheme)[keyof typeof MermaidTheme];
 
 export declare const MUL: Function_2;
 
-export declare function mul(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a multiplication expression: lhs * rhs */
+export declare function mul(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const MUL_VALUE: number;
 
 export declare const NE: Function_2;
 
-export declare function ne(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a not-equal expression: lhs != rhs */
+export declare function ne(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const NE_VALUE: number;
 
 export declare const NEG: Function_2;
 
-export declare function neg(value: EnvelopeEncodableValue): Expression;
+/** Creates a negation expression: -value */
+export declare function neg(value: EnvelopeInput): Expression;
 
 export declare const NEG_VALUE: number;
 
-/**
- * Creates a new attachment envelope.
- */
-export declare function newAttachment(payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string): Envelope;
-
 export declare const NOT: Function_2;
 
-export declare function not(value: EnvelopeEncodableValue): Expression;
+/** Creates a logical NOT expression: !value */
+export declare function not(value: EnvelopeInput): Expression;
 
 export declare const NOT_VALUE: number;
 
@@ -2705,70 +3353,130 @@ export declare const NOT_VALUE: number;
  */
 export declare const NOTE: KnownValue;
 
-export declare type ObscureAction = {
-    type: "elide";
-} | {
-    type: "encrypt";
-    key: unknown;
-} | {
-    type: "compress";
+/**
+ * Actions that can be performed on parts of an envelope to obscure them.
+ *
+ * Gordian Envelope supports several ways to obscure parts of an envelope while
+ * maintaining its semantic integrity and digest tree.
+ */
+export declare type ObscureAction = "elide" | "compress" | {
+    encrypt: SymmetricKey;
 };
 
-export declare enum ObscureType {
-    Elided = "elided",
-    Encrypted = "encrypted",
-    Compressed = "compressed"
-}
+/** How an obscured element was obscured. */
+export declare const ObscureType: {
+    readonly Elided: "elided";
+    readonly Encrypted: "encrypted";
+    readonly Compressed: "compressed";
+};
+
+export declare type ObscureType = (typeof ObscureType)[keyof typeof ObscureType];
 
 export declare const OR: Function_2;
 
-export declare function or(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a logical OR expression: lhs || rhs */
+export declare function or(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const OR_VALUE: number;
 
-export declare class Parameter implements EnvelopeEncodable {
+/**
+ * Represents a parameter identifier in an expression.
+ *
+ * In Gordian Envelope, a parameter appears as a predicate in an assertion on
+ * an expression envelope. The parameter identifies the name of the argument,
+ * and the object of the assertion is the argument value.
+ *
+ * Parameters can be identified in two ways:
+ * 1. By a numeric ID (for well-known parameters) - Known variant
+ * 2. By a string name (for application-specific parameters) - Named variant
+ *
+ * When encoded in CBOR, parameters are tagged with #6.40007.
+ */
+export declare class Parameter implements ToEnvelope {
     private readonly _variant;
     private readonly _value;
     private readonly _name;
     private readonly _paramValue;
     private constructor();
+    /** Creates a new known parameter with a numeric ID and optional name. */
     static newKnown(value: number, name?: string): Parameter;
+    /** Creates a new named parameter identified by a string. */
     static newNamed(name: string): Parameter;
+    /** Creates a parameter with a value envelope (internal use). */
     static withValue(id: ParameterID, value: Envelope): Parameter;
+    /** Returns true if this is a known (numeric) parameter. */
     isKnown(): boolean;
+    /** Returns true if this is a named (string) parameter. */
     isNamed(): boolean;
+    /** Returns the numeric value for known parameters. */
     value(): number | undefined;
+    /** Returns the parameter identifier (number for known, string for named). */
     id(): ParameterID;
+    /**
+     * Returns the display name of the parameter.
+     *
+     * For known parameters with a name, returns the name.
+     * For known parameters without a name, returns the numeric ID as a string.
+     * For named parameters, returns the name enclosed in quotes.
+     */
     name(): string;
+    /** Returns the raw name for named parameters, or undefined for known parameters. */
     namedName(): string | undefined;
+    /** Returns the assigned name if present (for known parameters only). */
     assignedName(): string | undefined;
+    /** Returns the parameter value as an envelope, if set. */
     paramValue(): Envelope | undefined;
+    /** Returns true if this is a numeric parameter ID (legacy compatibility). */
     isNumeric(): boolean;
+    /** Returns true if this is a string parameter ID (legacy compatibility). */
     isString(): boolean;
+    /**
+     * Creates a parameter envelope.
+     *
+     * Function above): the parameter is stored as `tag(40007, untagged)`
+     * where untagged is `uint(N)` (Known) or `text(name)` (Named).
+     */
     envelope(): Envelope;
-    intoEnvelope(): Envelope;
+    /** Converts this parameter into an envelope (ToEnvelope implementation). */
+    toEnvelope(): Envelope;
+    /** Checks equality based on value (for known) or name (for named). */
     equals(other: Parameter): boolean;
+    /** Returns a hash code for this parameter. */
     hashCode(): number;
+    /** Returns a string representation for display. */
     toString(): string;
-    static blank(value: EnvelopeEncodableValue): Parameter;
-    static lhs(value: EnvelopeEncodableValue): Parameter;
-    static rhs(value: EnvelopeEncodableValue): Parameter;
+    static blank(value: EnvelopeInput): Parameter;
+    static lhs(value: EnvelopeInput): Parameter;
+    static rhs(value: EnvelopeInput): Parameter;
 }
 
+/** Well-known parameter identifiers (numeric) */
 export declare const PARAMETER_IDS: {
     readonly BLANK: 1;
     readonly LHS: 2;
     readonly RHS: 3;
 };
 
+/** Type for parameter identifier (number or string) */
 export declare type ParameterID = number | string;
 
+/**
+ * A store that maps parameters to their assigned names.
+ *
+ * ParametersStore maintains a registry of parameters and their human-readable
+ * names, which is useful for displaying and debugging expression parameters.
+ */
 export declare class ParametersStore {
     private readonly _dict;
+    /** Creates a new ParametersStore with the given parameters. */
     constructor(parameters?: Iterable<Parameter>);
+    /** Inserts a parameter into the store. */
     insert(param: Parameter): void;
+    /** Returns the assigned name for a parameter, if it exists in the store. */
     assignedName(param: Parameter): string | undefined;
+    /** Returns the name for a parameter, either from this store or from the parameter itself. */
     name(param: Parameter): string;
+    /** Static method that returns the name of a parameter, using an optional store. */
     static nameForParameter(param: Parameter, store?: ParametersStore): string;
 }
 
@@ -2827,14 +3535,6 @@ declare interface ReadonlyTagsStore {
  */
 export declare function recipients(envelope: Envelope): SealedMessage[];
 
-export declare const registerMermaidExtension: () => void;
-
-export declare const registerSealExtension: () => void;
-
-export declare const registerSecretExtension: () => void;
-
-export declare const registerSskrExtension: () => void;
-
 /**
  * A Request represents a message requesting execution of a function with parameters.
  *
@@ -2855,7 +3555,7 @@ export declare const registerSskrExtension: () => void;
  * const envelope = request.toEnvelope();
  * ```
  */
-declare class Request_2 implements RequestBehavior, EnvelopeEncodable {
+declare class Request_2 implements RequestBehavior, ToEnvelope {
     private readonly _body;
     private readonly _id;
     private _note;
@@ -2876,7 +3576,7 @@ declare class Request_2 implements RequestBehavior, EnvelopeEncodable {
      * Returns a human-readable summary of the request.
      */
     summary(): string;
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request_2;
+    withParameter(param: ParameterID, value: EnvelopeInput): Request_2;
     withNote(note: string): Request_2;
     withDate(date: Date): Request_2;
     body(): Expression;
@@ -2892,10 +3592,6 @@ declare class Request_2 implements RequestBehavior, EnvelopeEncodable {
      * and assertions include the request's body, note (if not empty), and date (if present).
      */
     toEnvelope(): Envelope;
-    /**
-     * Converts this request into an envelope (EnvelopeEncodable implementation).
-     */
-    intoEnvelope(): Envelope;
     /**
      * Creates a request from an envelope.
      */
@@ -2921,7 +3617,7 @@ export declare interface RequestBehavior {
     /**
      * Adds a parameter to the request.
      */
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request_2;
+    withParameter(param: ParameterID, value: EnvelopeInput): Request_2;
     /**
      * Adds a note to the request.
      */
@@ -2984,7 +3680,7 @@ export declare interface RequestBehavior {
  * const errorEnvelope = errorResponse.toEnvelope();
  * ```
  */
-declare class Response_2 implements ResponseBehavior, EnvelopeEncodable {
+declare class Response_2 implements ResponseBehavior, ToEnvelope {
     private _result;
     private constructor();
     /**
@@ -3020,10 +3716,10 @@ declare class Response_2 implements ResponseBehavior, EnvelopeEncodable {
      * Returns a human-readable summary of the response.
      */
     summary(): string;
-    withResult(result: EnvelopeEncodableValue): Response_2;
-    withOptionalResult(result: EnvelopeEncodableValue | undefined): Response_2;
-    withError(error: EnvelopeEncodableValue): Response_2;
-    withOptionalError(error: EnvelopeEncodableValue | undefined): Response_2;
+    withResult(result: EnvelopeInput): Response_2;
+    withOptionalResult(result: EnvelopeInput | undefined): Response_2;
+    withError(error: EnvelopeInput): Response_2;
+    withOptionalError(error: EnvelopeInput | undefined): Response_2;
     isOk(): boolean;
     isErr(): boolean;
     id(): ARID | undefined;
@@ -3047,10 +3743,6 @@ declare class Response_2 implements ResponseBehavior, EnvelopeEncodable {
      */
     toEnvelope(): Envelope;
     /**
-     * Converts this response into an envelope (EnvelopeEncodable implementation).
-     */
-    intoEnvelope(): Envelope;
-    /**
      * Creates a response from an envelope.
      */
     static fromEnvelope(envelope: Envelope): Response_2;
@@ -3073,12 +3765,12 @@ export declare interface ResponseBehavior {
      * Sets the result value for a successful response.
      * @throws Error if called on a failure response.
      */
-    withResult(result: EnvelopeEncodableValue): Response_2;
+    withResult(result: EnvelopeInput): Response_2;
     /**
      * Sets the error value for a failure response.
      * @throws Error if called on a successful response.
      */
-    withError(error: EnvelopeEncodableValue): Response_2;
+    withError(error: EnvelopeInput): Response_2;
     /**
      * Returns true if this is a successful response.
      */
@@ -3111,9 +3803,29 @@ export declare const RHS: Parameter;
 
 export declare const RHS_VALUE: number;
 
-export declare const SALT: KnownValue;
+/** Options for `Envelope.addSalt`. */
+declare interface SaltOptions {
+    /** Use exactly this salt (at least 8 bytes). */
+    salt?: Salt | Uint8Array;
+    /** Random salt of exactly this many bytes (at least 8). */
+    length?: number;
+    /** Random salt of a length in this inclusive range. */
+    range?: {
+        min: number;
+        max: number;
+    };
+    /** Randomness source; secure by default. */
+    rng?: RandomNumberGenerator;
+}
 
-export declare function seal(envelope: Envelope, sender: Signer, recipient: Encrypter): Envelope;
+/**
+ * `sign(sender)` already wraps the envelope before signing, so the seal
+ * pipeline is `wrap → addSignature → wrap → encryptToRecipient`. Earlier
+ * revisions of this port called `addSignature(sender)` directly (no inner
+ * wrap), which produced sealed envelopes one wrap layer shallower than
+ * Rust's and broke cross-impl unseal.
+ */
+export declare function seal(envelope: Envelope, sender: Signer, recipient: Encrypter, options?: SignOptions): Envelope;
 
 /**
  * Re-export the SealedMessage from @blockchaincommons/components for compatibility.
@@ -3176,13 +3888,12 @@ export declare class SealedMessage {
     static fromData(data: Uint8Array): SealedMessage;
 }
 
-export declare function sealOpt(envelope: Envelope, sender: Signer, recipient: Encrypter, options?: SigningOptions): Envelope;
-
 export { Secret }
 
 export declare function shortId(envelope: Envelope, format?: "short" | "full" | "ur"): string;
 
-export declare function sign(envelope: Envelope, signer: Signer): Envelope;
+/** Wraps the envelope and signs it: `envelope.wrap()` plus a `signed` assertion. */
+export declare function sign(envelope: Envelope, signer: Signer, options?: SignOptions): Envelope;
 
 export { Signature }
 
@@ -3195,7 +3906,6 @@ export { Signature }
  * included in a structured way that is also signed, ensuring the metadata
  * cannot be tampered with without invalidating the signature.
  *
- * Ported from bc-envelope-rust/src/extension/signature/signature_metadata.rs
  */
 export declare class SignatureMetadata {
     private readonly _assertions;
@@ -3211,17 +3921,18 @@ export declare class SignatureMetadata {
      * @param object - The object for the assertion
      * @returns A new SignatureMetadata with the assertion added
      */
-    withAssertion(predicate: EnvelopeEncodableValue, object: unknown): SignatureMetadata;
+    withAssertion(predicate: EnvelopeInput, object: unknown): SignatureMetadata;
     /**
      * Returns all assertions in this metadata.
      */
-    assertions(): readonly [EnvelopeEncodableValue, unknown][];
+    assertions(): readonly [EnvelopeInput, unknown][];
     /**
      * Returns whether this metadata contains any assertions.
      */
     hasAssertions(): boolean;
 }
 
+/** Returns all signature assertion objects. */
 export declare function signatures(envelope: Envelope): Envelope[];
 
 /**
@@ -3238,9 +3949,17 @@ export { SigningPrivateKey }
 
 export { SigningPublicKey }
 
-export declare function signOpt(envelope: Envelope, signer: Signer, options?: SigningOptions): Envelope;
-
-export declare function signWithMetadata(envelope: Envelope, signer: Signer, metadata?: SignatureMetadata): Envelope;
+/**
+ * Creates a signature for the envelope's subject and returns a new
+ * envelope with a `'signed': Signature` assertion.
+ */
+/** Options for `sign` and `addSignature`. */
+export declare interface SignOptions {
+    /** Scheme-specific signing options (Schnorr `rng`, SSH namespace and hash). */
+    signing?: SigningOptions;
+    /** Assertions to bind to the signature (a signed, wrapped signature envelope). */
+    metadata?: SignatureMetadata;
+}
 
 /**
  * Represents CBOR simple values (major type 7).
@@ -3275,15 +3994,20 @@ export declare function sskrJoin(envelopes: Envelope[]): Envelope;
 
 export { SskrShare }
 
-export declare function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey): Envelope[][];
-
-export declare function sskrSplitFlattened(envelope: Envelope, spec: Spec, contentKey: SymmetricKey): Envelope[];
-
-export declare function sskrSplitUsing(envelope: Envelope, spec: Spec, contentKey: SymmetricKey, rng: RandomNumberGenerator): Envelope[][];
+/**
+ * Splits `contentKey` into SSKR shares per `spec` and returns one copy of
+ * the envelope per share, each carrying its share as an `sskrShare`
+ * assertion, grouped as the spec groups them. `sskrJoin` recovers the
+ * envelope from a quorum.
+ */
+export declare function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey, { rng }?: {
+    rng?: RandomNumberGenerator;
+}): Envelope[][];
 
 export declare const SUB: Function_2;
 
-export declare function sub(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a subtraction expression: lhs - rhs */
+export declare function sub(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const SUB_VALUE: number;
 
@@ -3298,9 +4022,20 @@ declare type SummarizerResult = {
     readonly error: CborError;
 };
 
-export declare function summary(envelope: Envelope, maxLength?: number): string;
+/**
+ * A one-line summary of an envelope: its leaf value (text truncated to
+ * `maxLength`), a known value's name, or the case name (`NODE`, `WRAPPED`,
+ * `ELIDED`, …) for structure.
+ */
+export declare function summary(envelope: Envelope, options?: SummaryOptions): string;
 
-export declare function summaryWithContext(envelope: Envelope, maxLength: number, context: FormatContext): string;
+/** Options for `summary`. */
+export declare interface SummaryOptions {
+    /** Truncate text leaves beyond this many characters (40 by default). */
+    maxLength?: number;
+    /** Names for tags and known values; the global context by default. */
+    context?: FormatContextOpt;
+}
 
 /**
  * A CBOR tag with an optional name.
@@ -3339,36 +4074,6 @@ declare const Tag: {
      */
     readonly equals: (a: Tag, b: Tag) => boolean;
 };
-
-/**
- * Converts an array of tag values to their corresponding Tag objects.
- *
- * This function looks up each tag value in the global tag registry and returns
- * an array of complete Tag objects. For any tag values that aren't
- * registered in the global registry, it creates a basic Tag with just the
- * value (no name).
- *
- * @param values - Array of numeric tag values to convert
- * @returns Array of Tag objects corresponding to the input values
- *
- * @example
- * ```typescript
- * // Register some tags first
- * registerStandardTags();
- *
- * // Convert tag values to Tag objects
- * const tags = tagsForValues([1, 42, 999]);
- *
- * // The first tag (value 1) should be registered as "date"
- * console.log(tags[0].value); // 1
- * console.log(tags[0].name); // "date"
- *
- * // Unregistered tags will have a value but no name
- * console.log(tags[1].value); // 42
- * console.log(tags[2].value); // 999
- * ```
- */
-declare const tagsForValues: (values: (number | bigint)[]) => Tag[];
 
 /**
  * Tag registry implementation.
@@ -3455,20 +4160,80 @@ declare interface ToCbor {
     toCbor(): Cbor;
 }
 
-export declare function treeFormat(envelope: Envelope, options?: TreeFormatOptions): string;
-
-export declare interface TreeFormatOptions {
-    hideNodes?: boolean;
-    highlightDigests?: Set<string>;
-    digestDisplay?: DigestDisplayFormat | "short" | "full" | "ur";
-    context?: FormatContext;
+/**
+ * A trait for types that can be encoded as a Gordian Envelope.
+ *
+ * This interface defines the contract for converting a value into an envelope.
+ * Types implementing this interface can be used directly with envelope
+ * construction functions without explicit conversion.
+ *
+ * There are numerous built-in implementations for common types including:
+ * - Primitive types (numbers, strings, booleans)
+ * - CBOR values
+ * - Cryptographic types (digests, keys, etc.)
+ * - Assertions
+ * - Other envelopes
+ *
+ * @example
+ * ```typescript
+ * // String implements ToEnvelope
+ * const e1 = Envelope.from("Hello");
+ *
+ * // Numbers implement ToEnvelope
+ * const e2 = Envelope.from(42);
+ *
+ * // Using in envelope construction
+ * const envelope = Envelope.from("subject")
+ *     .addAssertion("name", "Alice")  // Uses ToEnvelope for both predicate and object
+ *     .addAssertion("age", 30);       // Uses ToEnvelope for the numeric object
+ * ```
+ */
+export declare interface ToEnvelope {
+    /**
+     * Converts this value into a Gordian Envelope.
+     *
+     * This is the core method of the interface, converting the implementing type
+     * into an envelope representation. Most implementations will convert the
+     * value to a leaf envelope containing the value.
+     *
+     * @returns A new envelope containing the value.
+     */
+    toEnvelope(): Envelope;
 }
 
-export declare function tryObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+/**
+ * tree.rs`). For each element line we emit:
+ *
+ *   `[*]<short_id> [edge_label] <summary>`
+ *
+ * The summary is rendered through {@link Envelope.summaryWithContext} —
+ * **not** the context-free `summary()` — so KnownValue assertions appear
+ * as their registered names (e.g. `'isA'`, `'note'`) instead of the
+ * placeholder string `KNOWN_VALUE`. The format context defaults to the
+ * global one (via {@link getGlobalFormatContext}); callers can override
+ * per-call via {@link TreeFormatOptions.context}.
+ */
+export declare function treeFormat(envelope: Envelope, options?: TreeFormatOptions): string;
 
-export declare function tryObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-export declare function tryOptionalObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
+/** Options for tree formatting */
+export declare interface TreeFormatOptions {
+    /** If true, hides NODE identifiers and only shows semantic content */
+    hideNodes?: boolean;
+    /** Set of digest strings to highlight in the tree */
+    highlightDigests?: Set<string>;
+    /**
+     * Format for displaying digests: "short" (8 hex chars matching Rust
+     * `short_description`), "full" (64 hex chars), or "ur" (UR string)
+     */
+    digestDisplay?: DigestDisplayFormat | "short" | "full" | "ur";
+    /**
+     * Optional format context used for tag name resolution and KnownValue
+     * summarisation. When omitted, the global format context is used —
+     * matching Rust `tree_format_opt(&self, opts: TreeFormatOpts)` which
+     * reads names off the global context unless callers override.
+     */
+    context?: FormatContext;
+}
 
 export declare function types(envelope: Envelope): Envelope[];
 
@@ -3476,6 +4241,11 @@ export declare function unlock(envelope: Envelope, secret: Uint8Array): Envelope
 
 export declare function unlockSubject(envelope: Envelope, secret: Uint8Array): Envelope;
 
+/**
+ * `decrypt_to_recipient(recipient)?.verify(sender)`. The `verify` step
+ * performs `verifySignatureFrom(sender)` *and then* `tryUnwrap()` — the
+ * extra unwrap undoes the inner wrap that `sign()` added during seal.
+ */
 export declare function unseal(envelope: Envelope, senderPublicKey: Verifier, recipient: Decrypter): Envelope;
 
 /**
@@ -3497,7 +4267,6 @@ export declare function validateAttachment(envelope: Envelope): void;
  * must have exactly three assertion predicates: `'isA'`, `'source'`,
  * and `'target'`. No other assertions are permitted on the edge
  * subject. Mirrors Rust `Envelope::validate_edge`
- * (`bc-envelope-rust/src/extension/edge/edge_impl.rs`).
  *
  * @throws {EnvelopeError} If a required predicate is missing or
  *   duplicated, or if any other assertion is present
@@ -3512,28 +4281,60 @@ export declare const VENDOR: KnownValue;
 
 export { Verifier }
 
+/**
+ * Verifies that the envelope has a valid signature from the specified
+ * verifier, and unwraps it.
+ */
 export declare function verify(envelope: Envelope, verifier: Verifier): Envelope;
 
+/**
+ * Verifies the envelope's signature and returns both the unwrapped
+ * envelope and signature metadata.
+ */
 export declare function verifyReturningMetadata(envelope: Envelope, verifier: Verifier): {
     envelope: Envelope;
     metadata: Envelope;
 };
 
+/** Checks whether the given signature is valid for the given public key. */
 export declare function verifySignature(envelope: Envelope, signature: Signature, verifier: Verifier): Envelope;
 
+/**
+ * Checks whether the envelope's subject has a valid signature from the
+ * given public key.
+ */
 export declare function verifySignatureFrom(envelope: Envelope, verifier: Verifier): Envelope;
 
+/** Verifies signature and returns the metadata envelope. */
 export declare function verifySignatureFromReturningMetadata(envelope: Envelope, verifier: Verifier): Envelope;
 
+/** Checks whether the envelope's subject has a set of signatures. */
 export declare function verifySignaturesFrom(envelope: Envelope, verifiers: Verifier[]): Envelope;
 
+/** Checks whether the envelope's subject has some threshold of signatures. */
 export declare function verifySignaturesFromThreshold(envelope: Envelope, verifiers: Verifier[], threshold?: number): Envelope;
 
+/**
+ * A visitor function that is called for each element in the envelope.
+ *
+ * The visitor function takes the following parameters:
+ * - `envelope`: The current envelope element being visited
+ * - `level`: The depth level in the hierarchy (0 for root)
+ * - `incomingEdge`: The type of edge connecting this element to its parent
+ * - `state`: Optional context passed down from the parent's visitor call
+ *
+ * The visitor returns a tuple of:
+ * - The state that will be passed to child elements
+ * - A boolean indicating whether to stop traversal (true = stop)
+ *
+ * This enables accumulating state or passing context during traversal.
+ */
 export declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
 
 export declare const XOR: Function_2;
 
-export declare function xor(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+/** Creates a logical XOR expression: lhs ^ rhs */
+export declare function xor(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
 export declare const XOR_VALUE: number;
 

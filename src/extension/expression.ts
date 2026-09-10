@@ -47,7 +47,7 @@ import { EnvelopeError } from "../base/error";
 //   .withParameter('lhs', 2)
 //   .withParameter('rhs', 3);
 //
-// const envelope = expr.envelope();
+// const envelope = expr.toEnvelope();
 // ```
 
 /** CBOR tag for function identifiers */
@@ -125,25 +125,22 @@ export class Function implements ToEnvelope {
   }
 
   /** Creates a new known function with a numeric ID and optional name. */
-  static newKnown(value: number, name?: string): Function {
+  /** A function by known id (number) or name (string). */
+  static from(id: FunctionID): Function {
+    return typeof id === "number" ? Function.known(id) : Function.named(id);
+  }
+
+  static known(value: number, name?: string): Function {
     return new Function("known", value, name);
   }
 
   /** Creates a new named function identified by a string. */
-  static newNamed(name: string): Function {
+  static named(name: string): Function {
     return new Function("named", 0, name);
   }
 
   /** Creates a function from a numeric ID (convenience method). */
-  static fromNumeric(id: number): Function {
-    return Function.newKnown(id);
-  }
-
   /** Creates a function from a string name (convenience method). */
-  static fromString(name: string): Function {
-    return Function.newNamed(name);
-  }
-
   /** Returns true if this is a known (numeric) function. */
   isKnown(): boolean {
     return this._variant === "known";
@@ -155,12 +152,12 @@ export class Function implements ToEnvelope {
   }
 
   /** Returns the numeric value for known functions. */
-  value(): number | undefined {
+  get value(): number | undefined {
     return this._variant === "known" ? this._value : undefined;
   }
 
   /** Returns the function identifier (number for known, string for named). */
-  id(): FunctionID {
+  get id(): FunctionID {
     if (this._variant === "known") {
       return this._value;
     }
@@ -178,7 +175,7 @@ export class Function implements ToEnvelope {
    * For known functions without a name, returns the numeric ID as a string.
    * For named functions, returns the name enclosed in quotes.
    */
-  name(): string {
+  get name(): string {
     if (this._variant === "known") {
       return this._name ?? this._value.toString();
     } else {
@@ -187,25 +184,17 @@ export class Function implements ToEnvelope {
   }
 
   /** Returns the raw name for named functions, or undefined for known functions. */
-  namedName(): string | undefined {
+  get namedName(): string | undefined {
     return this._variant === "named" ? this._name : undefined;
   }
 
   /** Returns the assigned name if present (for known functions only). */
-  assignedName(): string | undefined {
+  get assignedName(): string | undefined {
     return this._variant === "known" ? this._name : undefined;
   }
 
   /** Returns true if this is a numeric function ID (legacy compatibility). */
-  isNumeric(): boolean {
-    return this._variant === "known";
-  }
-
   /** Returns true if this is a string function ID (legacy compatibility). */
-  isString(): boolean {
-    return this._variant === "named";
-  }
-
   /**
    * Creates an expression envelope with this function as the subject.
    *
@@ -220,16 +209,12 @@ export class Function implements ToEnvelope {
    * not tagged), so format() rendered the leaf as a quoted string
    * instead of `«"name"»`.
    */
-  envelope(): Envelope {
+  toEnvelope(): Envelope {
     const untagged: Cbor = this._variant === "known" ? toCbor(this._value) : toCbor(this._name);
     return Envelope.leaf(taggedValue(40006, untagged));
   }
 
   /** Converts this function into an envelope (ToEnvelope implementation). */
-  toEnvelope(): Envelope {
-    return this.envelope();
-  }
-
   /** Creates an expression with a parameter. */
   withParameter(param: ParameterID, value: EnvelopeInput): Expression {
     const expr = new Expression(this);
@@ -282,19 +267,19 @@ export class FunctionsStore {
   /** Creates a new FunctionsStore with the given functions. */
   constructor(functions: Iterable<Function> = []) {
     for (const func of functions) {
-      this.insert(func);
+      this.register(func);
     }
   }
 
   /** Inserts a function into the store. */
-  insert(func: Function): void {
+  register(func: Function): void {
     if (func.isKnown()) {
-      const value = func.value();
+      const value = func.value;
       if (value !== undefined) {
         this._dict.set(value, func);
       }
     } else {
-      const name = func.namedName();
+      const name = func.namedName;
       if (name !== undefined) {
         this._dict.set(name, func);
       }
@@ -302,31 +287,31 @@ export class FunctionsStore {
   }
 
   /** Returns the assigned name for a function, if it exists in the store. */
-  assignedName(func: Function): string | undefined {
+  assignedNameOf(func: Function): string | undefined {
     let key: number | string | undefined;
     if (func.isKnown()) {
-      key = func.value();
+      key = func.value;
     } else {
-      key = func.namedName();
+      key = func.namedName;
     }
     if (key === undefined) return undefined;
     const stored = this._dict.get(key);
-    return stored?.assignedName();
+    return stored?.assignedName;
   }
 
   /** Returns the name for a function, either from this store or from the function itself. */
-  name(func: Function): string {
-    const assigned = this.assignedName(func);
-    return assigned ?? func.name();
+  nameOf(func: Function): string {
+    const assigned = this.assignedNameOf(func);
+    return assigned ?? func.name;
   }
 
   /** Static method that returns the name of a function, using an optional store. */
   static nameForFunction(func: Function, store?: FunctionsStore): string {
     if (store !== undefined) {
-      const assigned = store.assignedName(func);
+      const assigned = store.assignedNameOf(func);
       if (assigned !== undefined && assigned !== "") return assigned;
     }
-    return func.name();
+    return func.name;
   }
 }
 
@@ -369,22 +354,22 @@ export class Parameter implements ToEnvelope {
   }
 
   /** Creates a new known parameter with a numeric ID and optional name. */
-  static newKnown(value: number, name?: string): Parameter {
+  static known(value: number, name?: string): Parameter {
     return new Parameter("known", value, name);
   }
 
   /** Creates a new named parameter identified by a string. */
-  static newNamed(name: string): Parameter {
+  static named(name: string): Parameter {
     return new Parameter("named", 0, name);
   }
 
   /** Creates a parameter with a value envelope (internal use). */
-  static withValue(id: ParameterID, value: Envelope): Parameter {
-    if (typeof id === "number") {
-      return new Parameter("known", id, undefined, value);
-    } else {
-      return new Parameter("named", 0, id, value);
-    }
+  /** A parameter by known id or name, carrying `value` when given. */
+  static from(id: ParameterID, value?: EnvelopeInput): Parameter {
+    const v = value === undefined ? undefined : Envelope.from(value);
+    return typeof id === "number"
+      ? new Parameter("known", id, undefined, v)
+      : new Parameter("named", 0, id, v);
   }
 
   /** Returns true if this is a known (numeric) parameter. */
@@ -398,12 +383,12 @@ export class Parameter implements ToEnvelope {
   }
 
   /** Returns the numeric value for known parameters. */
-  value(): number | undefined {
+  get value(): number | undefined {
     return this._variant === "known" ? this._value : undefined;
   }
 
   /** Returns the parameter identifier (number for known, string for named). */
-  id(): ParameterID {
+  get id(): ParameterID {
     if (this._variant === "known") {
       return this._value;
     }
@@ -421,7 +406,7 @@ export class Parameter implements ToEnvelope {
    * For known parameters without a name, returns the numeric ID as a string.
    * For named parameters, returns the name enclosed in quotes.
    */
-  name(): string {
+  get name(): string {
     if (this._variant === "known") {
       return this._name ?? this._value.toString();
     } else {
@@ -430,37 +415,29 @@ export class Parameter implements ToEnvelope {
   }
 
   /** Returns the raw name for named parameters, or undefined for known parameters. */
-  namedName(): string | undefined {
+  get namedName(): string | undefined {
     return this._variant === "named" ? this._name : undefined;
   }
 
   /** Returns the assigned name if present (for known parameters only). */
-  assignedName(): string | undefined {
+  get assignedName(): string | undefined {
     return this._variant === "known" ? this._name : undefined;
   }
 
   /** Returns the parameter value as an envelope, if set. */
-  paramValue(): Envelope | undefined {
+  get paramValue(): Envelope | undefined {
     return this._paramValue;
   }
 
   /** Returns true if this is a numeric parameter ID (legacy compatibility). */
-  isNumeric(): boolean {
-    return this._variant === "known";
-  }
-
   /** Returns true if this is a string parameter ID (legacy compatibility). */
-  isString(): boolean {
-    return this._variant === "named";
-  }
-
   /**
    * Creates a parameter envelope.
    *
    * Function above): the parameter is stored as `tag(40007, untagged)`
    * where untagged is `uint(N)` (Known) or `text(name)` (Named).
    */
-  envelope(): Envelope {
+  toEnvelope(): Envelope {
     const untagged: Cbor = this._variant === "known" ? toCbor(this._value) : toCbor(this._name);
     const paramLeaf = Envelope.leaf(taggedValue(40007, untagged));
     if (this._paramValue !== undefined) {
@@ -470,10 +447,6 @@ export class Parameter implements ToEnvelope {
   }
 
   /** Converts this parameter into an envelope (ToEnvelope implementation). */
-  toEnvelope(): Envelope {
-    return this.envelope();
-  }
-
   /** Checks equality based on value (for known) or name (for named). */
   equals(other: Parameter): boolean {
     if (this._variant !== other._variant) return false;
@@ -508,15 +481,15 @@ export class Parameter implements ToEnvelope {
 
   // Convenience static methods for standard parameters
   static blank(value: EnvelopeInput): Parameter {
-    return Parameter.withValue(PARAMETER_IDS.BLANK, Envelope.from(value));
+    return Parameter.from(PARAMETER_IDS.BLANK, Envelope.from(value));
   }
 
   static lhs(value: EnvelopeInput): Parameter {
-    return Parameter.withValue(PARAMETER_IDS.LHS, Envelope.from(value));
+    return Parameter.from(PARAMETER_IDS.LHS, Envelope.from(value));
   }
 
   static rhs(value: EnvelopeInput): Parameter {
-    return Parameter.withValue(PARAMETER_IDS.RHS, Envelope.from(value));
+    return Parameter.from(PARAMETER_IDS.RHS, Envelope.from(value));
   }
 }
 
@@ -536,19 +509,19 @@ export class ParametersStore {
   /** Creates a new ParametersStore with the given parameters. */
   constructor(parameters: Iterable<Parameter> = []) {
     for (const param of parameters) {
-      this.insert(param);
+      this.register(param);
     }
   }
 
   /** Inserts a parameter into the store. */
-  insert(param: Parameter): void {
+  register(param: Parameter): void {
     if (param.isKnown()) {
-      const value = param.value();
+      const value = param.value;
       if (value !== undefined) {
         this._dict.set(value, param);
       }
     } else {
-      const name = param.namedName();
+      const name = param.namedName;
       if (name !== undefined) {
         this._dict.set(name, param);
       }
@@ -556,31 +529,31 @@ export class ParametersStore {
   }
 
   /** Returns the assigned name for a parameter, if it exists in the store. */
-  assignedName(param: Parameter): string | undefined {
+  assignedNameOf(param: Parameter): string | undefined {
     let key: number | string | undefined;
     if (param.isKnown()) {
-      key = param.value();
+      key = param.value;
     } else {
-      key = param.namedName();
+      key = param.namedName;
     }
     if (key === undefined) return undefined;
     const stored = this._dict.get(key);
-    return stored?.assignedName();
+    return stored?.assignedName;
   }
 
   /** Returns the name for a parameter, either from this store or from the parameter itself. */
-  name(param: Parameter): string {
-    const assigned = this.assignedName(param);
-    return assigned ?? param.name();
+  nameOf(param: Parameter): string {
+    const assigned = this.assignedNameOf(param);
+    return assigned ?? param.name;
   }
 
   /** Static method that returns the name of a parameter, using an optional store. */
   static nameForParameter(param: Parameter, store?: ParametersStore): string {
     if (store !== undefined) {
-      const assigned = store.assignedName(param);
+      const assigned = store.assignedNameOf(param);
       if (assigned !== undefined && assigned !== "") return assigned;
     }
-    return param.name();
+    return param.name;
   }
 }
 
@@ -589,21 +562,21 @@ export class ParametersStore {
 //------------------------------------------------------------------------------
 
 /** Standard arithmetic and logical functions */
-export const ADD: Function = Function.newKnown(FUNCTION_IDS.ADD, "add");
-export const SUB: Function = Function.newKnown(FUNCTION_IDS.SUB, "sub");
-export const MUL: Function = Function.newKnown(FUNCTION_IDS.MUL, "mul");
-export const DIV: Function = Function.newKnown(FUNCTION_IDS.DIV, "div");
-export const NEG: Function = Function.newKnown(FUNCTION_IDS.NEG, "neg");
-export const LT: Function = Function.newKnown(FUNCTION_IDS.LT, "lt");
-export const LE: Function = Function.newKnown(FUNCTION_IDS.LE, "le");
-export const GT: Function = Function.newKnown(FUNCTION_IDS.GT, "gt");
-export const GE: Function = Function.newKnown(FUNCTION_IDS.GE, "ge");
-export const EQ: Function = Function.newKnown(FUNCTION_IDS.EQ, "eq");
-export const NE: Function = Function.newKnown(FUNCTION_IDS.NE, "ne");
-export const AND: Function = Function.newKnown(FUNCTION_IDS.AND, "and");
-export const OR: Function = Function.newKnown(FUNCTION_IDS.OR, "or");
-export const XOR: Function = Function.newKnown(FUNCTION_IDS.XOR, "xor");
-export const NOT: Function = Function.newKnown(FUNCTION_IDS.NOT, "not");
+export const ADD: Function = Function.known(FUNCTION_IDS.ADD, "add");
+export const SUB: Function = Function.known(FUNCTION_IDS.SUB, "sub");
+export const MUL: Function = Function.known(FUNCTION_IDS.MUL, "mul");
+export const DIV: Function = Function.known(FUNCTION_IDS.DIV, "div");
+export const NEG: Function = Function.known(FUNCTION_IDS.NEG, "neg");
+export const LT: Function = Function.known(FUNCTION_IDS.LT, "lt");
+export const LE: Function = Function.known(FUNCTION_IDS.LE, "le");
+export const GT: Function = Function.known(FUNCTION_IDS.GT, "gt");
+export const GE: Function = Function.known(FUNCTION_IDS.GE, "ge");
+export const EQ: Function = Function.known(FUNCTION_IDS.EQ, "eq");
+export const NE: Function = Function.known(FUNCTION_IDS.NE, "ne");
+export const AND: Function = Function.known(FUNCTION_IDS.AND, "and");
+export const OR: Function = Function.known(FUNCTION_IDS.OR, "or");
+export const XOR: Function = Function.known(FUNCTION_IDS.XOR, "xor");
+export const NOT: Function = Function.known(FUNCTION_IDS.NOT, "not");
 
 /** Raw value constants (matching Rust's _VALUE suffix constants) */
 export const ADD_VALUE: number = FUNCTION_IDS.ADD;
@@ -627,9 +600,9 @@ export const NOT_VALUE: number = FUNCTION_IDS.NOT;
 //------------------------------------------------------------------------------
 
 /** Standard parameters */
-export const BLANK: Parameter = Parameter.newKnown(PARAMETER_IDS.BLANK, "_");
-export const LHS: Parameter = Parameter.newKnown(PARAMETER_IDS.LHS, "lhs");
-export const RHS: Parameter = Parameter.newKnown(PARAMETER_IDS.RHS, "rhs");
+export const BLANK: Parameter = Parameter.known(PARAMETER_IDS.BLANK, "_");
+export const LHS: Parameter = Parameter.known(PARAMETER_IDS.LHS, "lhs");
+export const RHS: Parameter = Parameter.known(PARAMETER_IDS.RHS, "rhs");
 
 /** Raw value constants */
 export const BLANK_VALUE: number = PARAMETER_IDS.BLANK;
@@ -692,18 +665,18 @@ export class Expression implements ToEnvelope {
   }
 
   /** Returns the function. */
-  function(): Function {
+  get function(): Function {
     return this._function;
   }
 
   /** Returns all parameters. */
-  parameters(): Parameter[] {
+  get parameters(): Parameter[] {
     return this._parameters.slice();
   }
 
   /** Adds a parameter to the expression. */
   withParameter(param: ParameterID, value: EnvelopeInput): Expression {
-    this._parameters.push(Parameter.withValue(param, Envelope.from(value)));
+    this._parameters.push(Parameter.from(param, value));
     this._envelope = null; // Invalidate cached envelope
     return this;
   }
@@ -730,9 +703,9 @@ export class Expression implements ToEnvelope {
    * For multi-valued parameters (e.g. several `participant` assertions),
    * use {@link objectsForParameter} to retrieve all matching values.
    */
-  getParameter(param: ParameterID): Envelope | undefined {
-    const found = this._parameters.find((p) => Expression.parameterIdMatches(p.id(), param));
-    return found?.paramValue();
+  parameter(param: ParameterID): Envelope | undefined {
+    const found = this._parameters.find((p) => Expression.parameterIdMatches(p.id, param));
+    return found?.paramValue;
   }
 
   /**
@@ -743,8 +716,8 @@ export class Expression implements ToEnvelope {
   objectsForParameter(param: ParameterID): Envelope[] {
     const matches: Envelope[] = [];
     for (const p of this._parameters) {
-      if (Expression.parameterIdMatches(p.id(), param)) {
-        const v = p.paramValue();
+      if (Expression.parameterIdMatches(p.id, param)) {
+        const v = p.paramValue;
         if (v !== undefined) matches.push(v);
       }
     }
@@ -753,20 +726,20 @@ export class Expression implements ToEnvelope {
 
   /** Checks if a parameter exists. */
   hasParameter(param: ParameterID): boolean {
-    return this._parameters.some((p) => Expression.parameterIdMatches(p.id(), param));
+    return this._parameters.some((p) => Expression.parameterIdMatches(p.id, param));
   }
 
   /** Converts the expression to an envelope. */
-  envelope(): Envelope {
+  toEnvelope(): Envelope {
     if (this._envelope !== null) {
       return this._envelope;
     }
 
     // Start with function envelope
-    let env = this._function.envelope();
+    let env = this._function.toEnvelope();
 
     // Add all parameters as assertions. Each parameter's envelope is
-    // itself an assertion (`Parameter.envelope()` returns
+    // itself an assertion (`Parameter.toEnvelope()` returns
     // `Envelope.assertion(parameterLeaf, value)`); we extract the
     // predicate (a tagged-CBOR Parameter leaf, post-M0/G1 fix) and
     // attach it to the function envelope as a fresh assertion.
@@ -775,7 +748,7 @@ export class Expression implements ToEnvelope {
     // tagged-CBOR predicate would have produced `undefined` and the
     // assertion would silently be skipped.
     for (const param of this._parameters.values()) {
-      const paramEnv = param.envelope();
+      const paramEnv = param.toEnvelope();
       const paramCase = paramEnv.case;
       if (paramCase.type === "assertion") {
         const predicate = paramCase.assertion.predicate();
@@ -789,10 +762,6 @@ export class Expression implements ToEnvelope {
   }
 
   /** Converts this expression into an envelope (ToEnvelope implementation). */
-  toEnvelope(): Envelope {
-    return this.envelope();
-  }
-
   /**
    * Creates an expression from an envelope.
    *
@@ -855,10 +824,10 @@ function readFunctionFromLeaf(envelope: Envelope): Function {
   }
   const inner = tagged[1];
   if (isInteger(inner)) {
-    return Function.newKnown(Number(expectInteger(inner)));
+    return Function.known(Number(expectInteger(inner)));
   }
   if (isText(inner)) {
-    return Function.newNamed(expectText(inner));
+    return Function.named(expectText(inner));
   }
   throw EnvelopeError.general("Function tag content must be uint or text");
 }

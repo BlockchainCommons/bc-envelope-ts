@@ -184,6 +184,16 @@ export const HAND: E[] = [
     note: "a note",
     date: 1657512000000,
   },
+  {
+    // well-known function and parameters print by name («add», ❰lhs❱)
+    k: "request",
+    func: 1,
+    id: ARID_1,
+    params: [
+      [2, int(2)],
+      [3, int(3)],
+    ],
+  },
   { k: "response", id: ARID_1, result: int(5) },
   { k: "response", id: ARID_2, error: text("failed") },
   { k: "recipient", e: aliceMore, key: KEY, recipientSeed: SEED_B },

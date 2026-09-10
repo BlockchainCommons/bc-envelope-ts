@@ -110,7 +110,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
         const env = build(e.e);
         const s = signer(e.seed, e.scheme);
         if (e.note !== undefined) {
-          const md = m.SignatureMetadata.new().withAssertion(m.NOTE, e.note);
+          const md = m.SignatureMetadata.from().withAssertion(m.NOTE, e.note);
           return env.sign(s, { metadata: md });
         }
         return env.sign(s);
@@ -146,7 +146,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "position":
         return build(e.e).setPosition(e.pos);
       case "request": {
-        let req = m.Request.new(e.func, C.ARID.from(unhex(e.id)));
+        let req = m.Request.from(e.func, C.ARID.from(unhex(e.id)));
         for (const [p, v] of e.params) req = req.withParameter(p, build(v));
         if (e.note !== undefined) req = req.withNote(e.note);
         if (e.date !== undefined) req = req.withDate(new Date(e.date));
@@ -155,8 +155,8 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "response": {
         const id = C.ARID.from(unhex(e.id));
         if (e.result !== undefined)
-          return m.Response.newSuccess(id).withResult(build(e.result)).toEnvelope();
-        return m.Response.newFailure(id)
+          return m.Response.success(id).withResult(build(e.result)).toEnvelope();
+        return m.Response.failure(id)
           .withError(e.error === undefined ? "error" : build(e.error))
           .toEnvelope();
       }

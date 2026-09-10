@@ -71,11 +71,11 @@ export class SignatureMetadata {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
-  /**
-   * Creates a new empty SignatureMetadata.
-   */
-  static new(): SignatureMetadata {
-    return new SignatureMetadata();
+  /** Metadata with the given `[predicate, object]` assertions. */
+  static from(assertions: readonly [EnvelopeInput, unknown][] = []): SignatureMetadata {
+    const m = new SignatureMetadata();
+    for (const [predicate, object] of assertions) m._assertions.push([predicate, object]);
+    return m;
   }
 
   /**
@@ -95,7 +95,7 @@ export class SignatureMetadata {
   /**
    * Returns all assertions in this metadata.
    */
-  assertions(): readonly [EnvelopeInput, unknown][] {
+  get assertions(): readonly [EnvelopeInput, unknown][] {
     return this._assertions;
   }
 
@@ -142,7 +142,7 @@ export function addSignature(
 
   if (metadata?.hasAssertions() === true) {
     // Add metadata assertions to the signature envelope
-    for (const [predicate, object] of metadata.assertions()) {
+    for (const [predicate, object] of metadata.assertions) {
       signatureEnvelope = signatureEnvelope.addAssertion(predicate, object as EnvelopeInput);
     }
 

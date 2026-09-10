@@ -78,19 +78,19 @@ export interface ResponseBehavior {
   /**
    * Returns the ID of the request this response corresponds to, if known.
    */
-  id(): ARID | undefined;
+  readonly id: ARID | undefined;
 
   /**
    * Returns the result envelope if this is a successful response.
    * @throws Error if this is a failure response.
    */
-  result(): Envelope;
+  readonly result: Envelope;
 
   /**
    * Returns the error envelope if this is a failure response.
    * @throws Error if this is a successful response.
    */
-  error(): Envelope;
+  readonly error: Envelope;
 
   /**
    * Converts the response to an envelope.
@@ -110,11 +110,11 @@ export interface ResponseBehavior {
  * const requestId = ARID.new();
  *
  * // Create a successful response
- * const successResponse = Response.newSuccess(requestId)
+ * const successResponse = Response.success(requestId)
  *   .withResult("Transaction completed");
  *
  * // Create an error response
- * const errorResponse = Response.newFailure(requestId)
+ * const errorResponse = Response.failure(requestId)
  *   .withError("Insufficient funds");
  *
  * // Convert to envelopes
@@ -135,11 +135,11 @@ export class Response implements ResponseBehavior, ToEnvelope {
    * By default, the result will be the 'OK' known value. Use `withResult`
    * to set a specific result value.
    */
-  static newSuccess(id: ARID): Response {
+  static success(id: ARID): Response {
     return new Response({
       ok: true,
       id,
-      result: Response.ok(),
+      result: Response.OK,
     });
   }
 
@@ -149,11 +149,11 @@ export class Response implements ResponseBehavior, ToEnvelope {
    * By default, the error will be the 'Unknown' known value. Use
    * `withError` to set a specific error message.
    */
-  static newFailure(id: ARID): Response {
+  static failure(id: ARID): Response {
     return new Response({
       ok: false,
       id,
-      error: Response.unknown(),
+      error: Response.UNKNOWN,
     });
   }
 
@@ -163,25 +163,25 @@ export class Response implements ResponseBehavior, ToEnvelope {
    * An early failure occurs when the error happens before the request
    * has been fully processed, so the request ID is not known.
    */
-  static newEarlyFailure(): Response {
+  static earlyFailure(): Response {
     return new Response({
       ok: false,
       id: undefined,
-      error: Response.unknown(),
+      error: Response.UNKNOWN,
     });
   }
 
   /**
    * Creates an envelope containing the 'Unknown' known value.
    */
-  static unknown(): Envelope {
+  static get UNKNOWN(): Envelope {
     return Envelope.from(UNKNOWN_VALUE);
   }
 
   /**
    * Creates an envelope containing the 'OK' known value.
    */
-  static ok(): Envelope {
+  static get OK(): Envelope {
     return Envelope.from(OK_VALUE);
   }
 
@@ -202,7 +202,7 @@ export class Response implements ResponseBehavior, ToEnvelope {
 
   withResult(result: EnvelopeInput): Response {
     if (!this._result.ok) {
-      throw new Error("Cannot set result on a failed response");
+      throw EnvelopeError.general("Cannot set result on a failed response");
     }
     this._result = {
       ok: true,
@@ -221,7 +221,7 @@ export class Response implements ResponseBehavior, ToEnvelope {
 
   withError(error: EnvelopeInput): Response {
     if (this._result.ok) {
-      throw new Error("Cannot set error on a successful response");
+      throw EnvelopeError.general("Cannot set error on a successful response");
     }
     this._result = {
       ok: false,
@@ -246,26 +246,26 @@ export class Response implements ResponseBehavior, ToEnvelope {
     return !this._result.ok;
   }
 
-  id(): ARID | undefined {
+  get id(): ARID | undefined {
     return this._result.id;
   }
 
   expectId(): ARID {
-    const id = this.id();
+    const id = this.id;
     if (id === undefined) {
-      throw new Error("Expected an ID");
+      throw EnvelopeError.general("expected an ID");
     }
     return id;
   }
 
-  result(): Envelope {
+  get result(): Envelope {
     if (!this._result.ok) {
       throw EnvelopeError.general("Cannot get result from failed response");
     }
     return this._result.result;
   }
 
-  error(): Envelope {
+  get error(): Envelope {
     if (this._result.ok) {
       throw EnvelopeError.general("Cannot get error from successful response");
     }
@@ -276,14 +276,14 @@ export class Response implements ResponseBehavior, ToEnvelope {
    * Extracts a typed result value from a successful response.
    */
   extractResult<T>(decoder: (cbor: unknown) => T): T {
-    return this.result().expectSubject(decoder);
+    return this.result.expectSubject(decoder);
   }
 
   /**
    * Extracts a typed error value from a failure response.
    */
   extractError<T>(decoder: (cbor: unknown) => T): T {
-    return this.error().expectSubject(decoder);
+    return this.error.expectSubject(decoder);
   }
 
   /**
@@ -374,14 +374,14 @@ export class Response implements ResponseBehavior, ToEnvelope {
       return new Response({
         ok: true,
         id,
-        result: resultEnvelope ?? Response.ok(),
+        result: resultEnvelope ?? Response.OK,
       });
     } else {
       const errorEnvelope = envelope.objectForPredicate(ERROR);
       return new Response({
         ok: false,
         id,
-        error: errorEnvelope ?? Response.unknown(),
+        error: errorEnvelope ?? Response.UNKNOWN,
       });
     }
   }
