@@ -1,4 +1,5 @@
-import { Envelope, SymmetricKey } from "../src";
+import { Envelope } from "../src/index.js";
+import { SymmetricKey } from "@blockchaincommons/components";
 import { Spec, GroupSpec } from "@blockchaincommons/sskr";
 import { SeededRng } from "@blockchaincommons/rand";
 

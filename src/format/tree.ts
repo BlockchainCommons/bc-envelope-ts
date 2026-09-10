@@ -5,7 +5,7 @@
  */
 
 import { Envelope } from "../base/envelope";
-import { type EdgeType, edgeLabel } from "../base/walk";
+import { type EdgeType, edgeLabel } from "../base/envelope";
 import { getGlobalFormatContext, type FormatContext } from "./format-context";
 
 // ============================================================================

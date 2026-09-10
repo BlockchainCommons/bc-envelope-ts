@@ -12,7 +12,7 @@
 
 // Core types
 export { Envelope, type EnvelopeCase } from "./envelope";
-export { Assertion } from "./assertion";
+export { Assertion } from "./envelope";
 export { Digest, type DigestProvider } from "./digest";
 
 // Error handling
@@ -52,20 +52,10 @@ export {
   extractObjectForPredicateWithDefault,
   extractObjectsForPredicate,
   tryObjectsForPredicate,
-} from "./envelope-decodable";
+} from "./envelope";
 
 // Elision and selective disclosure
-export { ObscureType, type ObscureAction, elideAction } from "./elide";
+export { ObscureType, type ObscureAction, elideAction } from "./envelope";
 
 // Walking/traversal
-export { EdgeType, edgeLabel, type Visitor } from "./walk";
-
-// Import side-effect modules to register prototype extensions
-import "./assertions";
-import "./leaf";
-import "./queries";
-import "./elide";
-import "./wrap";
-import "./walk";
-import "./envelope-decodable";
-import "./ur";
+export { EdgeType, edgeLabel, type Visitor } from "./envelope";

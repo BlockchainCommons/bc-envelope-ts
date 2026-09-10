@@ -14,7 +14,7 @@
 /// flowchart graph, with edges showing relationships between components.
 
 import { Envelope } from "../base/envelope";
-import { EdgeType, edgeLabel } from "../base/walk";
+import { EdgeType, edgeLabel } from "../base/envelope";
 import type { Digest } from "../base/digest";
 import { withFormatContext } from "./format-context";
 

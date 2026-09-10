@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, SymmetricKey, SigningPrivateKey, PrivateKeyBase } from "../src";
+import { Envelope, SigningPrivateKey, PrivateKeyBase } from "../src/index.js";
+import { SymmetricKey } from "@blockchaincommons/components";
 import { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
 import { IS_A } from "@blockchaincommons/known-values";
 

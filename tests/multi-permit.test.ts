@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Envelope, SymmetricKey, PrivateKeyBase, SigningPrivateKey } from "../src";
+import { Envelope, PrivateKeyBase, SigningPrivateKey } from "../src/index.js";
+import { SymmetricKey } from "@blockchaincommons/components";
 import { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
 import { Spec, GroupSpec } from "@blockchaincommons/sskr";
 

@@ -19,7 +19,7 @@ import { HAS_SECRET } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
-import { SymmetricKey } from "./encrypt";
+import { SymmetricKey } from "@blockchaincommons/components";
 
 // ============================================================================
 // Envelope Prototype Extensions for Secret Locking

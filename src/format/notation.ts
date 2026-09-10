@@ -25,7 +25,7 @@ import { type Cbor, isTagged, tagValue } from "@blockchaincommons/dcbor";
 import { IS_A } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
-import type { Assertion } from "../base/assertion";
+import type { Assertion } from "../base/envelope";
 import {
   type FormatContextOpt,
   getGlobalFormatContext,

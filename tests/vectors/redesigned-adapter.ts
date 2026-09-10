@@ -90,14 +90,14 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
             ? { type: "elide" }
             : e.action === "compress"
               ? { type: "compress" }
-              : { type: "encrypt", key: m.SymmetricKey.from(unhex(e.action.encrypt)) };
+              : { type: "encrypt", key: C.SymmetricKey.from(unhex(e.action.encrypt)) };
         if (e.revealing !== undefined)
           return env.elideRevealingSetWithAction(digests(e.revealing), action);
         return env.elideRemovingSetWithAction(digests(e.removing ?? []), action);
       }
       case "encrypt": {
         const env = build(e.e);
-        const key = m.SymmetricKey.from(unhex(e.key));
+        const key = C.SymmetricKey.from(unhex(e.key));
         return e.subject ? env.encryptSubject(key) : env.encrypt(key);
       }
       case "compress": {
@@ -120,7 +120,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       }
       case "sskr": {
         const env = build(e.e);
-        const key = m.SymmetricKey.from(unhex(e.key));
+        const key = C.SymmetricKey.from(unhex(e.key));
         const spec =
           typeof deps.sskr.Spec?.from === "function"
             ? deps.sskr.Spec.from({
@@ -160,7 +160,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       }
       case "recipient": {
         const env = build(e.e);
-        const key = m.SymmetricKey.from(unhex(e.key));
+        const key = C.SymmetricKey.from(unhex(e.key));
         const base = C.PrivateKeyBase.from(unhex(e.recipientSeed));
         const recipient = base.encapsulationPrivateKey().publicKey();
         return env.encryptSubject(key).addRecipient(recipient, key);

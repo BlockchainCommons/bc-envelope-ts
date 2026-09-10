@@ -23,7 +23,7 @@ import { SSKR_SHARE } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
-import { SymmetricKey } from "./encrypt";
+import { SymmetricKey } from "@blockchaincommons/components";
 
 // Re-export useful types
 export { Spec, GroupSpec, SskrShare, Secret };
