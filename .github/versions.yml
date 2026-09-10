@@ -1,0 +1,8 @@
+# Version map: TypeScript package -> Reference implementation
+# Used by workflow automation to track upstream reference versions.
+packages:
+  envelope:
+    npm: "@blockchaincommons/envelope"
+    repo: "BlockchainCommons/bc-envelope-rust"
+    version: "0.43.0"
+    commit: "bae6880035bcd14c0d149d4eb42082b0069edb83"

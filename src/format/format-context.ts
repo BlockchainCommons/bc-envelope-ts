@@ -1,0 +1,671 @@
+/**
+ * Copyright © 2023-2026 Blockchain Commons, LLC
+ *
+ */
+
+// Format context for Gordian Envelopes with annotations.
+//
+// The FormatContext provides information about CBOR tags, known values,
+// functions, and parameters that are used to annotate the output of envelope
+// formatting functions. This context enables human-readable output when
+// converting envelopes to string representations like diagnostic notation.
+
+import {
+  type TagsStore,
+  type ReadonlyTagsStore,
+  type Tag,
+  type CborNumber,
+  type CborSummarizer,
+  TagsStore as TagsStoreClass,
+  getGlobalTagsStore,
+  taggedValue,
+  expectNumber,
+  expectText,
+  isNumber,
+  isText,
+  CborError,
+} from "@blockchaincommons/dcbor";
+import {
+  Function,
+  FunctionsStore,
+  GLOBAL_FUNCTIONS,
+  GLOBAL_PARAMETERS,
+  Parameter,
+  ParametersStore,
+} from "../extension/expression";
+import {
+  type KnownValuesStore,
+  KnownValuesStore as KnownValuesStoreClass,
+  KnownValue,
+  getGlobalKnownValuesStore,
+} from "@blockchaincommons/known-values";
+import {
+  KNOWN_VALUE,
+  registerTags as registerBcTags,
+  DIGEST as TAG_DIGEST,
+  ARID as TAG_ARID,
+  URI as TAG_URI,
+  UUID as TAG_UUID,
+  NONCE as TAG_NONCE,
+  SALT as TAG_SALT,
+  SEED as TAG_SEED,
+  SIGNATURE as TAG_SIGNATURE,
+  SEALED_MESSAGE as TAG_SEALED_MESSAGE,
+  ENCRYPTED_KEY as TAG_ENCRYPTED_KEY,
+  PRIVATE_KEY_BASE as TAG_PRIVATE_KEY_BASE,
+  PRIVATE_KEYS as TAG_PRIVATE_KEYS,
+  PUBLIC_KEYS as TAG_PUBLIC_KEYS,
+  SIGNING_PRIVATE_KEY as TAG_SIGNING_PRIVATE_KEY,
+  SIGNING_PUBLIC_KEY as TAG_SIGNING_PUBLIC_KEY,
+  SSKR_SHARE as TAG_SSKR_SHARE,
+  SSH_TEXT_PRIVATE_KEY as TAG_SSH_TEXT_PRIVATE_KEY,
+  SSH_TEXT_PUBLIC_KEY as TAG_SSH_TEXT_PUBLIC_KEY,
+  SSH_TEXT_SIGNATURE as TAG_SSH_TEXT_SIGNATURE,
+  SSH_TEXT_CERTIFICATE as TAG_SSH_TEXT_CERTIFICATE,
+  XID as TAG_XID,
+  FUNCTION as TAG_FUNCTION,
+  PARAMETER as TAG_PARAMETER,
+  REQUEST as TAG_REQUEST,
+  RESPONSE as TAG_RESPONSE,
+  EVENT as TAG_EVENT,
+  JSON as TAG_JSON,
+  REFERENCE as TAG_REFERENCE,
+} from "@blockchaincommons/tags";
+import {
+  Digest,
+  ARID,
+  URI,
+  UUID,
+  Nonce,
+  Salt,
+  Seed,
+  Signature,
+  SignatureScheme,
+  SealedMessage,
+  EncapsulationScheme,
+  PrivateKeyBase,
+  PrivateKeys,
+  PublicKeys,
+  SigningPrivateKey,
+  SigningPublicKey,
+  XID,
+  CborJson as JSONTagged,
+  Reference,
+} from "@blockchaincommons/components";
+import { EncryptedKey } from "@blockchaincommons/components/kdf";
+import { SSHPrivateKey, SSHPublicKey, SSHSignature } from "@blockchaincommons/components/ssh";
+import { SskrShare } from "@blockchaincommons/components/sskr";
+import { diagnostic } from "@blockchaincommons/dcbor/diagnostic";
+
+// ============================================================================
+// FormatContextOpt - Option type for format context
+// ============================================================================
+
+/**
+ * Which format context a formatter uses: a specific one, the global one
+ * (`"global"`, the default), or none (`"none"`: no tag names, no known-value
+ * names).
+ */
+export type FormatContextOpt = FormatContext | "global" | "none";
+
+/** The tags store a `FormatContextOpt` denotes; an empty store for `"none"`. */
+export function tagsStoreFor(opt: FormatContextOpt = "global"): TagsStore {
+  return resolveFormatContext(opt)?.tags ?? (EMPTY_TAGS ??= new TagsStoreClass());
+}
+let EMPTY_TAGS: TagsStore | undefined;
+
+/** The context a `FormatContextOpt` denotes; `undefined` for `"none"`. */
+export function resolveFormatContext(opt: FormatContextOpt = "global"): FormatContext | undefined {
+  if (opt === "none") return undefined;
+  if (opt === "global") return getGlobalFormatContext();
+  return opt;
+}
+
+// ============================================================================
+// FormatContext - Main formatting context class
+// ============================================================================
+
+/**
+ * Context object for formatting Gordian Envelopes with annotations.
+ *
+ * The FormatContext provides information about CBOR tags, known values,
+ * functions, and parameters that are used to annotate the output of envelope
+ * formatting functions.
+ */
+export class FormatContext implements ReadonlyTagsStore {
+  private readonly _tags: TagsStore;
+  private readonly _knownValues: KnownValuesStore;
+  private readonly _functions: FunctionsStore;
+  private readonly _parameters: ParametersStore;
+
+  constructor({
+    tags = new TagsStoreClass(),
+    knownValues = new KnownValuesStoreClass(),
+    functions = new FunctionsStore(),
+    parameters = new ParametersStore(),
+  }: {
+    tags?: TagsStore;
+    knownValues?: KnownValuesStore;
+    functions?: FunctionsStore;
+    parameters?: ParametersStore;
+  } = {}) {
+    this._tags = tags;
+    this._knownValues = knownValues;
+    this._functions = functions;
+    this._parameters = parameters;
+  }
+
+  /** Names for well-known expression functions (`«add»`). */
+  get functions(): FunctionsStore {
+    return this._functions;
+  }
+
+  /** Names for well-known expression parameters (`❰lhs❱`). */
+  get parameters(): ParametersStore {
+    return this._parameters;
+  }
+
+  /** The CBOR tags registry (names and summarisers). */
+  get tags(): TagsStore {
+    return this._tags;
+  }
+
+  /** The known values registry. */
+  get knownValues(): KnownValuesStore {
+    return this._knownValues;
+  }
+
+  // Implement ReadonlyTagsStore by delegating to internal tags store
+  assignedNameForTag(tag: Tag): string | undefined {
+    return this._tags.assignedNameForTag(tag);
+  }
+
+  nameForTag(tag: Tag): string {
+    return this._tags.nameForTag(tag);
+  }
+
+  tagForValue(value: CborNumber): Tag | undefined {
+    return this._tags.tagForValue(value);
+  }
+
+  tagForName(name: string): Tag | undefined {
+    return this._tags.tagForName(name);
+  }
+
+  nameForValue(value: CborNumber): string {
+    return this._tags.nameForValue(value);
+  }
+
+  summarizer(tag: CborNumber): CborSummarizer | undefined {
+    return this._tags.summarizer(tag);
+  }
+
+  /** Create a clone of this context */
+  clone(): FormatContext {
+    // Note: This creates a shallow copy - tags and knownValues are shared
+    // For a full deep copy, we would need to clone the stores
+    return new FormatContext({
+      tags: this._tags,
+      knownValues: this._knownValues,
+      functions: this._functions,
+      parameters: this._parameters,
+    });
+  }
+}
+
+// ============================================================================
+// Global Format Context
+// ============================================================================
+
+/** Global singleton instance of FormatContext for application-wide use. */
+let _globalFormatContextInstance: FormatContext | undefined;
+let isInitialized = false;
+
+/** Get the global format context instance, initializing it if necessary. */
+export const getGlobalFormatContext = (): FormatContext => {
+  if (!isInitialized) {
+    // Register dcbor's standard tags and every BC tag in *this* dcbor's
+    // global store (the explicit argument matters when a sibling package
+    // resolves its own copy of dcbor: `registerTags()` with no argument
+    // would fill that copy's store and leave ours nameless).
+    const tags = getGlobalTagsStore();
+    registerBcTags(tags);
+    const knownValues = getGlobalKnownValuesStore();
+
+    _globalFormatContextInstance = new FormatContext({
+      tags,
+      knownValues,
+      functions: GLOBAL_FUNCTIONS.get(),
+      parameters: GLOBAL_PARAMETERS.get(),
+    });
+    isInitialized = true;
+
+    // Set up known value summarizer
+    setupKnownValueSummarizer(_globalFormatContextInstance);
+
+    // Set up component tag summarizers
+    setupComponentSummarizers(_globalFormatContextInstance);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Safe: initialized in the if block above
+  return _globalFormatContextInstance!;
+};
+
+/** Execute a function with access to the global format context. */
+export const withFormatContext = <T>(action: (context: FormatContext) => T): T => {
+  return action(getGlobalFormatContext());
+};
+
+// ============================================================================
+// Tag Registration
+// ============================================================================
+
+/** Set up the known value summarizer in a format context */
+const setupKnownValueSummarizer = (context: FormatContext): void => {
+  const knownValues = context.knownValues;
+  const tags = context.tags;
+
+  // Known value summarizer - formats known values with single quotes
+  const summarizer: CborSummarizer = (cbor, _flat) => {
+    try {
+      // Try to extract the known value from the CBOR
+      const kv = KnownValue.fromCbor(cbor);
+      const name = knownValues.nameOf(kv);
+      return { ok: true, value: `'${name}'` };
+    } catch {
+      return { ok: true, value: "'<unknown>'" };
+    }
+  };
+
+  tags.setSummarizer(BigInt(KNOWN_VALUE.value), summarizer);
+};
+
+/**
+ * Registers dcbor's standard tags, every BC tag and the envelope
+ * summarisers in `context` (a custom context; the global one is set up on
+ * first use).
+ */
+export const registerTagsIn = (context: FormatContext): void => {
+  registerBcTags(context.tags);
+
+  // Set up known value summarizer
+  setupKnownValueSummarizer(context);
+
+  // Set up component tag summarizers
+  setupComponentSummarizers(context);
+};
+
+// ============================================================================
+// Component Tag Summarizers
+// ============================================================================
+
+/** Helper to create an error result for summarizers */
+const summarizerError = (e: unknown): { ok: false; error: CborError } => {
+  const message = e instanceof Error ? e.message : String(e);
+  return { ok: false as const, error: CborError.custom(message) };
+};
+
+/** Summarisers for the components tags, matching the reference registry byte for byte. */
+const setupComponentSummarizers = (context: FormatContext): void => {
+  const tags = context.tags;
+
+  // Digest: "Digest(shortDesc)"
+  tags.setSummarizer(TAG_DIGEST.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_DIGEST.value, cbor);
+      const digest = Digest.fromCbor(tagged);
+      return { ok: true, value: `Digest(${digest.shortDescription()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // ARID: "ARID(shortDesc)"
+  tags.setSummarizer(TAG_ARID.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_ARID.value, cbor);
+      const arid = ARID.fromCbor(tagged);
+      return { ok: true, value: `ARID(${arid.shortDescription()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // URI: "URI(uri)"
+  tags.setSummarizer(TAG_URI.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_URI.value, cbor);
+      const uri = URI.fromCbor(tagged);
+      return { ok: true, value: `URI(${uri.toString()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // UUID: "UUID(uuid)"
+  tags.setSummarizer(TAG_UUID.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_UUID.value, cbor);
+      const uuid = UUID.fromCbor(tagged);
+      return { ok: true, value: `UUID(${uuid.toString()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Nonce: "Nonce"
+  tags.setSummarizer(TAG_NONCE.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_NONCE.value, cbor);
+      Nonce.fromCbor(tagged);
+      return { ok: true, value: "Nonce" };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Salt: "Salt"
+  tags.setSummarizer(TAG_SALT.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SALT.value, cbor);
+      Salt.fromCbor(tagged);
+      return { ok: true, value: "Salt" };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Seed: "Seed"
+  tags.setSummarizer(TAG_SEED.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SEED.value, cbor);
+      Seed.fromCbor(tagged);
+      return { ok: true, value: "Seed" };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // JSON: "JSON(<as_str>)"
+  //   `Ok(json.as_str().flanked_by("JSON(", ")"))`
+  tags.setSummarizer(TAG_JSON.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_JSON.value, cbor);
+      const json = JSONTagged.fromCbor(tagged);
+      return { ok: true, value: `JSON(${json.asStr()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Reference: "Reference(<short>)"
+  // summarizer:
+  //   `Ok(Reference::from_untagged_cbor(...).to_string())`
+  // where `Display for Reference` is `Reference(<ref_hex_short>)`.
+  tags.setSummarizer(TAG_REFERENCE.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_REFERENCE.value, cbor);
+      const ref = Reference.fromCbor(tagged);
+      return { ok: true, value: ref.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Signature: bare "Signature" only for the *default* scheme (Schnorr),
+  // "Signature(scheme)" for every other scheme (Ed25519, MLDSA44, …).
+  //
+  // compares against `SignatureScheme::default()` (Schnorr, with the
+  // `secp256k1` feature) and only then emits bare "Signature"; otherwise
+  // `format!("Signature({scheme:?})")`. Rust's `Debug` for the enum emits the
+  // variant name verbatim (e.g. `Ed25519`, `MLDSA44`, `Sr25519`). The TS enum
+  // string values match Rust's variant names exactly, so we use the raw scheme
+  // value here. (Previously this also bared Ed25519, which diverged from Rust —
+  // an Ed25519 signature must render `Signature(Ed25519)`.)
+  tags.setSummarizer(TAG_SIGNATURE.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SIGNATURE.value, cbor);
+      const sig = Signature.fromCbor(tagged);
+      const scheme = sig.scheme;
+      if (scheme === SignatureScheme.Schnorr) {
+        return { ok: true, value: "Signature" };
+      }
+      return { ok: true, value: `Signature(${String(scheme)})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // SealedMessage: "SealedMessage" for X25519 (default),
+  // "SealedMessage(<SCHEME>)" otherwise.
+  //
+  //   format!("SealedMessage({encapsulation_scheme:?})")
+  // where Rust's `Debug` for the `EncapsulationScheme` enum emits
+  // the variant name in **uppercase** (e.g. `MLKEM512`). The TS enum
+  // values are lowercase (`"mlkem512"`) so we explicitly uppercase
+  // the rendered form to match Rust byte-for-byte.
+  tags.setSummarizer(TAG_SEALED_MESSAGE.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SEALED_MESSAGE.value, cbor);
+      const msg = SealedMessage.fromCbor(tagged);
+      const scheme = msg.encapsulationScheme;
+      if (scheme === EncapsulationScheme.X25519) {
+        return { ok: true, value: "SealedMessage" };
+      }
+      return { ok: true, value: `SealedMessage(${String(scheme).toUpperCase()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // EncryptedKey: toString()
+  tags.setSummarizer(TAG_ENCRYPTED_KEY.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_ENCRYPTED_KEY.value, cbor);
+      const ek = EncryptedKey.fromCbor(tagged);
+      return { ok: true, value: ek.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // PrivateKeyBase: toString()
+  tags.setSummarizer(TAG_PRIVATE_KEY_BASE.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_PRIVATE_KEY_BASE.value, cbor);
+      const pkb = PrivateKeyBase.fromCbor(tagged);
+      return { ok: true, value: pkb.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // PrivateKeys: toString()
+  tags.setSummarizer(TAG_PRIVATE_KEYS.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_PRIVATE_KEYS.value, cbor);
+      const pk = PrivateKeys.fromCbor(tagged);
+      return { ok: true, value: pk.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // PublicKeys: toString()
+  tags.setSummarizer(TAG_PUBLIC_KEYS.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_PUBLIC_KEYS.value, cbor);
+      const pk = PublicKeys.fromCbor(tagged);
+      return { ok: true, value: pk.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // SigningPrivateKey: toString()
+  tags.setSummarizer(TAG_SIGNING_PRIVATE_KEY.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SIGNING_PRIVATE_KEY.value, cbor);
+      const spk = SigningPrivateKey.fromCbor(tagged);
+      return { ok: true, value: spk.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // SigningPublicKey: toString()
+  tags.setSummarizer(TAG_SIGNING_PUBLIC_KEY.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SIGNING_PUBLIC_KEY.value, cbor);
+      const spk = SigningPublicKey.fromCbor(tagged);
+      return { ok: true, value: spk.toString() };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // SSKRShare: "SSKRShare"
+  tags.setSummarizer(TAG_SSKR_SHARE.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_SSKR_SHARE.value, cbor);
+      SskrShare.fromCbor(tagged);
+      return { ok: true, value: "SSKRShare" };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // SSH summarizers — mirror Rust
+  // `bc-components-rust/src/tags_registry.rs:196-238`. The CBOR shape for
+  // all four is `tag(N, text:openssh_text)`; the summarizer parses the
+  // text and returns either `<Type>(refHexShort)` (private/public key) or
+  // a fixed string (signature/certificate, exactly as Rust does).
+  tags.setSummarizer(TAG_SSH_TEXT_PRIVATE_KEY.value, (cbor, _flat) => {
+    try {
+      const text = expectText(cbor);
+      const key = SSHPrivateKey.fromOpenssh(text);
+      return { ok: true, value: `SSHPrivateKey(${key.refHexShort()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  tags.setSummarizer(TAG_SSH_TEXT_PUBLIC_KEY.value, (cbor, _flat) => {
+    try {
+      const text = expectText(cbor);
+      const key = SSHPublicKey.fromOpenssh(text);
+      return { ok: true, value: `SSHPublicKey(${key.refHexShort()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  tags.setSummarizer(TAG_SSH_TEXT_SIGNATURE.value, (cbor, _flat) => {
+    try {
+      const text = expectText(cbor);
+      // Validate by parsing — Rust does the same — but discard the
+      // parsed value, returning the fixed summarizer string.
+      SSHSignature.fromPem(text);
+      return { ok: true, value: "SSHSignature" };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  tags.setSummarizer(TAG_SSH_TEXT_CERTIFICATE.value, (cbor, _flat) => {
+    try {
+      // Rust's SSHCertificate summarizer is fixed-string with no
+      // validation (`// todo: validation`). We do the same: simply
+      // assert the payload is text-shaped and emit the fixed label.
+      expectText(cbor);
+      return { ok: true, value: "SSHCertificate" };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // XID: "XID(shortDesc)"
+  tags.setSummarizer(TAG_XID.value, (cbor, _flat) => {
+    try {
+      const tagged = taggedValue(TAG_XID.value, cbor);
+      const xid = XID.fromCbor(tagged);
+      return { ok: true, value: `XID(${xid.shortDescription()})` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Function: «name» for a known function the context names, «id» for
+  // one it does not, «"name"» for a named function.
+  tags.setSummarizer(TAG_FUNCTION.value, (cbor, _flat) => {
+    try {
+      if (isNumber(cbor)) {
+        const name = context.functions.nameOf(Function.known(Number(expectNumber(cbor))));
+        return { ok: true, value: `«${name}»` };
+      }
+      if (isText(cbor)) {
+        return { ok: true, value: `«"${expectText(cbor)}"»` };
+      }
+      return { ok: true, value: `«${diagnostic(cbor)}»` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Parameter: ❰name❱ / ❰id❱ / ❰"name"❱, likewise.
+  tags.setSummarizer(TAG_PARAMETER.value, (cbor, _flat) => {
+    try {
+      if (isNumber(cbor)) {
+        const name = context.parameters.nameOf(Parameter.known(Number(expectNumber(cbor))));
+        return { ok: true, value: `❰${name}❱` };
+      }
+      if (isText(cbor)) {
+        return { ok: true, value: `❰"${expectText(cbor)}"❱` };
+      }
+      return { ok: true, value: `❰${diagnostic(cbor)}❱` };
+    } catch (e) {
+      return summarizerError(e);
+    }
+  });
+
+  // Request/Response/Event: render the inner envelope's format
+  // wrapped with the keyword. Mirrors Rust
+  // `format_context.rs:391-434` which calls
+  // `Envelope::new(untagged_cbor).format_opt(...)` and flanks the
+  // result with `request(`/`response(`/`event(` and `)`.
+  //
+  // We can't `import { Envelope }` directly here because that
+  // would create a hard cycle at module-load time
+  // (`base/envelope.ts` ↔ `format/format-context.ts`). Instead,
+  // `index.ts` calls {@link setEnvelopeFormatHook} once both
+  // modules have finished loading.
+  const wrapWithEnvelopeFormat =
+    (keyword: string): CborSummarizer =>
+    (cbor, flat) => {
+      try {
+        if (envelopeFormatHook === undefined) {
+          // Hook not yet installed — fall back to the raw diag
+          // representation so we still produce *some* output.
+          return { ok: true, value: `${keyword}(${diagnostic(cbor)})` };
+        }
+        const innerFormat = envelopeFormatHook(cbor, flat);
+        return { ok: true, value: `${keyword}(${innerFormat})` };
+      } catch (e) {
+        return summarizerError(e);
+      }
+    };
+  tags.setSummarizer(TAG_REQUEST.value, wrapWithEnvelopeFormat("request"));
+  tags.setSummarizer(TAG_RESPONSE.value, wrapWithEnvelopeFormat("response"));
+  tags.setSummarizer(TAG_EVENT.value, wrapWithEnvelopeFormat("event"));
+};
+
+/**
+ * Hook installed by `src/index.ts` to break the circular import
+ * between `base/envelope.ts` and `format/format-context.ts`. Used by
+ * the request/response/event tag summarizers to recursively format the
+ * inner envelope.
+ */
+type EnvelopeFormatHook = (cbor: unknown, flat: boolean) => string;
+let envelopeFormatHook: EnvelopeFormatHook | undefined;
+export const setEnvelopeFormatHook = (hook: EnvelopeFormatHook): void => {
+  envelopeFormatHook = hook;
+};

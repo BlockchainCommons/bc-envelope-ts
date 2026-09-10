@@ -1,0 +1,301 @@
+/**
+ * Copyright © 2023-2026 Blockchain Commons, LLC
+ *
+ *
+ * Request type for distributed function calls.
+ *
+ * A Request represents a message requesting execution of a function with
+ * parameters. Requests are part of the expression system that enables
+ * distributed function calls and communication between systems.
+ *
+ * Each request:
+ * - Contains a body (an Expression) that represents the function to be executed
+ * - Has a unique identifier (ARID) for tracking and correlation
+ * - May include optional metadata like a note and timestamp
+ *
+ * Requests are designed to be paired with Response objects that contain the
+ * results of executing the requested function.
+ *
+ * When serialized to an envelope, requests are tagged with REQUEST tag.
+ */
+
+import { ARID } from "@blockchaincommons/components";
+import { REQUEST as TAG_REQUEST } from "@blockchaincommons/tags";
+import { taggedValue, CborDate, expectTaggedContent } from "@blockchaincommons/dcbor";
+import { BODY, NOTE, DATE } from "@blockchaincommons/known-values";
+
+import { Envelope } from "../base/envelope";
+import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
+import { EnvelopeError } from "../base/error";
+import { Expression, Function, type FunctionID, type ParameterID } from "./expression";
+import { formatFlat } from "../format/notation.js";
+
+/**
+ * Interface that defines the behavior of a request.
+ *
+ * This interface extends expression behavior to add methods specific to requests,
+ * including metadata management and access to request properties.
+ */
+export interface RequestBehavior {
+  /**
+   * Adds a parameter to the request.
+   */
+  withParameter(param: ParameterID, value: EnvelopeInput): Request;
+
+  /**
+   * Adds a note to the request.
+   */
+  withNote(note: string): Request;
+
+  /**
+   * Adds a date to the request.
+   */
+  withDate(date: Date): Request;
+
+  /**
+   * Returns the body of the request (the expression to be evaluated).
+   */
+  readonly body: Expression;
+
+  /**
+   * Returns the unique identifier (ARID) of the request.
+   */
+  readonly id: ARID;
+
+  /**
+   * Returns the note attached to the request, or an empty string if none exists.
+   */
+  readonly note: string;
+
+  /**
+   * Returns the date attached to the request, if any.
+   */
+  readonly date: Date | undefined;
+
+  /**
+   * Returns the function of the request.
+   */
+  readonly function: Function;
+
+  /**
+   * Returns the expression envelope of the request.
+   */
+  readonly expressionEnvelope: Envelope;
+
+  /**
+   * Converts the request to an envelope.
+   */
+  toEnvelope(): Envelope;
+}
+
+/**
+ * A Request represents a message requesting execution of a function with parameters.
+ *
+ * @example
+ * ```typescript
+ * import { Request, ARID } from '@blockchaincommons/envelope';
+ *
+ * // Create a random request ID
+ * const requestId = ARID.new();
+ *
+ * // Create a request to execute a function with parameters
+ * const request = Request.from("getBalance", requestId)
+ *   .withParameter("account", "alice")
+ *   .withParameter("currency", "USD")
+ *   .withNote("Monthly balance check");
+ *
+ * // Convert to an envelope
+ * const envelope = request.toEnvelope();
+ * ```
+ */
+export class Request implements RequestBehavior, ToEnvelope {
+  private readonly _body: Expression;
+  private readonly _id: ARID;
+  private _note: string;
+  private _date: Date | undefined;
+
+  private constructor(body: Expression, id: ARID, note = "", date?: Date) {
+    this._body = body;
+    this._id = id;
+    this._note = note;
+    this._date = date;
+  }
+
+  /**
+   * A request for `func` (a `Function`, a known-function number, a name, or
+   * a ready `Expression`) identified by `id`.
+   */
+  static from(func: Function | Expression | FunctionID, id: ARID): Request {
+    const body =
+      func instanceof Expression
+        ? func
+        : new Expression(func instanceof Function ? func : Function.from(func));
+    return new Request(body, id);
+  }
+
+  /**
+   * Returns a human-readable summary of the request.
+   */
+  summary(): string {
+    return `id: ${this._id.shortDescription()}, body: ${formatFlat(this._body.toEnvelope())}`;
+  }
+
+  // RequestBehavior implementation
+
+  withParameter(param: ParameterID, value: EnvelopeInput): Request {
+    this._body.withParameter(param, value);
+    return this;
+  }
+
+  withNote(note: string): Request {
+    this._note = note;
+    return this;
+  }
+
+  withDate(date: Date): Request {
+    this._date = date;
+    return this;
+  }
+
+  get body(): Expression {
+    return this._body;
+  }
+
+  get id(): ARID {
+    return this._id;
+  }
+
+  get note(): string {
+    return this._note;
+  }
+
+  get date(): Date | undefined {
+    return this._date;
+  }
+
+  get function(): Function {
+    return this._body.function;
+  }
+
+  get expressionEnvelope(): Envelope {
+    return this._body.toEnvelope();
+  }
+
+  /**
+   * Converts the request to an envelope.
+   *
+   * The envelope's subject is the request's ID tagged with TAG_REQUEST,
+   * and assertions include the request's body, note (if not empty), and date (if present).
+   */
+  toEnvelope(): Envelope {
+    // Create the tagged ARID as the subject
+    // Wrap the **tagged** ARID inside the request tag — mirrors Rust
+    // `CBOR::to_tagged_value(TAG_REQUEST, request.id)`, which goes
+    // through the `From<ARID> for CBOR` impl that returns the tagged
+    // form. Earlier the TS port stored an untagged ARID byte string,
+    // so format() rendered the request subject as `Bytes(32)` instead
+    // of `ARID(<short>)` — observable in the GSTP byte-shape pins.
+    const taggedArid = taggedValue(TAG_REQUEST, this._id.toCbor());
+
+    let envelope = Envelope.leaf(taggedArid).addAssertion(BODY, this._body.toEnvelope());
+
+    if (this._note !== "") {
+      envelope = envelope.addAssertion(NOTE, this._note);
+    }
+
+    if (this._date !== undefined) {
+      // Pass a tagged-CBOR Date (tag 1); mirrors Rust
+      // `Envelope::add_assertion(DATE, self.date)` which dispatches via
+      // `Date → CBOR` (tag 1). The earlier port stored the ISO 8601
+      // string here, producing a different CBOR object and digest.
+      envelope = envelope.addAssertion(DATE, CborDate.fromDate(this._date));
+    }
+
+    return envelope;
+  }
+
+  /**
+   * Creates a request from an envelope.
+   */
+  static fromEnvelope(envelope: Envelope, expectedFunction?: Function): Request {
+    // Extract the body
+    const bodyEnvelope = envelope.objectForPredicate(BODY);
+    if (bodyEnvelope === undefined) {
+      throw EnvelopeError.general("Request envelope missing body");
+    }
+
+    // Parse the expression from the body
+    const body = Expression.fromEnvelope(bodyEnvelope);
+
+    // Validate function if expected
+    if (expectedFunction !== undefined && !body.function.equals(expectedFunction)) {
+      throw EnvelopeError.general("Request function mismatch");
+    }
+
+    // Extract the ARID from the subject
+    const subject = envelope.subject();
+    const leaf = subject.asLeaf();
+    if (leaf === undefined) {
+      throw EnvelopeError.general("Request envelope has invalid subject");
+    }
+
+    // The subject is TAG_REQUEST(tag_40012(arid_bytes)) — see
+    // `toEnvelope` above. Extract the inner tagged-ARID, then decode.
+    const aridCbor = expectTaggedContent(leaf, TAG_REQUEST.value);
+    const id = ARID.fromCbor(aridCbor);
+
+    // Extract optional note
+    let note = "";
+    try {
+      const noteObj = envelope.objectForPredicate(NOTE);
+      if (noteObj !== undefined) {
+        note = noteObj.asText() ?? "";
+      }
+    } catch {
+      // Note is optional
+    }
+
+    // Extract optional date — mirrors Rust
+    // `extract_optional_object_for_predicate::<Date>(DATE)` (tag 1).
+    let date: Date | undefined;
+    try {
+      const dateObj = envelope.objectForPredicate(DATE);
+      if (dateObj !== undefined) {
+        const leaf = dateObj.asLeaf();
+        if (leaf !== undefined) {
+          date = CborDate.fromTaggedCbor(leaf).toDate();
+        } else {
+          // Back-compat shim: if a legacy producer wrote a plain ISO
+          // 8601 string, accept it. New encoders emit tag 1 so this
+          // branch is unreachable for round-trip cases.
+          const dateStr = dateObj.asText();
+          if (dateStr !== undefined) {
+            date = new Date(dateStr);
+          }
+        }
+      }
+    } catch {
+      // Date is optional
+    }
+
+    return new Request(body, id, note, date);
+  }
+
+  /**
+   * Returns a string representation of the request.
+   */
+  toString(): string {
+    return `Request(${this.summary()})`;
+  }
+
+  /**
+   * Checks equality with another request.
+   */
+  equals(other: Request): boolean {
+    return (
+      this._id.equals(other._id) &&
+      this._note === other._note &&
+      this._date?.getTime() === other._date?.getTime()
+    );
+  }
+}
