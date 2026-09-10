@@ -2,14 +2,12 @@ import { Envelope } from "../src";
 import {
   MermaidOrientation,
   MermaidTheme,
-  defaultMermaidOpts,
-  defaultFormatOpts,
-  flatFormatOpts,
   FormatContext,
-  globalFormatContext,
+  getGlobalFormatContext,
   withFormatContext,
 } from "../src/format";
 import "../src/all.js";
+import { Tag } from "@blockchaincommons/dcbor";
 
 describe("Mermaid Formatting", () => {
   describe("mermaidFormat()", () => {
@@ -44,12 +42,12 @@ describe("Mermaid Formatting", () => {
     it("should respect orientation option", () => {
       const envelope = Envelope.from("Test");
 
-      const lr = envelope.mermaidFormatOpt({
+      const lr = envelope.mermaidFormat({
         orientation: MermaidOrientation.LeftToRight,
       });
       expect(lr).toContain("LR");
 
-      const tb = envelope.mermaidFormatOpt({
+      const tb = envelope.mermaidFormat({
         orientation: MermaidOrientation.TopToBottom,
       });
       expect(tb).toContain("TB");
@@ -58,12 +56,12 @@ describe("Mermaid Formatting", () => {
     it("should respect theme option", () => {
       const envelope = Envelope.from("Test");
 
-      const dark = envelope.mermaidFormatOpt({
+      const dark = envelope.mermaidFormat({
         theme: MermaidTheme.Dark,
       });
       expect(dark).toContain("dark");
 
-      const forest = envelope.mermaidFormatOpt({
+      const forest = envelope.mermaidFormat({
         theme: MermaidTheme.Forest,
       });
       expect(forest).toContain("forest");
@@ -72,23 +70,12 @@ describe("Mermaid Formatting", () => {
     it("should respect monochrome option", () => {
       const envelope = Envelope.from("Test").addAssertion("key", "value");
 
-      const mono = envelope.mermaidFormatOpt({ monochrome: true });
-      const color = envelope.mermaidFormatOpt({ monochrome: false });
+      const mono = envelope.mermaidFormat({ monochrome: true });
+      const color = envelope.mermaidFormat({ monochrome: false });
 
       // Both should generate valid mermaid
       expect(mono).toContain("graph");
       expect(color).toContain("graph");
-    });
-  });
-
-  describe("defaultMermaidOpts()", () => {
-    it("should return default options", () => {
-      const opts = defaultMermaidOpts();
-
-      expect(opts.hideNodes).toBe(false);
-      expect(opts.monochrome).toBe(false);
-      expect(opts.theme).toBe(MermaidTheme.Default);
-      expect(opts.orientation).toBe(MermaidOrientation.LeftToRight);
     });
   });
 
@@ -173,7 +160,7 @@ describe("Mermaid Formatting", () => {
       // produces in `format_tests.rs:1125-1132`.
       const env = Envelope.from("Alice").addAssertion("knows", "Bob");
 
-      const dark = env.mermaidFormatOpt({
+      const dark = env.mermaidFormat({
         theme: MermaidTheme.Dark,
         orientation: MermaidOrientation.TopToBottom,
       });
@@ -183,7 +170,7 @@ describe("Mermaid Formatting", () => {
         ),
       ).toBe(true);
 
-      const forest = env.mermaidFormatOpt({
+      const forest = env.mermaidFormat({
         theme: MermaidTheme.Forest,
         orientation: MermaidOrientation.LeftToRight,
       });
@@ -217,7 +204,7 @@ describe("Mermaid Formatting", () => {
         "linkStyle 1 stroke:cyan,stroke-width:2px",
         "linkStyle 2 stroke:magenta,stroke-width:2px",
       ].join("\n");
-      expect(env.mermaidFormatOpt({ hideNodes: true })).toBe(expected);
+      expect(env.mermaidFormat({ hideNodes: true })).toBe(expected);
     });
   });
 });
@@ -282,8 +269,8 @@ describe("Notation Formatting", () => {
     it("should accept custom options", () => {
       const envelope = Envelope.from("Test");
 
-      const defaultFormatted = envelope.formatOpt(defaultFormatOpts());
-      const flatFormatted = envelope.formatOpt(flatFormatOpts());
+      const defaultFormatted = envelope.format();
+      const flatFormatted = envelope.format({ flat: true });
 
       expect(defaultFormatted).toBeDefined();
       expect(flatFormatted).toBeDefined();
@@ -300,7 +287,7 @@ describe("Format Context", () => {
 
     it("should register and retrieve tags", () => {
       const ctx = new FormatContext();
-      ctx.registerTag(12345, "CustomTag");
+      ctx.tags.register(Tag.from(12345, "CustomTag"));
 
       // Use assignedNameForTag which returns string | undefined
       const tag = ctx.tagForValue(BigInt(12345));
@@ -315,15 +302,15 @@ describe("Format Context", () => {
     });
   });
 
-  describe("globalFormatContext()", () => {
+  describe("getGlobalFormatContext()", () => {
     it("should return the global context", () => {
-      const ctx = globalFormatContext();
+      const ctx = getGlobalFormatContext();
       expect(ctx).toBeInstanceOf(FormatContext);
     });
 
     it("should return the same instance each time", () => {
-      const ctx1 = globalFormatContext();
-      const ctx2 = globalFormatContext();
+      const ctx1 = getGlobalFormatContext();
+      const ctx2 = getGlobalFormatContext();
       expect(ctx1).toBe(ctx2);
     });
   });
@@ -351,7 +338,7 @@ describe("Envelope Summary", () => {
   describe("summary()", () => {
     it("should summarize leaf envelope", () => {
       const envelope = Envelope.from("Hello, World!");
-      const summary = envelope.summary(20);
+      const summary = envelope.summary({ maxLength: 20 });
 
       expect(summary.length).toBeLessThanOrEqual(25); // some buffer for quotes
       expect(summary).toContain("Hello");
@@ -360,21 +347,21 @@ describe("Envelope Summary", () => {
     it("should truncate long strings", () => {
       const longString = "A".repeat(100);
       const envelope = Envelope.from(longString);
-      const summary = envelope.summary(20);
+      const summary = envelope.summary({ maxLength: 20 });
 
       expect(summary.length).toBeLessThan(longString.length);
     });
 
     it("should summarize number envelope", () => {
       const envelope = Envelope.from(12345);
-      const summary = envelope.summary(10);
+      const summary = envelope.summary({ maxLength: 10 });
 
       expect(summary).toContain("12345");
     });
 
     it("should summarize bytes envelope", () => {
       const envelope = Envelope.from(new Uint8Array([1, 2, 3, 4, 5]));
-      const summary = envelope.summary(30);
+      const summary = envelope.summary({ maxLength: 30 });
 
       // Should show hex representation
       expect(summary.length).toBeGreaterThan(0);

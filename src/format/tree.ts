@@ -7,7 +7,7 @@
 import { type Envelope } from "../base/envelope";
 import { type EdgeType, edgeLabel } from "../base/envelope";
 import { getGlobalFormatContext, type FormatContext } from "./format-context";
-import { summaryWithContext } from "./envelope-summary.js";
+import { summary } from "./envelope-summary.js";
 
 // ============================================================================
 // DigestDisplayFormat - Enum for digest display formatting
@@ -98,17 +98,6 @@ export function shortId(envelope: Envelope, format: "short" | "full" | "ur" = "s
   return digest.short();
 }
 
-/// Implementation of summary()
-///
-/// Mirrors Rust `Envelope::summary` (`bc-envelope-rust/src/format/
-/// envelope_summary.rs`): defers to `summaryWithContext(maxLength,
-/// global_context)`. KnownValue rendering, tag-name resolution for
-/// arrays/maps/tagged values, and the truncation rules all live in the
-/// context-aware path; the no-arg variant just uses the global context.
-export function summary(envelope: Envelope, maxLength = 40): string {
-  return summaryWithContext(envelope, maxLength, getGlobalFormatContext());
-}
-
 /// Implementation of treeFormat()
 ///
 /// Mirrors Rust `Envelope::tree_format_opt` (`bc-envelope-rust/src/format/
@@ -163,7 +152,7 @@ export function treeFormat(envelope: Envelope, options: TreeFormatOptions = {}):
       parts.push(label);
     }
 
-    parts.push(summaryWithContext(elem.envelope, 40, context));
+    parts.push(summary(elem.envelope, { context }));
 
     const line = parts.join(" ");
     const indent = " ".repeat(elem.level * 4);

@@ -299,8 +299,6 @@ fn run(recipe: &J) -> Result<String, String> {
 ///     does not (e.g. 706 'Self'): `'Name'` vs `'706'` in the format strings.
 /// D3  summaries truncate by characters in TypeScript and by bytes in the
 ///     reference, so a non-ASCII text leaf may be cut differently.
-/// P1  (pending) annotated hex carries no tag names in TypeScript.
-/// P2  (pending) tag-1 dates are not summarised in TypeScript formats.
 /// E1  both reject, different error taxonomies.
 fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -> Option<&'static str> {
     if got.len() == 1 && want.len() == 1 && got[0].starts_with("throw:") && want[0].starts_with("throw:") {
@@ -311,34 +309,18 @@ fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -
     }
     let text = serde_json::to_string(&recipe["e"]).unwrap();
     let byte_level = ["cbor", "ur", "diagnostic", "hex"];
-    let strip_tag_names = |s: &str| -> String {
-        s.lines()
-            .map(|l| match l.find("# tag(") {
-                Some(i) => match l[i..].find(')') {
-                    Some(j) => l[..i + j + 1].to_string(),
-                    None => l.to_string(),
-                },
-                None => l.to_string(),
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
     let mut classes: Vec<&'static str> = Vec::new();
     for (o, (g, w)) in outs.iter().zip(got.iter().zip(want.iter())) {
         if g == w {
             continue;
         }
-        if *o == "hex" && strip_tag_names(g) == strip_tag_names(w) {
-            classes.push("P1");
-        } else if byte_level.contains(o) && text.contains("\"compress\"") {
+        if byte_level.contains(o) && text.contains("\"compress\"") {
             classes.push("D1");
         } else if g.contains('\u{2026}') && !w.is_ascii() && !w.contains('\u{2026}') {
             classes.push("D3");
         } else if *o == "diagnostic" && !w.is_ascii() && g.split_whitespace().collect::<String>() == w.split_whitespace().collect::<String>() {
             // the diagnostic line-breaking threshold counts bytes in the reference
             classes.push("D3");
-        } else if w.contains("1(") && g.contains('T') && g.contains('Z') {
-            classes.push("P2");
         } else if g.contains('\'') && w.contains('\'') && !g.is_empty() {
             // a known value the TypeScript registry names and the reference does not
             let strip = |s: &str| s.replace(|c: char| c.is_ascii_digit() || c.is_alphabetic(), "");
@@ -360,11 +342,9 @@ fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -
     classes.sort();
     classes.dedup();
     Some(match classes.as_slice() {
-        ["P1"] => "P1",
-        ["D1"] | ["D1", "P1"] => "D1",
-        ["D2"] | ["D2", "P1"] => "D2",
-        ["D3"] | ["D3", "P1"] => "D3",
-        ["P2"] | ["P1", "P2"] => "P2",
+        ["D1"] => "D1",
+        ["D2"] => "D2",
+        ["D3"] => "D3",
         _ => "mixed",
     })
 }

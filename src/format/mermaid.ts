@@ -16,8 +16,7 @@
 import { type Envelope } from "../base/envelope";
 import { EdgeType, edgeLabel } from "../base/envelope";
 import type { Digest } from "../base/digest";
-import { withFormatContext } from "./format-context";
-import { summaryWithContext } from "./envelope-summary.js";
+import { summary } from "./envelope-summary.js";
 
 // ============================================================================
 // Mermaid Types
@@ -45,7 +44,7 @@ export const MermaidTheme = {
 export type MermaidTheme = (typeof MermaidTheme)[keyof typeof MermaidTheme];
 
 /// Options for Mermaid diagram formatting.
-export interface MermaidFormatOpts {
+export interface MermaidFormatOptions {
   /// Whether to hide NODE identifiers in the diagram (default: false)
   hideNodes?: boolean;
   /// Whether to use monochrome colors (default: false)
@@ -57,15 +56,6 @@ export interface MermaidFormatOpts {
   /// Set of digests to highlight in the diagram
   highlightingTarget?: Set<Digest>;
 }
-
-/// Default options for Mermaid formatting
-export const defaultMermaidOpts = (): MermaidFormatOpts => ({
-  hideNodes: false,
-  monochrome: false,
-  theme: MermaidTheme.Default,
-  orientation: MermaidOrientation.LeftToRight,
-  highlightingTarget: new Set(),
-});
 
 // ============================================================================
 // Internal Types
@@ -86,13 +76,8 @@ interface MermaidElement {
 // Envelope Prototype Extensions
 // ============================================================================
 
-/// Implementation of mermaidFormat
-export function mermaidFormat(envelope: Envelope): string {
-  return mermaidFormatOpt(envelope, defaultMermaidOpts());
-}
-
-/// Implementation of mermaidFormatOpt
-export function mermaidFormatOpt(envelope: Envelope, opts: MermaidFormatOpts): string {
+/** A Mermaid flowchart of the envelope's digest tree. */
+export function mermaidFormat(envelope: Envelope, opts: MermaidFormatOptions = {}): string {
   const hideNodes = opts.hideNodes ?? false;
   const monochrome = opts.monochrome ?? false;
   const theme = opts.theme ?? MermaidTheme.Default;
@@ -234,10 +219,7 @@ const formatNode = (element: MermaidElement, formattedIds: Set<number>): string 
     const lines: string[] = [];
 
     // Get summary
-    const summary = withFormatContext((ctx) => {
-      return summaryWithContext(element.envelope, 20, ctx).replace(/"/g, "&quot;");
-    });
-    lines.push(summary);
+    lines.push(summary(element.envelope, { maxLength: 20 }).replace(/"/g, "&quot;"));
 
     // Add digest if showing IDs
     if (element.showId) {

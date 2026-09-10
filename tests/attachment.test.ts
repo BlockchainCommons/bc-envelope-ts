@@ -5,7 +5,7 @@ import "../src/all.js";
 describe("Attachment Extension", () => {
   describe("Create attachment envelope", () => {
     it("should create attachment with vendor and conformsTo", () => {
-      const attachment = Envelope.newAttachment(
+      const attachment = Envelope.attachment(
         "Custom data",
         "com.example",
         "https://example.com/format/v1",
@@ -115,7 +115,7 @@ describe("Attachment Extension", () => {
 
   describe("Attachment without conformsTo", () => {
     it("should create attachment without conformsTo", () => {
-      const simpleAttachment = Envelope.newAttachment("Simple data", "com.simple");
+      const simpleAttachment = Envelope.attachment("Simple data", "com.simple");
 
       expect(simpleAttachment.attachmentVendor()).toBe("com.simple");
       expect(simpleAttachment.attachmentConformsTo()).toBeUndefined();

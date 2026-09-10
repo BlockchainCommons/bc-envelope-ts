@@ -14,10 +14,9 @@
  */
 
 import { type Envelope } from "../base/envelope";
-import { encodeCbor } from "@blockchaincommons/dcbor";
 import { hexAnnotated } from "@blockchaincommons/dcbor/diagnostic";
 
-import { type FormatContext, getGlobalFormatContext } from "./format-context";
+import { type FormatContextOpt, resolveFormatContext } from "./format-context";
 
 // Note: Method declarations are in the base Envelope class.
 // This module provides the prototype implementations.
@@ -28,25 +27,17 @@ import { type FormatContext, getGlobalFormatContext } from "./format-context";
 /// (`bc-envelope-rust/src/format/hex.rs`): the default is the **annotated**
 /// multi-line dump because that's the call most consumers expect when
 /// they ask for a debuggable hex view of an envelope.
-export function hex(envelope: Envelope): string {
-  const ctx = getGlobalFormatContext();
-  return hexAnnotated(envelope.toCbor(), { tagsStore: ctx.tags() });
+/** Options for `hex`. */
+export interface HexOptions {
+  /** Annotate each CBOR item with its type and tag name (on by default). */
+  annotate?: boolean;
+  /** Names for tags; the global context by default. */
+  context?: FormatContextOpt;
 }
 
-/// Implementation of hexAnnotated()
-///
-/// Mirrors Rust `Envelope::hex_opt(annotate, context)`. When `annotate` is
-/// `false` we emit a flat hex string (`hexOpt` short-circuits to plain
-/// `hex(...)` in that case). When `annotate` is `true` the optional
-/// `context` provides the tag store used to resolve tag names.
-export function hexOpt(envelope: Envelope, annotate: boolean, context?: FormatContext): string {
+/** The envelope's CBOR as hex, annotated line by line unless `annotate` is false. */
+export function hex(envelope: Envelope, { annotate = true, context }: HexOptions = {}): string {
   if (!annotate) return envelope.toCbor().toHex();
-  const ctx = context ?? getGlobalFormatContext();
-  return hexAnnotated(envelope.toCbor(), { tagsStore: ctx.tags() });
-}
-
-/// Implementation of cborBytes()
-export function cborBytes(envelope: Envelope): Uint8Array {
-  const cbor = envelope.toCbor();
-  return encodeCbor(cbor);
+  const ctx = resolveFormatContext(context);
+  return hexAnnotated(envelope.toCbor(), ctx === undefined ? {} : { tagsStore: ctx.tags });
 }

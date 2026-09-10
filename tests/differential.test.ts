@@ -37,7 +37,36 @@ const TOMBSTONES: {
     landed: true,
     matches: (r, a, b) => r.e.k === "decode" && a === "throw:CborError" && b === "throw:CBOR",
   },
+  {
+    // W7 (D4): the global format context registers the BC tags in *its*
+    // dcbor's global store, so annotated hex names tags (`# tag(200)
+    // envelope`) as the reference does. Everything but the names is equal.
+    id: "T2-annotated-hex-tag-names",
+    landed: true,
+    matches: (_r, a, b) => stripTagNames(a) === stripTagNames(b) && a !== b,
+  },
+  {
+    // W7 (D4): dcbor's standard-tag summarisers are registered too, so a
+    // tag-1 date leaf prints as `2022-07-11T04:00:00Z` rather than
+    // `1(1657512000)`, as the reference does.
+    id: "T3-date-summary",
+    landed: true,
+    matches: (_r, a, b) => {
+      // Diagnostic notation keeps `1(…)` on both sides; formats summarise.
+      const norm = (s: string): string =>
+        stripTagNames(s)
+          .replace(/1\(\d+\)/g, "")
+          .replace(DATE_G, "");
+      return a.includes("1(") && DATE.test(b) && norm(a) === norm(b);
+    },
+  },
 ];
+
+const DATE = /\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ/;
+const DATE_G = /\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ/g;
+
+/** `# tag(200) envelope` → `# tag(200)` on every annotated-hex line. */
+const stripTagNames = (s: string): string => s.replace(/# tag\((\d+)\)[^\n]*/g, "# tag($1)");
 
 const baseline = baselineAdapterFor(baselineMod, await baselineDeps());
 const current = redesignedAdapterFor(src, await currentDeps());

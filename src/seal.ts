@@ -46,10 +46,10 @@
  */
 
 import { type Envelope } from "./base/envelope";
-import type { Signer, Verifier, SigningOptions } from "./extension/signature";
+import type { Signer, Verifier } from "./extension/signature";
 import type { Encrypter, Decrypter } from "@blockchaincommons/components";
 import { decryptToRecipient, encryptSubjectToRecipient } from "./extension/recipient.js";
-import { sign, signOpt, verify } from "./extension/signature.js";
+import { sign, type SignOptions, verify } from "./extension/signature.js";
 
 // ============================================================================
 // Envelope Prototype Extensions for Sealing
@@ -68,23 +68,13 @@ export function encryptToRecipient(envelope: Envelope, recipient: Encrypter): En
 /// revisions of this port called `addSignature(sender)` directly (no inner
 /// wrap), which produced sealed envelopes one wrap layer shallower than
 /// Rust's and broke cross-impl unseal.
-export function seal(envelope: Envelope, sender: Signer, recipient: Encrypter): Envelope {
-  return encryptToRecipient(sign(envelope, sender), recipient);
-}
-
-/// Implementation of sealOpt — `seal_opt` with optional signing options.
-///
-/// Mirrors Rust `seal_opt()` (`bc-envelope-rust/src/seal.rs:117-125`).
-/// Same pipeline as {@link Envelope.seal} but threads `options` through to
-/// `signOpt`, used to select alternate signing schemes (e.g.
-/// `SigningOptions::Ssh`).
-export function sealOpt(
+export function seal(
   envelope: Envelope,
   sender: Signer,
   recipient: Encrypter,
-  options?: SigningOptions,
+  options: SignOptions = {},
 ): Envelope {
-  return encryptToRecipient(signOpt(envelope, sender, options), recipient);
+  return encryptToRecipient(sign(envelope, sender, options), recipient);
 }
 
 /// Implementation of unseal

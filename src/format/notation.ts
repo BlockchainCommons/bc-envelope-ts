@@ -28,8 +28,7 @@ import { Envelope } from "../base/envelope";
 import type { Assertion } from "../base/envelope";
 import {
   type FormatContextOpt,
-  getGlobalFormatContext,
-  formatContextGlobal,
+  resolveFormatContext,
   setEnvelopeFormatHook,
 } from "./format-context";
 import { cborEnvelopeSummary } from "./envelope-summary";
@@ -39,24 +38,18 @@ import { cborEnvelopeSummary } from "./envelope-summary";
 // ============================================================================
 
 /// Options for envelope notation formatting.
-export interface EnvelopeFormatOpts {
-  /// If true, format as a single line without indentation
-  flat: boolean;
-  /// The format context to use
-  context: FormatContextOpt;
+export interface FormatOptions {
+  /** Format as a single line without indentation. */
+  flat?: boolean;
+  /** Names for tags and known values; the global context by default. */
+  context?: FormatContextOpt;
 }
 
-/// Create default format options
-export const defaultFormatOpts = (): EnvelopeFormatOpts => ({
-  flat: false,
-  context: formatContextGlobal(),
-});
-
-/// Create format options with flat formatting
-export const flatFormatOpts = (): EnvelopeFormatOpts => ({
-  flat: true,
-  context: formatContextGlobal(),
-});
+/** `FormatOptions` with every field decided. */
+interface EnvelopeFormatOpts {
+  flat: boolean;
+  context: FormatContextOpt;
+}
 
 // ============================================================================
 // EnvelopeFormatItem - Format item types
@@ -296,19 +289,8 @@ export const formatEnvelope = (
 
     case "knownValue": {
       // Get the name from context
-      let name: string;
-      if (opts.context.type === "custom") {
-        const knownValues = opts.context.context.knownValues();
-        const assignedName = knownValues.assignedNameOf(c.value);
-        name = assignedName ?? c.value.name;
-      } else if (opts.context.type === "global") {
-        const ctx = getGlobalFormatContext();
-        const knownValues = ctx.knownValues();
-        const assignedName = knownValues.assignedNameOf(c.value);
-        name = assignedName ?? c.value.name;
-      } else {
-        name = c.value.name;
-      }
+      const ctx = resolveFormatContext(opts.context);
+      const name = ctx?.knownValues.assignedNameOf(c.value) ?? c.value.name;
       return formatItem(`'${name}'`);
     }
 
@@ -509,20 +491,22 @@ const compareFormatItemArrays = (
 // Envelope Prototype Extensions
 // ============================================================================
 
-/// Implementation of formatOpt
-export function formatOpt(envelope: Envelope, opts: EnvelopeFormatOpts): string {
+/**
+ * Envelope notation: the subject followed by its assertions in brackets,
+ * nested and indented (or on one line with `flat`).
+ */
+export function format(envelope: Envelope, options: FormatOptions = {}): string {
+  const opts: EnvelopeFormatOpts = {
+    flat: options.flat ?? false,
+    context: options.context ?? "global",
+  };
   const item = formatEnvelope(envelope, opts);
   return formatFormatItem(item, opts).trim();
 }
 
-/// Implementation of format
-export function format(envelope: Envelope): string {
-  return formatOpt(envelope, defaultFormatOpts());
-}
-
-/// Implementation of formatFlat
-export function formatFlat(envelope: Envelope): string {
-  return formatOpt(envelope, flatFormatOpts());
+/** `format` on one line. */
+export function formatFlat(envelope: Envelope, options: Omit<FormatOptions, "flat"> = {}): string {
+  return format(envelope, { ...options, flat: true });
 }
 
 // All exports are done inline above with 'export const' and 'export interface'

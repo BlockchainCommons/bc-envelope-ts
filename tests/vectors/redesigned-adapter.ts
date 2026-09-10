@@ -111,7 +111,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
         const s = signer(e.seed, e.scheme);
         if (e.note !== undefined) {
           const md = m.SignatureMetadata.new().withAssertion(m.NOTE, e.note);
-          return env.signWithMetadata(s, md);
+          return env.sign(s, { metadata: md });
         }
         return env.sign(s);
       }
@@ -206,7 +206,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
           case "diagnostic":
             return env.diagnostic();
           case "hex":
-            return env.hexOpt(true);
+            return env.hex();
           case "summary":
             return env.summary();
           default:

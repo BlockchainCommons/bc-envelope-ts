@@ -124,21 +124,9 @@ declare module "./base/envelope.js" {
     addSignature(
       ...args: Tail<Parameters<typeof xsignature.addSignature>>
     ): ReturnType<typeof xsignature.addSignature>;
-    addSignatureOpt(
-      ...args: Tail<Parameters<typeof xsignature.addSignatureOpt>>
-    ): ReturnType<typeof xsignature.addSignatureOpt>;
-    addSignatureWithMetadata(
-      ...args: Tail<Parameters<typeof xsignature.addSignatureWithMetadata>>
-    ): ReturnType<typeof xsignature.addSignatureWithMetadata>;
     addSignatures(
       ...args: Tail<Parameters<typeof xsignature.addSignatures>>
     ): ReturnType<typeof xsignature.addSignatures>;
-    addSignaturesOpt(
-      ...args: Tail<Parameters<typeof xsignature.addSignaturesOpt>>
-    ): ReturnType<typeof xsignature.addSignaturesOpt>;
-    addSignaturesWithMetadata(
-      ...args: Tail<Parameters<typeof xsignature.addSignaturesWithMetadata>>
-    ): ReturnType<typeof xsignature.addSignaturesWithMetadata>;
     hasSignatureFrom(
       ...args: Tail<Parameters<typeof xsignature.hasSignatureFrom>>
     ): ReturnType<typeof xsignature.hasSignatureFrom>;
@@ -158,12 +146,6 @@ declare module "./base/envelope.js" {
       ...args: Tail<Parameters<typeof xsignature.makeSignedAssertion>>
     ): ReturnType<typeof xsignature.makeSignedAssertion>;
     sign(...args: Tail<Parameters<typeof xsignature.sign>>): ReturnType<typeof xsignature.sign>;
-    signOpt(
-      ...args: Tail<Parameters<typeof xsignature.signOpt>>
-    ): ReturnType<typeof xsignature.signOpt>;
-    signWithMetadata(
-      ...args: Tail<Parameters<typeof xsignature.signWithMetadata>>
-    ): ReturnType<typeof xsignature.signWithMetadata>;
     signatures(
       ...args: Tail<Parameters<typeof xsignature.signatures>>
     ): ReturnType<typeof xsignature.signatures>;
@@ -213,30 +195,18 @@ declare module "./base/envelope.js" {
     diagnostic(
       ...args: Tail<Parameters<typeof xdiagnostic.diagnostic>>
     ): ReturnType<typeof xdiagnostic.diagnostic>;
-    diagnosticAnnotated(
-      ...args: Tail<Parameters<typeof xdiagnostic.diagnosticAnnotated>>
-    ): ReturnType<typeof xdiagnostic.diagnosticAnnotated>;
-    summaryWithContext(
-      ...args: Tail<Parameters<typeof xenvelope_summary.summaryWithContext>>
-    ): ReturnType<typeof xenvelope_summary.summaryWithContext>;
-    cborBytes(...args: Tail<Parameters<typeof xhex.cborBytes>>): ReturnType<typeof xhex.cborBytes>;
     hex(...args: Tail<Parameters<typeof xhex.hex>>): ReturnType<typeof xhex.hex>;
-    hexOpt(...args: Tail<Parameters<typeof xhex.hexOpt>>): ReturnType<typeof xhex.hexOpt>;
     mermaidFormat(
       ...args: Tail<Parameters<typeof xmermaid.mermaidFormat>>
     ): ReturnType<typeof xmermaid.mermaidFormat>;
-    mermaidFormatOpt(
-      ...args: Tail<Parameters<typeof xmermaid.mermaidFormatOpt>>
-    ): ReturnType<typeof xmermaid.mermaidFormatOpt>;
     format(...args: Tail<Parameters<typeof xnotation.format>>): ReturnType<typeof xnotation.format>;
     formatFlat(
       ...args: Tail<Parameters<typeof xnotation.formatFlat>>
     ): ReturnType<typeof xnotation.formatFlat>;
-    formatOpt(
-      ...args: Tail<Parameters<typeof xnotation.formatOpt>>
-    ): ReturnType<typeof xnotation.formatOpt>;
     shortId(...args: Tail<Parameters<typeof xtree.shortId>>): ReturnType<typeof xtree.shortId>;
-    summary(...args: Tail<Parameters<typeof xtree.summary>>): ReturnType<typeof xtree.summary>;
+    summary(
+      ...args: Tail<Parameters<typeof xenvelope_summary.summary>>
+    ): ReturnType<typeof xenvelope_summary.summary>;
     treeFormat(
       ...args: Tail<Parameters<typeof xtree.treeFormat>>
     ): ReturnType<typeof xtree.treeFormat>;
@@ -244,12 +214,11 @@ declare module "./base/envelope.js" {
       ...args: Tail<Parameters<typeof xseal.encryptToRecipient>>
     ): ReturnType<typeof xseal.encryptToRecipient>;
     seal(...args: Tail<Parameters<typeof xseal.seal>>): ReturnType<typeof xseal.seal>;
-    sealOpt(...args: Tail<Parameters<typeof xseal.sealOpt>>): ReturnType<typeof xseal.sealOpt>;
     unseal(...args: Tail<Parameters<typeof xseal.unseal>>): ReturnType<typeof xseal.unseal>;
   }
 
   namespace Envelope {
-    const newAttachment: typeof xattachment.newAttachment;
+    const attachment: typeof xattachment.attachment;
     const sskrJoin: typeof xsskr.sskrJoin;
   }
 }
@@ -275,7 +244,7 @@ install("attachmentVendor", xattachment.attachmentVendor);
 install("attachmentWithVendorAndConformsTo", xattachment.attachmentWithVendorAndConformsTo);
 install("attachments", xattachment.attachments);
 install("attachmentsWithVendorAndConformsTo", xattachment.attachmentsWithVendorAndConformsTo);
-statics["newAttachment"] ??= xattachment.newAttachment;
+statics["attachment"] ??= xattachment.attachment;
 install("validateAttachment", xattachment.validateAttachment);
 install("addEdgeEnvelope", xedge.addEdgeEnvelope);
 install("edgeIsA", xedge.edgeIsA);
@@ -300,11 +269,7 @@ install("lockSubject", xsecret.lockSubject);
 install("unlock", xsecret.unlock);
 install("unlockSubject", xsecret.unlockSubject);
 install("addSignature", xsignature.addSignature);
-install("addSignatureOpt", xsignature.addSignatureOpt);
-install("addSignatureWithMetadata", xsignature.addSignatureWithMetadata);
 install("addSignatures", xsignature.addSignatures);
-install("addSignaturesOpt", xsignature.addSignaturesOpt);
-install("addSignaturesWithMetadata", xsignature.addSignaturesWithMetadata);
 install("hasSignatureFrom", xsignature.hasSignatureFrom);
 install("hasSignatureFromReturningMetadata", xsignature.hasSignatureFromReturningMetadata);
 install("hasSignaturesFrom", xsignature.hasSignaturesFrom);
@@ -312,8 +277,6 @@ install("hasSignaturesFromThreshold", xsignature.hasSignaturesFromThreshold);
 install("isVerifiedSignature", xsignature.isVerifiedSignature);
 install("makeSignedAssertion", xsignature.makeSignedAssertion);
 install("sign", xsignature.sign);
-install("signOpt", xsignature.signOpt);
-install("signWithMetadata", xsignature.signWithMetadata);
 install("signatures", xsignature.signatures);
 install("verify", xsignature.verify);
 install("verifyReturningMetadata", xsignature.verifyReturningMetadata);
@@ -334,22 +297,15 @@ install("hasType", xtypes.hasType);
 install("hasTypeValue", xtypes.hasTypeValue);
 install("types", xtypes.types);
 install("diagnostic", xdiagnostic.diagnostic);
-install("diagnosticAnnotated", xdiagnostic.diagnosticAnnotated);
-install("summaryWithContext", xenvelope_summary.summaryWithContext);
-install("cborBytes", xhex.cborBytes);
 install("hex", xhex.hex);
-install("hexOpt", xhex.hexOpt);
 install("mermaidFormat", xmermaid.mermaidFormat);
-install("mermaidFormatOpt", xmermaid.mermaidFormatOpt);
 install("format", xnotation.format);
 install("formatFlat", xnotation.formatFlat);
-install("formatOpt", xnotation.formatOpt);
 install("shortId", xtree.shortId);
-install("summary", xtree.summary);
+install("summary", xenvelope_summary.summary);
 install("treeFormat", xtree.treeFormat);
 install("encryptToRecipient", xseal.encryptToRecipient);
 install("seal", xseal.seal);
-install("sealOpt", xseal.sealOpt);
 install("unseal", xseal.unseal);
 install("proofContainsSet", xproof.proofContainsSet);
 install("proofContainsTarget", xproof.proofContainsTarget);

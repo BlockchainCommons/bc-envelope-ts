@@ -81,7 +81,7 @@ describe("Signature Extension", () => {
         .withAssertion("purpose", "Contract approval");
 
       const document = Envelope.from("Important document");
-      const signedWithMetadata = document.addSignatureWithMetadata(alice, metadata);
+      const signedWithMetadata = document.addSignature(alice, { metadata: metadata });
 
       expect(signedWithMetadata.assertions().length).toBeGreaterThan(0);
       expect(signedWithMetadata.hasSignatureFrom(alicePub)).toBe(true);
@@ -107,7 +107,7 @@ describe("Signature Extension", () => {
 
       const envelope = Envelope.from("Important document")
         .wrap()
-        .addSignatureOpt(alice, undefined, metadata);
+        .addSignature(alice, { metadata: metadata });
 
       // verify_returning_metadata returns (unwrapped envelope, metadata envelope)
       const result = envelope.verifyReturningMetadata(alicePub);
@@ -126,7 +126,7 @@ describe("Signature Extension", () => {
       const metadata = SignatureMetadata.new().withAssertion(NOTE, "Signed by Alice");
 
       const document = Envelope.from("Secret");
-      const signedWithMetadata = document.addSignatureWithMetadata(alice, metadata);
+      const signedWithMetadata = document.addSignature(alice, { metadata: metadata });
 
       expect(signedWithMetadata.hasSignatureFrom(bob.publicKey())).toBe(false);
     });

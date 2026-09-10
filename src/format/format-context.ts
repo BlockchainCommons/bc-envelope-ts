@@ -94,21 +94,19 @@ import { diagnostic } from "@blockchaincommons/dcbor/diagnostic";
 // FormatContextOpt - Option type for format context
 // ============================================================================
 
-/// Option type for format context, similar to Rust's FormatContextOpt<'a>.
-export type FormatContextOpt =
-  { type: "none" } | { type: "global" } | { type: "custom"; context: FormatContext };
+/**
+ * Which format context a formatter uses: a specific one, the global one
+ * (`"global"`, the default), or none (`"none"`: no tag names, no known-value
+ * names).
+ */
+export type FormatContextOpt = FormatContext | "global" | "none";
 
-/// Create a FormatContextOpt with no context
-export const formatContextNone = (): FormatContextOpt => ({ type: "none" });
-
-/// Create a FormatContextOpt with global context
-export const formatContextGlobal = (): FormatContextOpt => ({ type: "global" });
-
-/// Create a FormatContextOpt with custom context
-export const formatContextCustom = (context: FormatContext): FormatContextOpt => ({
-  type: "custom",
-  context,
-});
+/** The context a `FormatContextOpt` denotes; `undefined` for `"none"`. */
+export function resolveFormatContext(opt: FormatContextOpt = "global"): FormatContext | undefined {
+  if (opt === "none") return undefined;
+  if (opt === "global") return getGlobalFormatContext();
+  return opt;
+}
 
 // ============================================================================
 // FormatContext - Main formatting context class
@@ -123,18 +121,21 @@ export class FormatContext implements ReadonlyTagsStore {
   private readonly _tags: TagsStore;
   private readonly _knownValues: KnownValuesStore;
 
-  constructor(tags?: TagsStore, knownValues?: KnownValuesStore) {
-    this._tags = tags ?? new TagsStoreClass();
-    this._knownValues = knownValues ?? new KnownValuesStoreClass();
+  constructor({
+    tags = new TagsStoreClass(),
+    knownValues = new KnownValuesStoreClass(),
+  }: { tags?: TagsStore; knownValues?: KnownValuesStore } = {}) {
+    this._tags = tags;
+    this._knownValues = knownValues;
   }
 
-  /// Returns a reference to the CBOR tags registry.
-  tags(): TagsStore {
+  /** The CBOR tags registry (names and summarisers). */
+  get tags(): TagsStore {
     return this._tags;
   }
 
-  /// Returns a reference to the known values registry.
-  knownValues(): KnownValuesStore {
+  /** The known values registry. */
+  get knownValues(): KnownValuesStore {
     return this._knownValues;
   }
 
@@ -163,16 +164,11 @@ export class FormatContext implements ReadonlyTagsStore {
     return this._tags.summarizer(tag);
   }
 
-  /// Register a tag with a name
-  registerTag(value: number | bigint, name: string): void {
-    this._tags.register({ value: BigInt(value), name });
-  }
-
   /// Create a clone of this context
   clone(): FormatContext {
     // Note: This creates a shallow copy - tags and knownValues are shared
     // For a full deep copy, we would need to clone the stores
-    return new FormatContext(this._tags, this._knownValues);
+    return new FormatContext({ tags: this._tags, knownValues: this._knownValues });
   }
 }
 
@@ -187,14 +183,15 @@ let isInitialized = false;
 /// Get the global format context instance, initializing it if necessary.
 export const getGlobalFormatContext = (): FormatContext => {
   if (!isInitialized) {
-    // Register all known tags (dcbor + BC component tags) in the global tags store
-    registerBcTags();
-
-    // Get the global stores
+    // Register dcbor's standard tags and every BC tag in *this* dcbor's
+    // global store (the explicit argument matters when a sibling package
+    // resolves its own copy of dcbor: `registerTags()` with no argument
+    // would fill that copy's store and leave ours nameless).
     const tags = getGlobalTagsStore();
+    registerBcTags(tags);
     const knownValues = getGlobalKnownValuesStore();
 
-    _globalFormatContextInstance = new FormatContext(tags, knownValues);
+    _globalFormatContextInstance = new FormatContext({ tags, knownValues });
     isInitialized = true;
 
     // Set up known value summarizer
@@ -212,19 +209,14 @@ export const withFormatContext = <T>(action: (context: FormatContext) => T): T =
   return action(getGlobalFormatContext());
 };
 
-/// Execute a function with mutable access to the global format context.
-export const withFormatContextMut = <T>(action: (context: FormatContext) => T): T => {
-  return action(getGlobalFormatContext());
-};
-
 // ============================================================================
 // Tag Registration
 // ============================================================================
 
 /// Set up the known value summarizer in a format context
 const setupKnownValueSummarizer = (context: FormatContext): void => {
-  const knownValues = context.knownValues();
-  const tags = context.tags();
+  const knownValues = context.knownValues;
+  const tags = context.tags;
 
   // Known value summarizer - formats known values with single quotes
   const summarizer: CborSummarizer = (cbor, _flat) => {
@@ -241,23 +233,19 @@ const setupKnownValueSummarizer = (context: FormatContext): void => {
   tags.setSummarizer(BigInt(KNOWN_VALUE.value), summarizer);
 };
 
-/// Registers standard tags and summarizers in a format context.
+/**
+ * Registers dcbor's standard tags, every BC tag and the envelope
+ * summarisers in `context` (a custom context; the global one is set up on
+ * first use).
+ */
 export const registerTagsIn = (context: FormatContext): void => {
-  // Register all known tags (dcbor + BC component tags)
-  registerBcTags();
+  registerBcTags(context.tags);
 
   // Set up known value summarizer
   setupKnownValueSummarizer(context);
 
   // Set up component tag summarizers
   setupComponentSummarizers(context);
-};
-
-/// Registers standard tags in the global format context.
-export const registerTags = (): void => {
-  withFormatContextMut((context) => {
-    registerTagsIn(context);
-  });
 };
 
 // ============================================================================
@@ -272,7 +260,7 @@ const summarizerError = (e: unknown): { ok: false; error: CborError } => {
 
 /// Set up component tag summarizers matching Rust bc-components-rust/src/tags_registry.rs
 const setupComponentSummarizers = (context: FormatContext): void => {
-  const tags = context.tags();
+  const tags = context.tags;
 
   // Digest: "Digest(shortDesc)"
   tags.setSummarizer(TAG_DIGEST.value, (cbor, _flat) => {
@@ -642,16 +630,4 @@ type EnvelopeFormatHook = (cbor: unknown, flat: boolean) => string;
 let envelopeFormatHook: EnvelopeFormatHook | undefined;
 export const setEnvelopeFormatHook = (hook: EnvelopeFormatHook): void => {
   envelopeFormatHook = hook;
-};
-
-// ============================================================================
-// Exports
-// ============================================================================
-
-/// Alias function for getGlobalFormatContext
-export const globalFormatContext: () => FormatContext = getGlobalFormatContext;
-
-/// Object-style access to global format context
-export const GLOBAL_FORMAT_CONTEXT: { get: () => FormatContext } = {
-  get: getGlobalFormatContext,
 };

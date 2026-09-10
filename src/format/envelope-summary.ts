@@ -25,17 +25,9 @@ import {
 import { diagnostic, type DiagFormatOpts } from "@blockchaincommons/dcbor/diagnostic";
 
 import { type Envelope } from "../base/envelope";
-import {
-  type FormatContext,
-  type FormatContextOpt,
-  getGlobalFormatContext,
-} from "./format-context";
+import { type FormatContextOpt, resolveFormatContext } from "./format-context";
 
-// ============================================================================
-// EnvelopeSummary Interface
-// ============================================================================
-
-/// Interface for types that can produce envelope summary strings.
+/** Types that render their own one-line summary. */
 export interface EnvelopeSummary {
   envelopeSummary(maxLength: number, context: FormatContextOpt): string;
 }
@@ -97,15 +89,8 @@ export const cborEnvelopeSummary = (
   if (isArray(cbor) || isMap(cbor) || isTagged(cbor)) {
     const opts: DiagFormatOpts = { summarize: true };
 
-    // Get appropriate tags store based on context
-    if (context.type === "custom") {
-      return diagnostic(cbor, { ...opts, tags: context.context.tags() });
-    } else if (context.type === "global") {
-      const ctx = getGlobalFormatContext();
-      return diagnostic(cbor, { ...opts, tags: ctx.tags() });
-    } else {
-      return diagnostic(cbor, opts);
-    }
+    const ctx = resolveFormatContext(context);
+    return diagnostic(cbor, ctx === undefined ? opts : { ...opts, tags: ctx.tags });
   }
 
   // Fallback
@@ -116,12 +101,22 @@ export const cborEnvelopeSummary = (
 // Envelope Summary Method Extension
 // ============================================================================
 
-/// Implementation of summaryWithContext
-export function summaryWithContext(
-  envelope: Envelope,
-  maxLength: number,
-  context: FormatContext,
-): string {
+/** Options for `summary`. */
+export interface SummaryOptions {
+  /** Truncate text leaves beyond this many characters (40 by default). */
+  maxLength?: number;
+  /** Names for tags and known values; the global context by default. */
+  context?: FormatContextOpt;
+}
+
+/**
+ * A one-line summary of an envelope: its leaf value (text truncated to
+ * `maxLength`), a known value's name, or the case name (`NODE`, `WRAPPED`,
+ * `ELIDED`, …) for structure.
+ */
+export function summary(envelope: Envelope, options: SummaryOptions = {}): string {
+  const maxLength = options.maxLength ?? 40;
+  const context = resolveFormatContext(options.context);
   const c = envelope.case;
 
   switch (c.type) {
@@ -129,10 +124,7 @@ export function summaryWithContext(
       return "NODE";
 
     case "leaf":
-      return cborEnvelopeSummary(c.cbor, maxLength, {
-        type: "custom",
-        context,
-      });
+      return cborEnvelopeSummary(c.cbor, maxLength, context ?? "none");
 
     case "wrapped":
       return "WRAPPED";
@@ -144,8 +136,7 @@ export function summaryWithContext(
       return "ELIDED";
 
     case "knownValue": {
-      const knownValues = context.knownValues();
-      const name = knownValues.nameOf(c.value);
+      const name = context === undefined ? c.value.name : context.knownValues.nameOf(c.value);
       return flankedBy(name, "'", "'");
     }
 

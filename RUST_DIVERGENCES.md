@@ -20,9 +20,8 @@ differs from the Rust reference. It has three kinds of entry:
 Every entry below is checked by `tests/rust-validation`, a Rust program that
 pins `bc-envelope = 0.43.0` and replays `tests/vectors/vectors.json` through
 the reference, building each recipe with the reference's own API. The
-current run: **149 vectors — 10 match, 139 expected divergences, 0
-mismatches.** (Almost every vector carries the annotated-hex output, which
-is the pending P1 below; everything else in those vectors matches.)
+current run: **149 vectors — 136 match, 13 expected divergences, 0
+mismatches.**
 
 ## 1. True behavioral divergences
 
@@ -48,17 +47,17 @@ the reference, so a non-ASCII text leaf can be truncated or wrapped
 differently: `"unicode ✓ ☺ 日本"` is cut to `"unicode ✓ ☺ 日本…"` by the
 reference and shown whole here. ASCII text is identical.
 
-### P1. Annotated hex carries no tag names — **pending fix** (125 vectors)
+### Resolved in Phase 3 W7
 
-`hexOpt(true)` / `hex()` prints `# tag(200)` where the reference prints
-`# tag(200) envelope`: the tags store handed to the annotator has no names.
-Fixed in Phase 3 W7 (format context); the harness records it until then.
-
-### P2. Tag-1 dates are not summarised — **pending fix** (1 vector)
-
-A `date` assertion prints as `1(1657512000)` where the reference prints
-`2022-07-11T04:00:00Z`: the format context lacks dcbor's standard-tag
-summarisers. Fixed in Phase 3 W7.
+- **P1, annotated hex without tag names (125 vectors).** `hex()` printed
+  `# tag(200)` where the reference prints `# tag(200) envelope`: the tags
+  package registered the BC tags in *its own* copy of dcbor's global store
+  when a consumer's install resolved two copies. The global format context
+  now registers into the dcbor store it hands to the annotator
+  (`registerTags(getGlobalTagsStore())`). Differential tombstone T2.
+- **P2, tag-1 dates not summarised (1 vector).** The same registration
+  installs dcbor's standard-tag summarisers, so a `date` assertion prints
+  `2022-07-11T04:00:00Z` as the reference does. Tombstone T3.
 
 ## 2. JS-only input domain
 

@@ -248,7 +248,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
         .withAssertion("timestamp", "2024-01-15T10:30:00Z");
 
       const document = helloEnvelope();
-      const signedWithMetadata = document.addSignatureWithMetadata(alice, metadata);
+      const signedWithMetadata = document.addSignature(alice, { metadata: metadata });
 
       // Should have assertions (the signed assertion)
       expect(signedWithMetadata.assertions().length).toBeGreaterThan(0);
@@ -276,7 +276,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
       const carol = carolPrivateKey();
       const metadata = SignatureMetadata.new().withAssertion(NOTE, "Signed by Alice");
 
-      const signedWithMetadata = helloEnvelope().addSignatureWithMetadata(alice, metadata);
+      const signedWithMetadata = helloEnvelope().addSignature(alice, { metadata: metadata });
 
       // Carol's key should not verify
       expect(signedWithMetadata.hasSignatureFrom(carol.publicKey())).toBe(false);

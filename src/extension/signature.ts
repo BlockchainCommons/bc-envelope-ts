@@ -122,11 +122,22 @@ export class SignatureMetadata {
 /// envelope with a `'signed': Signature` assertion.
 ///
 /// Matches Rust: add_signature_opt()
-export function addSignatureOpt(
+/** Options for `sign` and `addSignature`. */
+export interface SignOptions {
+  /** Scheme-specific signing options (Schnorr `rng`, SSH namespace and hash). */
+  signing?: SigningOptions;
+  /** Assertions to bind to the signature (a signed, wrapped signature envelope). */
+  metadata?: SignatureMetadata;
+}
+
+/**
+ * Adds a `signed` assertion: a signature over the subject's digest, with
+ * `metadata` bound to it when given.
+ */
+export function addSignature(
   envelope: Envelope,
   signer: Signer,
-  options?: SigningOptions,
-  metadata?: SignatureMetadata,
+  { signing: options, metadata }: SignOptions = {},
 ): Envelope {
   const digest = envelope.subject().digest();
   let signatureEnvelope = Envelope.from(signer.signWithOptions(digest.bytes, options));
@@ -152,52 +163,16 @@ export function addSignatureOpt(
   return envelope.addAssertion(SIGNED, signatureEnvelope);
 }
 
-/// Creates a signature without options or metadata.
-///
-/// Matches Rust: add_signature()
-export function addSignature(envelope: Envelope, signer: Signer): Envelope {
-  return addSignatureOpt(envelope, signer, undefined, undefined);
-}
-
-/// Creates a signature with optional metadata but no options.
-///
-/// Convenience method matching the common use case.
-export function addSignatureWithMetadata(
+/** `addSignature` for each signer, each with its own options when given as `{ signer, ...options }`. */
+export function addSignatures(
   envelope: Envelope,
-  signer: Signer,
-  metadata?: SignatureMetadata,
+  signers: readonly (Signer | ({ signer: Signer } & SignOptions))[],
 ): Envelope {
-  return addSignatureOpt(envelope, signer, undefined, metadata);
-}
-
-/// Creates several signatures for the envelope's subject.
-///
-/// Matches Rust: add_signatures()
-export function addSignatures(envelope: Envelope, signers: Signer[]): Envelope {
-  return signers.reduce<Envelope>((envelope, signer) => addSignature(envelope, signer), envelope);
-}
-
-/// Creates several signatures with individual options and metadata.
-///
-/// Matches Rust: add_signatures_opt()
-export function addSignaturesOpt(
-  envelope: Envelope,
-  signersWithOptions: { signer: Signer; options?: SigningOptions; metadata?: SignatureMetadata }[],
-): Envelope {
-  return signersWithOptions.reduce<Envelope>(
-    (envelope, { signer, options, metadata }) =>
-      addSignatureOpt(envelope, signer, options, metadata),
-    envelope,
-  );
-}
-
-/// Creates several signatures with metadata (no options).
-export function addSignaturesWithMetadata(
-  envelope: Envelope,
-  signersWithMetadata: { signer: Signer; metadata?: SignatureMetadata }[],
-): Envelope {
-  return signersWithMetadata.reduce<Envelope>(
-    (envelope, { signer, metadata }) => addSignatureWithMetadata(envelope, signer, metadata),
+  return signers.reduce<Envelope>(
+    (e, s) =>
+      "signer" in s && !(s instanceof Object && "sign" in s)
+        ? addSignature(e, s.signer, s)
+        : addSignature(e, s as Signer),
     envelope,
   );
 }
@@ -422,27 +397,9 @@ export function signatures(envelope: Envelope): Envelope[] {
 // included in the signature.
 // ============================================================================
 
-/// Signs the entire envelope by wrapping it first.
-///
-/// Matches Rust: sign()
-export function sign(envelope: Envelope, signer: Signer): Envelope {
-  return signOpt(envelope, signer, undefined);
-}
-
-/// Signs the entire envelope with options but no metadata.
-///
-/// Matches Rust: sign_opt()
-export function signOpt(envelope: Envelope, signer: Signer, options?: SigningOptions): Envelope {
-  return addSignatureOpt(envelope.wrap(), signer, options, undefined);
-}
-
-/// Signs the entire envelope with optional metadata.
-export function signWithMetadata(
-  envelope: Envelope,
-  signer: Signer,
-  metadata?: SignatureMetadata,
-): Envelope {
-  return addSignatureOpt(envelope.wrap(), signer, undefined, metadata);
+/** Wraps the envelope and signs it: `envelope.wrap()` plus a `signed` assertion. */
+export function sign(envelope: Envelope, signer: Signer, options: SignOptions = {}): Envelope {
+  return addSignature(envelope.wrap(), signer, options);
 }
 
 /// Verifies that the envelope has a valid signature from the specified

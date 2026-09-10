@@ -66,8 +66,8 @@ export class Attachments {
    * @param conformsTo - Optional URI identifying the structure the payload conforms to
    */
   add(payload: EnvelopeInput, vendor: string, conformsTo?: string): void {
-    const attachment = Envelope.newAttachment(payload, vendor, conformsTo);
-    this._envelopes.set(attachment.digest().toHex(), attachment);
+    const envelope = attachment(payload, vendor, conformsTo);
+    this._envelopes.set(envelope.digest().toHex(), envelope);
   }
 
   /**
@@ -175,11 +175,7 @@ export class Attachments {
 /**
  * Creates a new attachment envelope.
  */
-export function newAttachment(
-  payload: EnvelopeInput,
-  vendor: string,
-  conformsTo?: string,
-): Envelope {
+export function attachment(payload: EnvelopeInput, vendor: string, conformsTo?: string): Envelope {
   // Create the payload envelope wrapped with vendor assertion
   let attachmentObj = Envelope.from(payload).wrap().addAssertion(VENDOR, vendor);
 
@@ -347,7 +343,7 @@ export function validateAttachment(envelope: Envelope): void {
   const conformsTo = attachmentConformsTo(envelope);
 
   // Reconstruct the attachment
-  const reconstructed = Envelope.newAttachment(payload, vendor, conformsTo);
+  const reconstructed = attachment(payload, vendor, conformsTo);
 
   // Check equivalence (same digest = semantically equivalent)
   if (!envelope.digest().equals(reconstructed.digest())) {
