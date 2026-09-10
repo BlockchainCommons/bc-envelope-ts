@@ -1,4 +1,6 @@
-import { Envelope, IS_A } from "../src";
+import { Envelope } from "../src/index.js";
+import { IS_A } from "@blockchaincommons/known-values";
+import "../src/all.js";
 
 describe("Type System", () => {
   describe("Single type", () => {

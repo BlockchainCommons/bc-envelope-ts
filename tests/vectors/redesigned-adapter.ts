@@ -14,6 +14,7 @@ import {
   outputsFor,
   SEP,
 } from "./recipes";
+import "../../src/all.js";
 
 export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
   const C = deps.components;

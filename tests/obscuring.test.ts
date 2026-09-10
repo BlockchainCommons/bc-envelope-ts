@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { Envelope, Digest, ObscureType } from "../src/index.js";
+import { Envelope, ObscureType } from "../src/index.js";
+import { Digest } from "@blockchaincommons/components";
 import { SymmetricKey } from "@blockchaincommons/components";
+import "../src/all.js";
 
 /**
  * This tests the transformation of different kinds of "obscured" envelopes

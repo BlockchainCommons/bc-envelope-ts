@@ -10,58 +10,18 @@
 /// serializing envelopes, including hex, diagnostic, notation, tree,
 /// UR, and mermaid diagram formats.
 
-// Export types and enums from tree
-export type { TreeFormatOptions } from "./tree";
-export { DigestDisplayFormat } from "./tree";
-
-// Export format context
-export {
-  type FormatContextOpt,
-  FormatContext,
-  formatContextNone,
-  formatContextGlobal,
-  formatContextCustom,
-  getGlobalFormatContext,
-  globalFormatContext,
-  withFormatContext,
-  withFormatContextMut,
-  registerTags,
-  registerTagsIn,
-  GLOBAL_FORMAT_CONTEXT,
-} from "./format-context";
-
-// Export envelope summary
-export { type EnvelopeSummary, cborEnvelopeSummary, envelopeSummary } from "./envelope-summary";
-
-// Export notation formatting
-export {
-  type EnvelopeFormatOpts,
-  type EnvelopeFormatItem,
-  formatEnvelope,
-  formatCbor,
-  formatAssertion,
-  defaultFormatOpts,
-  flatFormatOpts,
-  formatBegin,
-  formatEnd,
-  formatItem,
-  formatSeparator,
-  formatList,
-} from "./notation";
-
-// Export mermaid formatting
-export {
-  MermaidOrientation,
-  MermaidTheme,
-  type MermaidFormatOpts,
-  defaultMermaidOpts,
-  registerMermaidExtension,
-} from "./mermaid";
-
-// Import side-effect modules to register prototype extensions
-import "./hex";
-import "./diagnostic";
-import "./tree";
-import "./envelope-summary";
-import "./notation";
-import "./mermaid";
+/**
+ * Formatting: notation, tree, mermaid, diagnostic, annotated hex and
+ * summaries, as functions over an envelope, plus the format context.
+ *
+ * Subpath entry `@blockchaincommons/envelope/format`.
+ *
+ * @module format
+ */
+export * from "./tree.js";
+export * from "./format-context.js";
+export * from "./envelope-summary.js";
+export * from "./notation.js";
+export * from "./mermaid.js";
+export * from "./hex.js";
+export * from "./diagnostic.js";

@@ -4,7 +4,7 @@
  *
  */
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { type Digest } from "../base/digest";
 
 /// Extension for envelope inclusion proofs.
@@ -54,40 +54,45 @@ import { type Digest } from "../base/digest";
 /// ```
 
 /// Implementation of proof methods on Envelope prototype
-// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-if (Envelope?.prototype) {
-  Envelope.prototype.proofContainsSet = function (target: Set<Digest>): Envelope | undefined {
-    const revealSet = revealSetOfSet(this, target);
+export function proofContainsSet(envelope: Envelope, target: Set<Digest>): Envelope | undefined {
+  const revealSet = revealSetOfSet(envelope, target);
 
-    // Check if all targets can be revealed
-    if (!isSubset(target, revealSet)) {
-      return undefined;
-    }
+  // Check if all targets can be revealed
+  if (!isSubset(target, revealSet)) {
+    return undefined;
+  }
 
-    // Create a proof by revealing only what's necessary, then eliding the targets
-    const revealed = this.elideRevealingSet(revealSet);
-    return revealed.elideRemovingSet(target);
-  };
+  // Create a proof by revealing only what's necessary, then eliding the targets
+  const revealed = envelope.elideRevealingSet(revealSet);
+  return revealed.elideRemovingSet(target);
+}
 
-  Envelope.prototype.proofContainsTarget = function (target: Envelope): Envelope | undefined {
-    const targetSet = new Set<Digest>([target.digest()]);
-    return this.proofContainsSet(targetSet);
-  };
+export function proofContainsTarget(envelope: Envelope, target: Envelope): Envelope | undefined {
+  const targetSet = new Set<Digest>([target.digest()]);
+  return proofContainsSet(envelope, targetSet);
+}
 
-  Envelope.prototype.confirmContainsSet = function (target: Set<Digest>, proof: Envelope): boolean {
-    // Verify the proof has the same digest as this envelope
-    if (this.digest().toHex() !== proof.digest().toHex()) {
-      return false;
-    }
+export function confirmContainsSet(
+  envelope: Envelope,
+  target: Set<Digest>,
+  proof: Envelope,
+): boolean {
+  // Verify the proof has the same digest as envelope envelope
+  if (envelope.digest().toHex() !== proof.digest().toHex()) {
+    return false;
+  }
 
-    // Verify the proof contains all target elements
-    return containsAll(proof, target);
-  };
+  // Verify the proof contains all target elements
+  return containsAll(proof, target);
+}
 
-  Envelope.prototype.confirmContainsTarget = function (target: Envelope, proof: Envelope): boolean {
-    const targetSet = new Set<Digest>([target.digest()]);
-    return this.confirmContainsSet(targetSet, proof);
-  };
+export function confirmContainsTarget(
+  envelope: Envelope,
+  target: Envelope,
+  proof: Envelope,
+): boolean {
+  const targetSet = new Set<Digest>([target.digest()]);
+  return confirmContainsSet(envelope, targetSet, proof);
 }
 
 /// Internal helper functions
@@ -231,6 +236,4 @@ function isSubset(subset: Set<Digest>, superset: Set<Digest>): boolean {
 
 /// Register proof extension on Envelope prototype.
 /// This function is exported to allow explicit registration.
-export function registerProofExtension(): void {
-  // Methods are already registered above when this module loads
-}
+// Methods are already registered above when this module loads

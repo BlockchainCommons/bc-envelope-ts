@@ -2,6 +2,7 @@ import { Envelope } from "../src/index.js";
 import { SymmetricKey } from "@blockchaincommons/components";
 import { Spec, GroupSpec } from "@blockchaincommons/sskr";
 import { SeededRng } from "@blockchaincommons/rand";
+import "../src/all.js";
 
 describe("SSKR Extension", () => {
   // Simple 2-of-3 scheme: 2 shares required out of 3 total

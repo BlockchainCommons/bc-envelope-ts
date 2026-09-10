@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Envelope, EnvelopeDecoder } from "../src";
 import { NOTE, UNIT } from "@blockchaincommons/known-values";
+import "../src/all.js";
 
 // ============================================================================
 // Test Data Helpers

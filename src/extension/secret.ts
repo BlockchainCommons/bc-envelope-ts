@@ -17,7 +17,7 @@ import { SymmetricKey as ComponentsSymmetricKey } from "@blockchaincommons/compo
 import { EncryptedKey, type KeyDerivationMethod } from "@blockchaincommons/components/kdf";
 import { HAS_SECRET } from "@blockchaincommons/known-values";
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
 import { SymmetricKey } from "@blockchaincommons/components";
 
@@ -26,8 +26,8 @@ import { SymmetricKey } from "@blockchaincommons/components";
 // ============================================================================
 
 /// Implementation of lockSubject
-Envelope.prototype.lockSubject = function (
-  this: Envelope,
+export function lockSubject(
+  envelope: Envelope,
   method: KeyDerivationMethod,
   secret: Uint8Array,
 ): Envelope {
@@ -41,14 +41,14 @@ Envelope.prototype.lockSubject = function (
   const encryptedKey = EncryptedKey.lock(method, secret, componentsKey);
 
   // Encrypt the subject and add the hasSecret assertion
-  const encrypted = this.encryptSubject(contentKey);
+  const encrypted = envelope.encryptSubject(contentKey);
   return encrypted.addAssertion(HAS_SECRET, encryptedKey);
-};
+}
 
 /// Implementation of unlockSubject
-Envelope.prototype.unlockSubject = function (this: Envelope, secret: Uint8Array): Envelope {
+export function unlockSubject(envelope: Envelope, secret: Uint8Array): Envelope {
   // Find all hasSecret assertions
-  const assertions = this.assertionsWithPredicate(HAS_SECRET);
+  const assertions = envelope.assertionsWithPredicate(HAS_SECRET);
 
   // Try each one until we find one that unlocks
   for (const assertion of assertions) {
@@ -69,7 +69,7 @@ Envelope.prototype.unlockSubject = function (this: Envelope, secret: Uint8Array)
       const contentKey = SymmetricKey.from(componentsKey.bytes);
 
       // If successful, decrypt the subject
-      return this.decryptSubject(contentKey);
+      return envelope.decryptSubject(contentKey);
     } catch {
       // This assertion didn't work, try the next one
       continue;
@@ -78,11 +78,11 @@ Envelope.prototype.unlockSubject = function (this: Envelope, secret: Uint8Array)
 
   // No matching secret found
   throw EnvelopeError.unknownSecret();
-};
+}
 
 /// Implementation of isLockedWithPassword
-Envelope.prototype.isLockedWithPassword = function (this: Envelope): boolean {
-  const assertions = this.assertionsWithPredicate(HAS_SECRET);
+export function isLockedWithPassword(envelope: Envelope): boolean {
+  const assertions = envelope.assertionsWithPredicate(HAS_SECRET);
 
   for (const assertion of assertions) {
     const obj = assertion.asObject();
@@ -99,11 +99,11 @@ Envelope.prototype.isLockedWithPassword = function (this: Envelope): boolean {
   }
 
   return false;
-};
+}
 
 /// Implementation of isLockedWithSshAgent
-Envelope.prototype.isLockedWithSshAgent = function (this: Envelope): boolean {
-  const assertions = this.assertionsWithPredicate(HAS_SECRET);
+export function isLockedWithSshAgent(envelope: Envelope): boolean {
+  const assertions = envelope.assertionsWithPredicate(HAS_SECRET);
 
   for (const assertion of assertions) {
     const obj = assertion.asObject();
@@ -120,11 +120,11 @@ Envelope.prototype.isLockedWithSshAgent = function (this: Envelope): boolean {
   }
 
   return false;
-};
+}
 
 /// Implementation of addSecret
-Envelope.prototype.addSecret = function (
-  this: Envelope,
+export function addSecret(
+  envelope: Envelope,
   method: KeyDerivationMethod,
   secret: Uint8Array,
   contentKey: SymmetricKey,
@@ -136,22 +136,22 @@ Envelope.prototype.addSecret = function (
   const encryptedKey = EncryptedKey.lock(method, secret, componentsKey);
 
   // Add a hasSecret assertion with the EncryptedKey
-  return this.addAssertion(HAS_SECRET, encryptedKey);
-};
+  return envelope.addAssertion(HAS_SECRET, encryptedKey);
+}
 
 /// Implementation of lock
-Envelope.prototype.lock = function (
-  this: Envelope,
+export function lock(
+  envelope: Envelope,
   method: KeyDerivationMethod,
   secret: Uint8Array,
 ): Envelope {
-  return this.wrap().lockSubject(method, secret);
-};
+  return lockSubject(envelope.wrap(), method, secret);
+}
 
 /// Implementation of unlock
-Envelope.prototype.unlock = function (this: Envelope, secret: Uint8Array): Envelope {
-  return this.unlockSubject(secret).tryUnwrap();
-};
+export function unlock(envelope: Envelope, secret: Uint8Array): Envelope {
+  return unlockSubject(envelope, secret).tryUnwrap();
+}
 
 // ============================================================================
 // Module Registration

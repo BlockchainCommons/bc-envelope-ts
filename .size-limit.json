@@ -1,7 +1,87 @@
 [
   {
-    "name": "ESM entry (import *), minified + gzipped",
+    "name": "ESM root entry (import *), minified + gzipped",
     "path": "dist/index.mjs",
-    "limit": "310 kB"
+    "limit": "45 kB"
+  },
+  {
+    "name": "root entry, package's own code (siblings external)",
+    "path": "dist/index.mjs",
+    "ignore": [
+      "@blockchaincommons/components",
+      "@blockchaincommons/crypto",
+      "@blockchaincommons/dcbor",
+      "@blockchaincommons/known-values",
+      "@blockchaincommons/rand",
+      "@blockchaincommons/sskr",
+      "@blockchaincommons/tags",
+      "@blockchaincommons/uniform-resources"
+    ],
+    "limit": "15 kB"
+  },
+  {
+    "name": "all subpath, minified + gzipped",
+    "path": "dist/all.mjs",
+    "limit": "154 kB"
+  },
+  {
+    "name": "format subpath, minified + gzipped",
+    "path": "dist/format.mjs",
+    "limit": "145 kB"
+  },
+  {
+    "name": "expression subpath, minified + gzipped",
+    "path": "dist/expression.mjs",
+    "limit": "145 kB"
+  },
+  {
+    "name": "attachment subpath, minified + gzipped",
+    "path": "dist/attachment.mjs",
+    "limit": "45 kB"
+  },
+  {
+    "name": "edge subpath, minified + gzipped",
+    "path": "dist/edge.mjs",
+    "limit": "25 kB"
+  },
+  {
+    "name": "proof subpath, minified + gzipped",
+    "path": "dist/proof.mjs",
+    "limit": "1 kB"
+  },
+  {
+    "name": "recipient subpath, minified + gzipped",
+    "path": "dist/recipient.mjs",
+    "limit": "32 kB"
+  },
+  {
+    "name": "salt subpath, minified + gzipped",
+    "path": "dist/salt.mjs",
+    "limit": "46 kB"
+  },
+  {
+    "name": "secret subpath, minified + gzipped",
+    "path": "dist/secret.mjs",
+    "limit": "40 kB"
+  },
+  {
+    "name": "signature subpath, minified + gzipped",
+    "path": "dist/signature.mjs",
+    "limit": "92 kB"
+  },
+  {
+    "name": "sskr subpath, minified + gzipped",
+    "path": "dist/sskr.mjs",
+    "limit": "33 kB"
+  },
+  {
+    "name": "types subpath, minified + gzipped",
+    "path": "dist/types.mjs",
+    "limit": "45 kB"
+  },
+  {
+    "name": "seal subpath, minified + gzipped",
+    "path": "dist/seal.mjs",
+    "limit": "73 kB"
   }
 ]

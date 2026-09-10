@@ -22,7 +22,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const api =
   process.env.VECTORS_FROM === "baseline"
     ? baselineAdapterFor(await import("../tests/baseline/envelope-baseline.mjs"), await baselineDeps())
-    : redesignedAdapterFor(await import("../src/index.ts"), await currentDeps());
+    : redesignedAdapterFor(await import("../src/all.ts"), await currentDeps());
 const vectors = [];
 for (const recipe of goldenRecipes()) {
   vectors.push({

@@ -1,4 +1,5 @@
 import { Envelope } from "../src";
+import "../src/all.js";
 
 describe("Compression Extension", () => {
   describe("Basic compression", () => {

@@ -8,6 +8,7 @@ import { describe, it } from "vitest";
 import fc from "fast-check";
 import { SymmetricKey } from "@blockchaincommons/components";
 import { Envelope, envelopeFromBytes, envelopeToBytes } from "../src/index.js";
+import "../src/all.js";
 
 const leaf = fc.oneof(
   fc.string({ maxLength: 12 }).map((s) => Envelope.new(s)),

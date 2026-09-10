@@ -31,6 +31,7 @@ import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import { Expression, Function, type ParameterID } from "./expression";
+import { formatFlat } from "../format/notation.js";
 
 /**
  * Interface that defines the behavior of a request.
@@ -150,7 +151,7 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
    * Returns a human-readable summary of the request.
    */
   summary(): string {
-    return `id: ${this._id.shortDescription()}, body: ${this._body.envelope().formatFlat()}`;
+    return `id: ${this._id.shortDescription()}, body: ${formatFlat(this._body.envelope())}`;
   }
 
   // RequestBehavior implementation

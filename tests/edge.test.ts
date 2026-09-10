@@ -20,8 +20,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, Edges, SigningPrivateKey, EnvelopeError, ErrorCode } from "../src";
+import { Envelope, EnvelopeError, ErrorCode } from "../src/index.js";
+import { Edges } from "../src/extension/edge.js";
+import { SigningPrivateKey } from "@blockchaincommons/components";
 import { IS_A, SOURCE, TARGET, DEREFERENCE_VIA } from "@blockchaincommons/known-values";
+import "../src/all.js";
 
 // -------------------------------------------------------------------
 // Test Helpers (equivalent to Rust common/test_data.rs)

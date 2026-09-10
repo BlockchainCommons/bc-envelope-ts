@@ -1,4 +1,6 @@
-import { Envelope, Attachments } from "../src";
+import { Envelope } from "../src/index.js";
+import { Attachments } from "../src/extension/attachment.js";
+import "../src/all.js";
 
 describe("Attachment Extension", () => {
   describe("Create attachment envelope", () => {

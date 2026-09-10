@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Envelope } from "../src";
+import "../src/all.js";
 
 /**
  * Non-correlation tests for Gordian Envelope.

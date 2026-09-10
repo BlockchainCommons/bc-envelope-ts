@@ -21,7 +21,7 @@ import { Secret, Spec, GroupSpec } from "@blockchaincommons/sskr";
 import type { RandomNumberGenerator } from "@blockchaincommons/rand";
 import { SSKR_SHARE } from "@blockchaincommons/known-values";
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
 import { SymmetricKey } from "@blockchaincommons/components";
 
@@ -38,11 +38,7 @@ const addSskrShare = (envelope: Envelope, share: SskrShare): Envelope => {
 };
 
 /// Implementation of sskrSplit
-Envelope.prototype.sskrSplit = function (
-  this: Envelope,
-  spec: Spec,
-  contentKey: SymmetricKey,
-): Envelope[][] {
+export function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey): Envelope[][] {
   // Convert symmetric key to SSKR secret
   const masterSecret = Secret.from(contentKey.bytes);
 
@@ -54,27 +50,27 @@ Envelope.prototype.sskrSplit = function (
   for (const group of shareGroups) {
     const groupResult: Envelope[] = [];
     for (const share of group) {
-      const shareEnvelope = addSskrShare(this, share);
+      const shareEnvelope = addSskrShare(envelope, share);
       groupResult.push(shareEnvelope);
     }
     result.push(groupResult);
   }
 
   return result;
-};
+}
 
 /// Implementation of sskrSplitFlattened
-Envelope.prototype.sskrSplitFlattened = function (
-  this: Envelope,
+export function sskrSplitFlattened(
+  envelope: Envelope,
   spec: Spec,
   contentKey: SymmetricKey,
 ): Envelope[] {
-  return this.sskrSplit(spec, contentKey).flat();
-};
+  return sskrSplit(envelope, spec, contentKey).flat();
+}
 
 /// Implementation of sskrSplitUsing (with custom RNG)
-Envelope.prototype.sskrSplitUsing = function (
-  this: Envelope,
+export function sskrSplitUsing(
+  envelope: Envelope,
   spec: Spec,
   contentKey: SymmetricKey,
   rng: RandomNumberGenerator,
@@ -90,14 +86,14 @@ Envelope.prototype.sskrSplitUsing = function (
   for (const group of shareGroups) {
     const groupResult: Envelope[] = [];
     for (const share of group) {
-      const shareEnvelope = addSskrShare(this, share);
+      const shareEnvelope = addSskrShare(envelope, share);
       groupResult.push(shareEnvelope);
     }
     result.push(groupResult);
   }
 
   return result;
-};
+}
 
 /// Helper function to extract SSKR shares from envelopes, grouped by identifier
 const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[]> => {
@@ -135,9 +131,7 @@ const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[
 };
 
 /// Implementation of sskrJoin (static method)
-(Envelope as unknown as { sskrJoin: (envelopes: Envelope[]) => Envelope }).sskrJoin = function (
-  envelopes: Envelope[],
-): Envelope {
+export function sskrJoin(envelopes: Envelope[]): Envelope {
   if (envelopes.length === 0) {
     throw EnvelopeError.invalidShares();
   }
@@ -167,7 +161,7 @@ const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[
 
   // No valid combination found
   throw EnvelopeError.invalidShares();
-};
+}
 
 // ============================================================================
 // Module Registration

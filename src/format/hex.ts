@@ -13,7 +13,7 @@
  * Rust's parity-test fixtures.
  */
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { encodeCbor } from "@blockchaincommons/dcbor";
 import { hexAnnotated } from "@blockchaincommons/dcbor/diagnostic";
 
@@ -28,10 +28,10 @@ import { type FormatContext, getGlobalFormatContext } from "./format-context";
 /// (`bc-envelope-rust/src/format/hex.rs`): the default is the **annotated**
 /// multi-line dump because that's the call most consumers expect when
 /// they ask for a debuggable hex view of an envelope.
-Envelope.prototype.hex = function (this: Envelope): string {
+export function hex(envelope: Envelope): string {
   const ctx = getGlobalFormatContext();
-  return hexAnnotated(this.taggedCbor(), { tagsStore: ctx.tags() });
-};
+  return hexAnnotated(envelope.taggedCbor(), { tagsStore: ctx.tags() });
+}
 
 /// Implementation of hexAnnotated()
 ///
@@ -39,18 +39,14 @@ Envelope.prototype.hex = function (this: Envelope): string {
 /// `false` we emit a flat hex string (`hexOpt` short-circuits to plain
 /// `hex(...)` in that case). When `annotate` is `true` the optional
 /// `context` provides the tag store used to resolve tag names.
-Envelope.prototype.hexOpt = function (
-  this: Envelope,
-  annotate: boolean,
-  context?: FormatContext,
-): string {
-  if (!annotate) return this.taggedCbor().toHex();
+export function hexOpt(envelope: Envelope, annotate: boolean, context?: FormatContext): string {
+  if (!annotate) return envelope.taggedCbor().toHex();
   const ctx = context ?? getGlobalFormatContext();
-  return hexAnnotated(this.taggedCbor(), { tagsStore: ctx.tags() });
-};
+  return hexAnnotated(envelope.taggedCbor(), { tagsStore: ctx.tags() });
+}
 
 /// Implementation of cborBytes()
-Envelope.prototype.cborBytes = function (this: Envelope): Uint8Array {
-  const cbor = this.taggedCbor();
+export function cborBytes(envelope: Envelope): Uint8Array {
+  const cbor = envelope.taggedCbor();
   return encodeCbor(cbor);
-};
+}

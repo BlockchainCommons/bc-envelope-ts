@@ -1,5 +1,6 @@
 import { Envelope } from "../src/index.js";
 import { SymmetricKey } from "@blockchaincommons/components";
+import "../src/all.js";
 
 describe("Encryption Extension", () => {
   describe("Basic encryption", () => {

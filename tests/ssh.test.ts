@@ -19,7 +19,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, SigningPrivateKey } from "../src";
+import { Envelope } from "../src/index.js";
+import { SigningPrivateKey } from "@blockchaincommons/components";
+import "../src/all.js";
 
 const PLAINTEXT_HELLO = "Hello.";
 

@@ -17,8 +17,11 @@
  * in the parity-test fixtures).
  */
 
-import { Envelope } from "../base/envelope";
-import { diagnostic, type DiagFormatOpts } from "@blockchaincommons/dcbor/diagnostic";
+import { type Envelope } from "../base/envelope";
+import {
+  diagnostic as cborDiagnostic,
+  type DiagFormatOpts,
+} from "@blockchaincommons/dcbor/diagnostic";
 
 import { type FormatContext, getGlobalFormatContext } from "./format-context";
 
@@ -30,13 +33,13 @@ import { type FormatContext, getGlobalFormatContext } from "./format-context";
 /// Mirrors Rust `Envelope::diagnostic` (`bc-envelope-rust/src/format/
 /// diagnostic.rs:27`):
 ///
-///     pub fn diagnostic(&self) -> String { self.tagged_cbor().diagnostic() }
+///     pub fn diagnostic(&self) -> String { diagnostic(self.tagged_cbor()) }
 ///
 /// Plain CBOR diagnostic notation, no tag-name annotations. The annotated
 /// variant lives on `diagnosticAnnotated()` below.
-Envelope.prototype.diagnostic = function (this: Envelope): string {
-  return diagnostic(this.taggedCbor());
-};
+export function diagnostic(envelope: Envelope): string {
+  return cborDiagnostic(envelope.taggedCbor());
+}
 
 /// Implementation of diagnosticAnnotated()
 ///
@@ -45,12 +48,9 @@ Envelope.prototype.diagnostic = function (this: Envelope): string {
 /// names appear in the output. `dcbor` accepts a `TagsStore` directly via
 /// its `tags` option; we read it off the format context's `tags()`
 /// accessor (or the global tag store when no context is provided).
-Envelope.prototype.diagnosticAnnotated = function (
-  this: Envelope,
-  context?: FormatContext,
-): string {
+export function diagnosticAnnotated(envelope: Envelope, context?: FormatContext): string {
   const opts: DiagFormatOpts = { annotate: true };
   const ctx = context ?? getGlobalFormatContext();
   opts.tags = ctx.tags();
-  return diagnostic(this.taggedCbor(), opts);
-};
+  return cborDiagnostic(envelope.taggedCbor(), opts);
+}

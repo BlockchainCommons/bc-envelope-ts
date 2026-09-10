@@ -2,10 +2,11 @@ import { Compressed } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
 import { EncryptedMessage } from '@blockchaincommons/components';
 import { KnownValue } from '@blockchaincommons/known-values';
+import { KnownValuesStore } from '@blockchaincommons/known-values';
 import { SymmetricKey } from '@blockchaincommons/components';
 import { UR } from '@blockchaincommons/uniform-resources';
 
-export declare class Assertion implements DigestProvider {
+declare class Assertion implements DigestProvider {
     private readonly _predicate;
     private readonly _object;
     private readonly _digest;
@@ -218,6 +219,8 @@ declare interface CborArrayType {
     readonly type: typeof MajorType.Array;
     readonly value: readonly Cbor[];
 }
+
+export declare function cborBytes(envelope: Envelope): Uint8Array;
 
 declare interface CborByteStringType {
     readonly isCbor: true;
@@ -589,7 +592,163 @@ declare class CborDate implements CborTagged {
     private constructor();
 }
 
-export declare type CborDecoder<T> = (cbor: Cbor) => T;
+declare type CborDecoder<T> = (cbor: Cbor) => T;
+
+declare const cborEnvelopeSummary: (cbor: Cbor, maxLength: number, context: FormatContextOpt) => string;
+export { cborEnvelopeSummary }
+export { cborEnvelopeSummary as envelopeSummary }
+
+/**
+ * The single error type thrown by dCBOR encoding, decoding, and extraction.
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   decodeCbor(bytes);
+ * } catch (e) {
+ *   if (CborError.isCborError(e) && e.code === "WrongTag") {
+ *     console.log(e.details.expectedTag, e.details.actualTag);
+ *   }
+ * }
+ * ```
+ */
+declare class CborError extends Error {
+    /** Machine-readable discriminant; switch on this to handle errors. */
+    readonly code: CborErrorCode;
+    /** Structured, code-specific data (see {@link CborErrorDetails}). */
+    readonly details: CborErrorDetails;
+    constructor(code: CborErrorCode, message: string, details?: CborErrorDetails);
+    /** Type guard: is `value` a {@link CborError}? Narrows to the
+     * code-discriminated {@link CborErrorTyped} union. */
+    static isCborError(value: unknown): value is CborErrorTyped;
+    /** The CBOR data ended before a complete item could be decoded. */
+    static underrun(): CborErrorTyped<"Underrun">;
+    /** An unsupported/invalid value was found in a CBOR header byte. */
+    static unsupportedHeaderValue(headerValue: number): CborErrorTyped<"UnsupportedHeaderValue">;
+    /** A numeric value was not in its shortest/canonical dCBOR form. */
+    static nonCanonicalNumeric(): CborErrorTyped<"NonCanonicalNumeric">;
+    /** A major-type-7 simple value other than false/true/null/float. */
+    static invalidSimpleValue(): CborErrorTyped<"InvalidSimpleValue">;
+    /** A text string was not valid UTF-8 (with the underlying reason). */
+    static invalidString(cause: string): CborErrorTyped<"InvalidString">;
+    /** A text string was not in Unicode NFC. */
+    static nonCanonicalString(): CborErrorTyped<"NonCanonicalString">;
+    /** The decoded item left `count` trailing bytes unconsumed. */
+    static unusedData(count: number): CborErrorTyped<"UnusedData">;
+    /** Map keys were not in canonical ascending byte order. */
+    static misorderedMapKey(): CborErrorTyped<"MisorderedMapKey">;
+    /** A map contained a duplicate key. */
+    static duplicateMapKey(): CborErrorTyped<"DuplicateMapKey">;
+    /** A requested map key was not present. */
+    static missingMapKey(): CborErrorTyped<"MissingMapKey">;
+    /** A numeric value could not be represented in the target type. */
+    static outOfRange(): CborErrorTyped<"OutOfRange">;
+    /** The CBOR value was not the type expected by a conversion. */
+    static wrongType(): CborErrorTyped<"WrongType">;
+    /** A tagged value had a tag other than the one expected. */
+    static wrongTag(expected: Tag, actual: Tag): CborErrorTyped<"WrongTag">;
+    /** Invalid UTF-8 in a text string (with the underlying reason). */
+    static invalidUtf8(cause: string): CborErrorTyped<"InvalidUtf8">;
+    /** Invalid ISO 8601 / RFC 3339 date string (with the underlying reason). */
+    static invalidDate(cause: string): CborErrorTyped<"InvalidDate">;
+    /** An arbitrary error carrying a custom message. */
+    static custom(message: string): CborErrorTyped<"Custom">;
+}
+
+/**
+ * Machine-readable discriminant for a {@link CborError}.
+ *
+ * These cover the deterministic-encoding validation failures from RFC 8949
+ * §4.2.1 and the dCBOR application profile, plus type/range errors raised while
+ * extracting values.
+ */
+declare type CborErrorCode = "Underrun" | "UnsupportedHeaderValue" | "NonCanonicalNumeric" | "InvalidSimpleValue" | "InvalidString" | "NonCanonicalString" | "UnusedData" | "MisorderedMapKey" | "DuplicateMapKey" | "MissingMapKey" | "OutOfRange" | "WrongType" | "WrongTag" | "InvalidUtf8" | "InvalidDate" | "Custom";
+
+/**
+ * Optional structured data attached to a {@link CborError}, keyed by the codes
+ * that carry it. Everything is optional so callers can narrow on `code` and
+ * read only the fields relevant to that code.
+ *
+ * @deprecated Use {@link CborErrorDetailsByCode} (per-code payloads) with
+ * {@link CborErrorTyped} - narrowing on `error.code` then makes the matching
+ * detail fields non-optional. This undiscriminated bag remains for
+ * compatibility and is removed at 2.0.
+ */
+declare interface CborErrorDetails {
+    /** `UnsupportedHeaderValue`: the offending CBOR header byte. */
+    readonly headerValue?: number | undefined;
+    /** `UnusedData`: number of trailing bytes left unconsumed. */
+    readonly count?: number | undefined;
+    /** `WrongTag`: the tag that was expected. */
+    readonly expectedTag?: Tag | undefined;
+    /** `WrongTag`: the tag actually found. */
+    readonly actualTag?: Tag | undefined;
+    /** `InvalidString`/`InvalidUtf8`/`InvalidDate`: the underlying reason. */
+    readonly cause?: string | undefined;
+}
+
+/**
+ * The structured detail payload each {@link CborErrorCode} carries.
+ * Codes mapped to `unknown` attach no structured details.
+ *
+ * Prefer consuming this through {@link CborErrorTyped}: narrowing on
+ * `error.code` makes the matching payload fields non-optional.
+ */
+declare interface CborErrorDetailsByCode {
+    Underrun: unknown;
+    UnsupportedHeaderValue: {
+        readonly headerValue: number;
+    };
+    NonCanonicalNumeric: unknown;
+    InvalidSimpleValue: unknown;
+    InvalidString: {
+        readonly cause: string;
+    };
+    NonCanonicalString: unknown;
+    UnusedData: {
+        readonly count: number;
+    };
+    MisorderedMapKey: unknown;
+    DuplicateMapKey: unknown;
+    MissingMapKey: unknown;
+    OutOfRange: unknown;
+    WrongType: unknown;
+    WrongTag: {
+        readonly expectedTag: Tag;
+        readonly actualTag: Tag;
+    };
+    InvalidUtf8: {
+        readonly cause: string;
+    };
+    InvalidDate: {
+        readonly cause: string;
+    };
+    Custom: unknown;
+}
+
+/**
+ * A {@link CborError} whose `details` payload is discriminated by its `code`.
+ * With the default type argument this is the distributed union over all codes,
+ * so narrowing on `error.code` narrows `error.details` to exactly the fields
+ * that code carries:
+ *
+ * ```typescript
+ * try {
+ *   decodeCbor(bytes);
+ * } catch (e) {
+ *   if (CborError.isCborError(e) && e.code === "WrongTag") {
+ *     e.details.expectedTag; // Tag - non-optional after narrowing
+ *   }
+ * }
+ * ```
+ *
+ * The intersection with the legacy {@link CborErrorDetails} bag keeps
+ * un-narrowed `details` access compiling exactly as before.
+ */
+declare type CborErrorTyped<C extends CborErrorCode = CborErrorCode> = C extends CborErrorCode ? CborError & {
+    readonly code: C;
+    readonly details: Readonly<CborErrorDetailsByCode[C]> & CborErrorDetails;
+} : never;
 
 /**
  * Type for values that can be converted to CBOR.
@@ -774,6 +933,18 @@ declare interface CborSimpleType {
 }
 
 /**
+ * Function type for custom CBOR value summarizers.
+ *
+ * Summarizers provide custom string representations for tagged values.
+ * Returns a summary string on success, or a CborError on failure.
+ *
+ * @param cbor - The CBOR value to summarize
+ * @param flat - If true, produce single-line output
+ * @returns Result with summary string on success, or error on failure
+ */
+declare type CborSummarizer = (cbor: Cbor, flat: boolean) => SummarizerResult;
+
+/**
  * Interface for types that have associated CBOR tags.
  *
  * `cborTags()` returns tags in order of preference: the first is used when
@@ -784,12 +955,6 @@ declare interface CborTagged {
      * Returns the CBOR tags associated with this type, most-preferred first.
      */
     cborTags(): Tag[];
-}
-
-/** The pre-redesign tagged-decodable shape (replaced by a codec in Phase 3). */
-declare interface CborTaggedDecodable<T> extends CborTagged {
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
 }
 
 /** The pre-redesign tagged-encodable shape (replaced by dcbor's ToCbor in Phase 3). */
@@ -817,13 +982,41 @@ declare interface CborUnsignedType {
     readonly value: CborNumber;
 }
 
-export declare interface DigestProvider {
+export declare const defaultFormatOpts: () => EnvelopeFormatOpts;
+
+export declare const defaultMermaidOpts: () => MermaidFormatOpts;
+
+export declare function diagnostic(envelope: Envelope): string;
+
+export declare function diagnosticAnnotated(envelope: Envelope, context?: FormatContext): string;
+
+/**
+ * Specifies the format for displaying envelope digests in tree output.
+ *
+ * Ported from bc-envelope-rust/src/format/tree/format/digest.rs
+ */
+export declare enum DigestDisplayFormat {
+    /**
+     * Short format: hex-encoded first 4 bytes of the digest (8 chars),
+     * matching Rust `Digest::short_description`.
+     * This is the default format.
+     */
+    Short = "short",
+    /**
+     * Full format: complete 64 hex character digest.
+     */
+    Full = "full",
+    /**
+     * UR format: digest encoded as a UR string.
+     */
+    UR = "ur"
+}
+
+declare interface DigestProvider {
     digest(): Digest;
 }
 
-export declare function edgeLabel(edgeType: EdgeType): string | undefined;
-
-export declare enum EdgeType {
+declare enum EdgeType {
     None = "none",
     Subject = "subject",
     Assertion = "assertion",
@@ -832,9 +1025,7 @@ export declare enum EdgeType {
     Content = "content"
 }
 
-export declare function elideAction(): ObscureAction;
-
-export declare class Envelope implements DigestProvider {
+declare class Envelope implements DigestProvider {
     private readonly _case;
     private constructor();
     case(): EnvelopeCase;
@@ -1412,7 +1603,7 @@ export declare class Envelope implements DigestProvider {
     isCompressed(): boolean;
 }
 
-export declare type EnvelopeCase = {
+declare type EnvelopeCase = {
     type: "node";
     subject: Envelope;
     assertions: Envelope[];
@@ -1443,192 +1634,111 @@ export declare type EnvelopeCase = {
     value: Compressed;
 };
 
-export declare class EnvelopeCBORTagged implements CborTagged {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static cborTags(): number[];
-}
-
-export declare class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDecodable<T> {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
-export declare class EnvelopeCBORTaggedEncodable implements CborTaggedEncodable {
-    private readonly envelope;
-    constructor(envelope: Envelope);
-    cborTags(): ReturnType<typeof tagsForValues>;
-    untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
-}
-
-export declare class EnvelopeDecoder {
-    static tryFromCbor(cbor: Cbor): Envelope;
-    static tryFromCborData(data: Uint8Array): Envelope;
-}
-
-export declare interface EnvelopeEncodable {
+declare interface EnvelopeEncodable {
     intoEnvelope(): Envelope;
 }
 
-export declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
+declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
 
-export declare class EnvelopeError extends Error {
-    readonly code: ErrorCode;
-    readonly cause?: Error;
-    constructor(code: ErrorCode, message: string, cause?: Error);
-    static alreadyElided(): EnvelopeError;
-    static ambiguousPredicate(): EnvelopeError;
-    static invalidDigest(): EnvelopeError;
-    static invalidFormat(): EnvelopeError;
-    static missingDigest(): EnvelopeError;
-    static nonexistentPredicate(): EnvelopeError;
-    static notWrapped(): EnvelopeError;
-    static notLeaf(): EnvelopeError;
-    static notAssertion(): EnvelopeError;
-    static invalidAssertion(): EnvelopeError;
-    static invalidAttachment(message?: string): EnvelopeError;
-    static nonexistentAttachment(): EnvelopeError;
-    static ambiguousAttachment(): EnvelopeError;
-    static edgeMissingIsA(): EnvelopeError;
-    static edgeMissingSource(): EnvelopeError;
-    static edgeMissingTarget(): EnvelopeError;
-    static edgeDuplicateIsA(): EnvelopeError;
-    static edgeDuplicateSource(): EnvelopeError;
-    static edgeDuplicateTarget(): EnvelopeError;
-    static edgeUnexpectedAssertion(): EnvelopeError;
-    static nonexistentEdge(): EnvelopeError;
-    static ambiguousEdge(): EnvelopeError;
-    static alreadyCompressed(): EnvelopeError;
-    static notCompressed(): EnvelopeError;
-    static alreadyEncrypted(): EnvelopeError;
-    static notEncrypted(): EnvelopeError;
-    static notKnownValue(): EnvelopeError;
-    static unknownRecipient(): EnvelopeError;
-    static unknownSecret(): EnvelopeError;
-    static unverifiedSignature(): EnvelopeError;
-    static invalidOuterSignatureType(): EnvelopeError;
-    static invalidInnerSignatureType(): EnvelopeError;
-    static unverifiedInnerSignature(): EnvelopeError;
-    static invalidSignatureType(): EnvelopeError;
-    static invalidShares(): EnvelopeError;
-    static sskr(message: string, cause?: Error): EnvelopeError;
-    static invalidType(): EnvelopeError;
-    static ambiguousType(): EnvelopeError;
-    static subjectNotUnit(): EnvelopeError;
-    static unexpectedResponseId(): EnvelopeError;
-    static invalidResponse(): EnvelopeError;
-    static cbor(message: string, cause?: Error): EnvelopeError;
-    static components(message: string, cause?: Error): EnvelopeError;
-    static general(message: string, cause?: Error): EnvelopeError;
-    static msg(message: string): EnvelopeError;
+/**
+ * Hook installed by `src/index.ts` to break the circular import
+ * between `base/envelope.ts` and `format/format-context.ts`. Used by
+ * the request/response/event tag summarizers to recursively format the
+ * inner envelope.
+ */
+declare type EnvelopeFormatHook = (cbor: unknown, flat: boolean) => string;
+
+export declare type EnvelopeFormatItem = {
+    type: "begin";
+    value: string;
+} | {
+    type: "end";
+    value: string;
+} | {
+    type: "item";
+    value: string;
+} | {
+    type: "separator";
+} | {
+    type: "list";
+    items: EnvelopeFormatItem[];
+};
+
+export declare interface EnvelopeFormatOpts {
+    flat: boolean;
+    context: FormatContextOpt;
 }
 
-export declare function envelopeFromBytes(bytes: Uint8Array): Envelope;
-
-export declare function envelopeFromCbor(cbor: Cbor): Envelope;
-
-export declare function envelopeToBytes(envelope: Envelope): Uint8Array;
-
-export declare function envelopeToCbor(envelope: Envelope): Cbor;
-
-/**
- * Copyright © 2023-2026 Blockchain Commons, LLC
- * Copyright © 2025-2026 Parity Technologies
- *
- */
-export declare enum ErrorCode {
-    ALREADY_ELIDED = "ALREADY_ELIDED",
-    AMBIGUOUS_PREDICATE = "AMBIGUOUS_PREDICATE",
-    INVALID_DIGEST = "INVALID_DIGEST",
-    INVALID_FORMAT = "INVALID_FORMAT",
-    MISSING_DIGEST = "MISSING_DIGEST",
-    NONEXISTENT_PREDICATE = "NONEXISTENT_PREDICATE",
-    NOT_WRAPPED = "NOT_WRAPPED",
-    NOT_LEAF = "NOT_LEAF",
-    NOT_ASSERTION = "NOT_ASSERTION",
-    INVALID_ASSERTION = "INVALID_ASSERTION",
-    INVALID_ATTACHMENT = "INVALID_ATTACHMENT",
-    NONEXISTENT_ATTACHMENT = "NONEXISTENT_ATTACHMENT",
-    AMBIGUOUS_ATTACHMENT = "AMBIGUOUS_ATTACHMENT",
-    EDGE_MISSING_IS_A = "EDGE_MISSING_IS_A",
-    EDGE_MISSING_SOURCE = "EDGE_MISSING_SOURCE",
-    EDGE_MISSING_TARGET = "EDGE_MISSING_TARGET",
-    EDGE_DUPLICATE_IS_A = "EDGE_DUPLICATE_IS_A",
-    EDGE_DUPLICATE_SOURCE = "EDGE_DUPLICATE_SOURCE",
-    EDGE_DUPLICATE_TARGET = "EDGE_DUPLICATE_TARGET",
-    EDGE_UNEXPECTED_ASSERTION = "EDGE_UNEXPECTED_ASSERTION",
-    NONEXISTENT_EDGE = "NONEXISTENT_EDGE",
-    AMBIGUOUS_EDGE = "AMBIGUOUS_EDGE",
-    ALREADY_COMPRESSED = "ALREADY_COMPRESSED",
-    NOT_COMPRESSED = "NOT_COMPRESSED",
-    ALREADY_ENCRYPTED = "ALREADY_ENCRYPTED",
-    NOT_ENCRYPTED = "NOT_ENCRYPTED",
-    NOT_KNOWN_VALUE = "NOT_KNOWN_VALUE",
-    UNKNOWN_RECIPIENT = "UNKNOWN_RECIPIENT",
-    UNKNOWN_SECRET = "UNKNOWN_SECRET",
-    UNVERIFIED_SIGNATURE = "UNVERIFIED_SIGNATURE",
-    INVALID_OUTER_SIGNATURE_TYPE = "INVALID_OUTER_SIGNATURE_TYPE",
-    INVALID_INNER_SIGNATURE_TYPE = "INVALID_INNER_SIGNATURE_TYPE",
-    UNVERIFIED_INNER_SIGNATURE = "UNVERIFIED_INNER_SIGNATURE",
-    INVALID_SIGNATURE_TYPE = "INVALID_SIGNATURE_TYPE",
-    INVALID_SHARES = "INVALID_SHARES",
-    SSKR = "SSKR",
-    INVALID_TYPE = "INVALID_TYPE",
-    AMBIGUOUS_TYPE = "AMBIGUOUS_TYPE",
-    SUBJECT_NOT_UNIT = "SUBJECT_NOT_UNIT",
-    UNEXPECTED_RESPONSE_ID = "UNEXPECTED_RESPONSE_ID",
-    INVALID_RESPONSE = "INVALID_RESPONSE",
-    CBOR = "CBOR",
-    COMPONENTS = "COMPONENTS",
-    GENERAL = "GENERAL"
+export declare interface EnvelopeSummary {
+    envelopeSummary(maxLength: number, context: FormatContextOpt): string;
 }
 
-export declare function extractBoolean(envelope: Envelope): boolean;
+export declare const flatFormatOpts: () => EnvelopeFormatOpts;
 
-export declare function extractBytes(envelope: Envelope): Uint8Array;
+export declare function format(envelope: Envelope): string;
 
-export declare function extractNull(envelope: Envelope): null;
+export declare const formatAssertion: (assertion: Assertion, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
 
-export declare function extractNumber(envelope: Envelope): number;
+export declare const formatBegin: (value: string) => EnvelopeFormatItem;
 
-export declare function extractObjectForPredicateWithDefault<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
+export declare const formatCbor: (cbor: Cbor, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
 
-export declare function extractObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+export declare class FormatContext implements ReadonlyTagsStore {
+    private readonly _tags;
+    private readonly _knownValues;
+    constructor(tags?: TagsStore, knownValues?: KnownValuesStore);
+    tags(): TagsStore;
+    knownValues(): KnownValuesStore;
+    assignedNameForTag(tag: Tag): string | undefined;
+    nameForTag(tag: Tag): string;
+    tagForValue(value: CborNumber): Tag | undefined;
+    tagForName(name: string): Tag | undefined;
+    nameForValue(value: CborNumber): string;
+    summarizer(tag: CborNumber): CborSummarizer | undefined;
+    registerTag(value: number | bigint, name: string): void;
+    clone(): FormatContext;
+}
 
-export declare function extractString(envelope: Envelope): string;
+export declare const formatContextCustom: (context: FormatContext) => FormatContextOpt;
 
-export declare function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T;
+export declare const formatContextGlobal: () => FormatContextOpt;
 
-/**
- * Copyright © 2023-2026 Blockchain Commons, LLC
- * Copyright © 2025-2026 Parity Technologies
- *
- *
- * String utility functions used throughout the envelope library.
- *
- * Provides helper methods for string formatting and manipulation.
- */
-/**
- * Flanks a string with specified left and right delimiters.
- *
- * @param str - The string to flank
- * @param left - The left delimiter
- * @param right - The right delimiter
- * @returns The flanked string
- *
- * @example
- * ```typescript
- * flanked('hello', '"', '"')  // Returns: "hello"
- * flanked('name', "'", "'")   // Returns: 'name'
- * flanked('item', '[', ']')   // Returns: [item]
- * ```
- */
-export declare function flanked(str: string, left: string, right: string): string;
+export declare const formatContextNone: () => FormatContextOpt;
 
-export declare function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable;
+export declare type FormatContextOpt = {
+    type: "none";
+} | {
+    type: "global";
+} | {
+    type: "custom";
+    context: FormatContext;
+};
+
+export declare const formatEnd: (value: string) => EnvelopeFormatItem;
+
+export declare const formatEnvelope: (envelope: Envelope, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
+
+export declare function formatFlat(envelope: Envelope): string;
+
+export declare const formatItem: (value: string) => EnvelopeFormatItem;
+
+export declare const formatList: (items: EnvelopeFormatItem[]) => EnvelopeFormatItem;
+
+export declare function formatOpt(envelope: Envelope, opts: EnvelopeFormatOpts): string;
+
+export declare const formatSeparator: () => EnvelopeFormatItem;
+
+export declare const getGlobalFormatContext: () => FormatContext;
+
+export declare const GLOBAL_FORMAT_CONTEXT: {
+    get: () => FormatContext;
+};
+
+export declare const globalFormatContext: () => FormatContext;
+
+export declare function hex(envelope: Envelope): string;
+
+export declare function hexOpt(envelope: Envelope, annotate: boolean, context?: FormatContext): string;
 
 declare const MajorType: {
     readonly Unsigned: 0;
@@ -1648,7 +1758,34 @@ declare interface MapEntry {
     readonly value: Cbor;
 }
 
-export declare type ObscureAction = {
+export declare function mermaidFormat(envelope: Envelope): string;
+
+export declare function mermaidFormatOpt(envelope: Envelope, opts: MermaidFormatOpts): string;
+
+export declare interface MermaidFormatOpts {
+    hideNodes?: boolean;
+    monochrome?: boolean;
+    theme?: MermaidTheme;
+    orientation?: MermaidOrientation;
+    highlightingTarget?: Set<Digest>;
+}
+
+export declare enum MermaidOrientation {
+    LeftToRight = "LR",
+    TopToBottom = "TB",
+    RightToLeft = "RL",
+    BottomToTop = "BT"
+}
+
+export declare enum MermaidTheme {
+    Default = "default",
+    Neutral = "neutral",
+    Dark = "dark",
+    Forest = "forest",
+    Base = "base"
+}
+
+declare type ObscureAction = {
     type: "elide";
 } | {
     type: "encrypt";
@@ -1657,11 +1794,69 @@ export declare type ObscureAction = {
     type: "compress";
 };
 
-export declare enum ObscureType {
+declare enum ObscureType {
     Elided = "elided",
     Encrypted = "encrypted",
     Compressed = "compressed"
 }
+
+/**
+ * The read-only tags-store surface.
+ */
+declare interface ReadonlyTagsStore {
+    /**
+     * Get the assigned name for a tag, if any.
+     *
+     * @param tag - The tag to look up
+     * @returns The assigned name, or undefined if no name is registered
+     */
+    assignedNameForTag(tag: Tag): string | undefined;
+    /**
+     * Get a display name for a tag.
+     *
+     * @param tag - The tag to get a name for
+     * @returns The assigned name if available, otherwise the tag value as a string
+     */
+    nameForTag(tag: Tag): string;
+    /**
+     * Look up a tag by its numeric value.
+     *
+     * @param value - The numeric tag value
+     * @returns The Tag object if found, undefined otherwise
+     */
+    tagForValue(value: CborNumber): Tag | undefined;
+    /**
+     * Look up a tag by its name.
+     *
+     * @param name - The tag name
+     * @returns The Tag object if found, undefined otherwise
+     */
+    tagForName(name: string): Tag | undefined;
+    /**
+     * Get a display name for a tag value.
+     *
+     * @param value - The numeric tag value
+     * @returns The tag name if registered, otherwise the value as a string
+     */
+    nameForValue(value: CborNumber): string;
+    /**
+     * Get a custom summarizer function for a tag, if registered.
+     *
+     * @param tag - The numeric tag value
+     * @returns The summarizer function if registered, undefined otherwise
+     */
+    summarizer(tag: CborNumber): CborSummarizer | undefined;
+}
+
+export declare const registerMermaidExtension: () => void;
+
+export declare const registerTags: () => void;
+
+export declare const registerTagsIn: (context: FormatContext) => void;
+
+export declare const setEnvelopeFormatHook: (hook: EnvelopeFormatHook) => void;
+
+export declare function shortId(envelope: Envelope, format?: "short" | "full" | "ur"): string;
 
 /**
  * Represents CBOR simple values (major type 7).
@@ -1689,6 +1884,21 @@ declare type Simple = {
     readonly type: "Float";
     readonly value: number;
 };
+
+/**
+ * Result type for summarizer functions: a summary string or a CborError.
+ */
+declare type SummarizerResult = {
+    readonly ok: true;
+    readonly value: string;
+} | {
+    readonly ok: false;
+    readonly error: CborError;
+};
+
+export declare function summary(envelope: Envelope, maxLength?: number): string;
+
+export declare function summaryWithContext(envelope: Envelope, maxLength: number, context: FormatContext): string;
 
 /**
  * A CBOR tag with an optional name.
@@ -1729,34 +1939,68 @@ declare const Tag: {
 };
 
 /**
- * Converts an array of tag values to their corresponding Tag objects.
+ * Tag registry implementation.
  *
- * This function looks up each tag value in the global tag registry and returns
- * an array of complete Tag objects. For any tag values that aren't
- * registered in the global registry, it creates a basic Tag with just the
- * value (no name).
- *
- * @param values - Array of numeric tag values to convert
- * @returns Array of Tag objects corresponding to the input values
- *
- * @example
- * ```typescript
- * // Register some tags first
- * registerStandardTags();
- *
- * // Convert tag values to Tag objects
- * const tags = tagsForValues([1, 42, 999]);
- *
- * // The first tag (value 1) should be registered as "date"
- * console.log(tags[0].value); // 1
- * console.log(tags[0].name); // "date"
- *
- * // Unregistered tags will have a value but no name
- * console.log(tags[1].value); // 42
- * console.log(tags[2].value); // 999
- * ```
+ * Stores tags with their names and optional summarizer functions.
  */
-declare const tagsForValues: (values: (number | bigint)[]) => Tag[];
+declare class TagsStore implements ReadonlyTagsStore {
+    /** Debug label: `Object.prototype.toString` reports `[object TagsStore]`. */
+    get [Symbol.toStringTag](): string;
+    private readonly _tagsByValue;
+    private readonly _tagsByName;
+    private readonly _summarizers;
+    constructor();
+    /**
+     * Insert a tag into the registry.
+     *
+     * - Throws if the tag name is undefined or empty
+     * - Throws if a tag with the same value exists with a different name
+     * - Allows re-registering the same tag value with the same name
+     *
+     * @param tag - The tag to register (must have a non-empty name)
+     * @throws Error if tag has no name, empty name, or conflicts with existing registration
+     *
+     * @example
+     * ```typescript
+     * const store = new TagsStore();
+     * store.register(Tag.from(12345, 'myCustomTag'));
+     * ```
+     */
+    register(tag: Tag): void;
+    /**
+     * Register multiple tags; the conflict-throwing validation in `register()`
+     * applies per tag.
+     */
+    registerAll(tags: Tag[]): void;
+    /**
+     * Register a custom summarizer function for a tag.
+     *
+     * @param tagValue - The numeric tag value
+     * @param summarizer - The summarizer function
+     *
+     * @example
+     * ```typescript
+     * store.setSummarizer(1, (cbor, flat) => {
+     *   // Custom date formatting
+     *   return `Date(${extractCbor(cbor)})`;
+     * });
+     * ```
+     */
+    setSummarizer(tagValue: CborNumber, summarizer: CborSummarizer): void;
+    assignedNameForTag(tag: Tag): string | undefined;
+    nameForTag(tag: Tag): string;
+    tagForValue(value: CborNumber): Tag | undefined;
+    tagForName(name: string): Tag | undefined;
+    nameForValue(value: CborNumber): string;
+    summarizer(tag: CborNumber): CborSummarizer | undefined;
+    /**
+     * Create a string key for a numeric tag value.
+     * Handles both number and bigint types.
+     *
+     * @private
+     */
+    private _valueKey;
+}
 
 /**
  * Numeric tag value type alias.
@@ -1779,12 +2023,19 @@ declare interface ToCbor {
     toCbor(): Cbor;
 }
 
-export declare function tryObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+export declare function treeFormat(envelope: Envelope, options?: TreeFormatOptions): string;
 
-export declare function tryObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+export declare interface TreeFormatOptions {
+    hideNodes?: boolean;
+    highlightDigests?: Set<string>;
+    digestDisplay?: DigestDisplayFormat | "short" | "full" | "ur";
+    context?: FormatContext;
+}
 
-export declare function tryOptionalObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
+declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
 
-export declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
+export declare const withFormatContext: <T>(action: (context: FormatContext) => T) => T;
+
+export declare const withFormatContextMut: <T>(action: (context: FormatContext) => T) => T;
 
 export { }

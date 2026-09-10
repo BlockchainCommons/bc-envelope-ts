@@ -4,57 +4,12 @@
 
 ```ts
 
-import { ARID } from '@blockchaincommons/components';
-import { ATTACHMENT } from '@blockchaincommons/known-values';
-import { SealedMessage as ComponentsSealedMessage } from '@blockchaincommons/components';
 import { Compressed } from '@blockchaincommons/components';
-import { CONFORMS_TO } from '@blockchaincommons/known-values';
-import { Decrypter } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
-import { EDGE } from '@blockchaincommons/known-values';
 import { EncryptedMessage } from '@blockchaincommons/components';
-import { Encrypter } from '@blockchaincommons/components';
-import { IS_A } from '@blockchaincommons/known-values';
-import { KeyDerivationMethod } from '@blockchaincommons/components/kdf';
 import { KnownValue } from '@blockchaincommons/known-values';
-import { KnownValuesStore } from '@blockchaincommons/known-values';
-import { Nonce } from '@blockchaincommons/components';
-import { NOTE } from '@blockchaincommons/known-values';
-import { PrivateKeys as PrivateKeyBase } from '@blockchaincommons/components';
-import { EncapsulationPublicKey as PublicKeyBase } from '@blockchaincommons/components';
-import { RandomNumberGenerator } from '@blockchaincommons/rand';
-import { Salt } from '@blockchaincommons/components';
-import { Signature } from '@blockchaincommons/components';
-import { SIGNED } from '@blockchaincommons/known-values';
-import { Signer } from '@blockchaincommons/components';
-import { SigningOptions } from '@blockchaincommons/components';
-import { SigningPrivateKey } from '@blockchaincommons/components';
-import { SigningPublicKey } from '@blockchaincommons/components';
-import { SOURCE } from '@blockchaincommons/known-values';
-import { Spec } from '@blockchaincommons/sskr';
 import { SymmetricKey } from '@blockchaincommons/components';
-import { TARGET } from '@blockchaincommons/known-values';
 import { UR } from '@blockchaincommons/uniform-resources';
-import { VENDOR } from '@blockchaincommons/known-values';
-import { Verifier } from '@blockchaincommons/components';
-
-// @public (undocumented)
-export const ADD: Function_2;
-
-// @public (undocumented)
-export function add(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const ADD_VALUE: number;
-
-// @public (undocumented)
-export const AND: Function_2;
-
-// @public (undocumented)
-export function and(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const AND_VALUE: number;
 
 // @public (undocumented)
 export class Assertion implements DigestProvider {
@@ -83,72 +38,8 @@ export class Assertion implements DigestProvider {
     toString(): string;
 }
 
-export { ATTACHMENT }
-
-// @public
-export class Attachments {
-    constructor();
-    add(payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string): void;
-    addEnvelope(envelope: Envelope): void;
-    addToEnvelope(envelope: Envelope): Envelope;
-    clear(): void;
-    equals(other: Attachments): boolean;
-    static fromEnvelope(envelope: Envelope): Attachments;
-    get(digest: Digest): Envelope | undefined;
-    isEmpty(): boolean;
-    iter(): IterableIterator<[string, Envelope]>;
-    len(): number;
-    remove(digest: Digest): Envelope | undefined;
-}
-
-// @public (undocumented)
-export const BLANK: Parameter;
-
-// @public (undocumented)
-export const BLANK_VALUE: number;
-
-// @public (undocumented)
-export const CBOR_TAG_FUNCTION = 40006;
-
-// @public (undocumented)
-export const CBOR_TAG_PARAMETER = 40007;
-
-// @public (undocumented)
-export const CBOR_TAG_PLACEHOLDER = 40008;
-
-// @public (undocumented)
-export const CBOR_TAG_REPLACEMENT = 40009;
-
 // @public (undocumented)
 export type CborDecoder<T> = (cbor: Cbor) => T;
-
-// @public (undocumented)
-const cborEnvelopeSummary: (cbor: Cbor, maxLength: number, context: FormatContextOpt) => string;
-export { cborEnvelopeSummary }
-export { cborEnvelopeSummary as envelopeSummary }
-
-export { ComponentsSealedMessage }
-
-export { Compressed }
-
-export { CONFORMS_TO }
-
-export { Decrypter }
-
-// @public (undocumented)
-export const defaultFormatOpts: () => EnvelopeFormatOpts;
-
-// @public (undocumented)
-export const defaultMermaidOpts: () => MermaidFormatOpts;
-
-export { Digest }
-
-// @public
-export enum DigestDisplayFormat {
-    Full = "full",
-    Short = "short",
-    UR = "ur"
-}
 
 // @public (undocumented)
 export interface DigestProvider {
@@ -157,44 +48,7 @@ export interface DigestProvider {
 }
 
 // @public (undocumented)
-export const DIV: Function_2;
-
-// @public (undocumented)
-export function div(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const DIV_VALUE: number;
-
-export { EDGE }
-
-// @public
-export interface Edgeable {
-    addEdge(edgeEnvelope: Envelope): void;
-    clearEdges(): void;
-    edges(): Edges;
-    edgesMut(): Edges;
-    getEdge(digest: Digest): Envelope | undefined;
-    hasEdges(): boolean;
-    removeEdge(digest: Digest): Envelope | undefined;
-}
-
-// @public (undocumented)
 export function edgeLabel(edgeType: EdgeType): string | undefined;
-
-// @public
-export class Edges {
-    constructor();
-    add(edgeEnvelope: Envelope): void;
-    addToEnvelope(envelope: Envelope): Envelope;
-    clear(): void;
-    equals(other: Edges): boolean;
-    static fromEnvelope(envelope: Envelope): Edges;
-    get(digest: Digest): Envelope | undefined;
-    isEmpty(): boolean;
-    iter(): IterableIterator<[string, Envelope]>;
-    len(): number;
-    remove(digest: Digest): Envelope | undefined;
-}
 
 // @public (undocumented)
 export enum EdgeType {
@@ -215,345 +69,122 @@ export enum EdgeType {
 // @public (undocumented)
 export function elideAction(): ObscureAction;
 
-export { EncryptedMessage }
-
-export { Encrypter }
-
 // @public (undocumented)
 export class Envelope implements DigestProvider {
     // (undocumented)
     addAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
     // (undocumented)
     addAssertionEnvelope(assertion: Envelope): Envelope;
-    // (undocumented)
-    addAssertionEnvelopeIf: (condition: boolean, assertionEnvelope: Envelope) => Envelope;
-    // (undocumented)
-    addAssertionEnvelopes: (assertions: Envelope[]) => Envelope;
-    // (undocumented)
-    addAssertionEnvelopeSalted: (assertionEnvelope: Envelope, salted: boolean) => Envelope;
-    // (undocumented)
-    addAssertionIf: (condition: boolean, predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue) => Envelope;
-    // (undocumented)
-    addAssertions: (envelopes: Envelope[]) => Envelope;
-    // (undocumented)
-    addAssertionSalted: (predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue, salted: boolean) => Envelope;
-    // (undocumented)
-    addAttachment: (payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string) => Envelope;
-    // (undocumented)
-    addEdgeEnvelope: (edge: Envelope) => Envelope;
-    // (undocumented)
-    addNonemptyStringAssertion: (predicate: EnvelopeEncodableValue, str: string) => Envelope;
-    // (undocumented)
-    addOptionalAssertion: (predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue | undefined) => Envelope;
-    // (undocumented)
-    addOptionalAssertionEnvelope: (assertion: Envelope | undefined) => Envelope;
-    // (undocumented)
-    addOptionalAssertionEnvelopeSalted: (assertionEnvelope: Envelope | undefined, salted: boolean) => Envelope;
-    // (undocumented)
-    addRecipient: (recipient: Encrypter, contentKey: SymmetricKey, testNonce?: Nonce) => Envelope;
-    // (undocumented)
-    addSalt: () => Envelope;
-    // (undocumented)
-    addSaltBytes: (saltBytes: Uint8Array) => Envelope;
-    // (undocumented)
-    addSaltInRange: (min: number, max: number) => Envelope;
-    // (undocumented)
-    addSaltInRangeUsing: (min: number, max: number, rng: RandomNumberGenerator) => Envelope;
-    // (undocumented)
-    addSaltInstance: (salt: Salt) => Envelope;
-    // (undocumented)
-    addSaltUsing: (rng: RandomNumberGenerator) => Envelope;
-    // (undocumented)
-    addSaltWithLen: (count: number) => Envelope;
-    // (undocumented)
-    addSaltWithLength: (count: number) => Envelope;
-    // (undocumented)
-    addSaltWithLenUsing: (count: number, rng: RandomNumberGenerator) => Envelope;
-    // (undocumented)
-    addSecret: (method: KeyDerivationMethod, secret: Uint8Array, contentKey: SymmetricKey) => Envelope;
-    // (undocumented)
-    addSignature: (signer: Signer) => Envelope;
-    // (undocumented)
-    addSignatureOpt: (signer: Signer, options?: SigningOptions, metadata?: SignatureMetadata) => Envelope;
-    // (undocumented)
-    addSignatures: (signers: Signer[]) => Envelope;
-    // (undocumented)
-    addSignaturesOpt: (signersWithOptions: {
-        signer: Signer;
-        options?: SigningOptions;
-        metadata?: SignatureMetadata;
-    }[]) => Envelope;
-    // (undocumented)
-    addSignaturesWithMetadata: (signersWithMetadata: {
-        signer: Signer;
-        metadata?: SignatureMetadata;
-    }[]) => Envelope;
-    // (undocumented)
-    addSignatureWithMetadata: (signer: Signer, metadata?: SignatureMetadata) => Envelope;
-    // (undocumented)
-    addType: (object: EnvelopeEncodableValue) => Envelope;
-    // (undocumented)
-    asArray: () => readonly Cbor[] | undefined;
-    // (undocumented)
-    asAssertion: () => Envelope | undefined;
-    // (undocumented)
-    asBytes: () => Uint8Array | undefined;
-    // (undocumented)
-    asKnownValue: () => KnownValue | undefined;
-    // (undocumented)
-    asLeaf: () => Cbor | undefined;
-    // (undocumented)
-    asMap: () => CborMap | undefined;
-    // (undocumented)
-    asObject: () => Envelope | undefined;
-    // (undocumented)
-    asPredicate: () => Envelope | undefined;
-    // (undocumented)
-    assertions: () => Envelope[];
-    // (undocumented)
-    assertionsWithPredicate: (predicate: EnvelopeEncodableValue) => Envelope[];
-    // (undocumented)
-    assertionWithPredicate: (predicate: EnvelopeEncodableValue) => Envelope;
-    // (undocumented)
-    asText: () => string | undefined;
-    // (undocumented)
-    attachmentConformsTo: () => string | undefined;
-    // (undocumented)
-    attachmentPayload: () => Envelope;
-    // (undocumented)
-    attachments: () => Envelope[];
-    // (undocumented)
-    attachmentsWithVendorAndConformsTo: (vendor?: string, conformsTo?: string) => Envelope[];
-    // (undocumented)
-    attachmentVendor: () => string;
-    // (undocumented)
-    attachmentWithVendorAndConformsTo: (vendor?: string, conformsTo?: string) => Envelope;
+    addAssertionEnvelopeIf(condition: boolean, assertionEnvelope: Envelope): Envelope;
+    addAssertionEnvelopes(assertions: Envelope[]): Envelope;
+    addAssertionIf(condition: boolean, predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
+    addAssertions(envelopes: Envelope[]): Envelope;
+    addNonemptyStringAssertion(predicate: EnvelopeEncodableValue, str: string): Envelope;
+    addOptionalAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue | undefined): Envelope;
+    addOptionalAssertionEnvelope(assertion: Envelope | undefined): Envelope;
+    asArray(): readonly Cbor[] | undefined;
+    asAssertion(): Envelope | undefined;
+    asBytes(): Uint8Array | undefined;
+    asKnownValue(): KnownValue | undefined;
+    asLeaf(): Cbor | undefined;
+    asMap(): CborMap | undefined;
+    asObject(): Envelope | undefined;
+    asPredicate(): Envelope | undefined;
+    assertions(): Envelope[];
+    assertionsWithPredicate(predicate: EnvelopeEncodableValue): Envelope[];
+    assertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    asText(): string | undefined;
     // (undocumented)
     case(): EnvelopeCase;
-    // (undocumented)
-    cborBytes: () => Uint8Array;
-    // (undocumented)
-    checkSubjectUnit: () => Envelope;
-    // (undocumented)
-    checkType: (t: EnvelopeEncodableValue) => void;
-    // (undocumented)
-    checkTypeValue: (t: KnownValue) => void;
+    checkSubjectUnit(): Envelope;
     // (undocumented)
     clone(): Envelope;
     // (undocumented)
-    compress: () => Envelope;
-    // (undocumented)
-    compressSubject: () => Envelope;
-    // (undocumented)
-    confirmContainsSet: (target: Set<Digest>, proof: Envelope) => boolean;
-    // (undocumented)
-    confirmContainsTarget: (target: Envelope, proof: Envelope) => boolean;
-    // (undocumented)
-    decompress: () => Envelope;
-    // (undocumented)
-    decompressSubject: () => Envelope;
-    // (undocumented)
-    decrypt: (key: SymmetricKey) => Envelope;
-    // (undocumented)
-    decryptSubject: (key: SymmetricKey) => Envelope;
-    // (undocumented)
-    decryptSubjectToRecipient: (recipient: Decrypter) => Envelope;
-    // (undocumented)
-    decryptToRecipient: (recipient: Decrypter) => Envelope;
-    // (undocumented)
-    deepDigests: () => Set<Digest>;
-    // (undocumented)
-    diagnostic: () => string;
-    // (undocumented)
-    diagnosticAnnotated: (context?: FormatContext) => string;
+    compress(): Envelope;
+    compressSubject(): Envelope;
+    decompress(): Envelope;
+    decompressSubject(): Envelope;
+    decrypt(key: SymmetricKey): Envelope;
+    decryptSubject(key: SymmetricKey): Envelope;
+    deepDigests(): Set<Digest>;
     // (undocumented)
     digest(): Digest;
+    digests(levelLimit: number): Set<Digest>;
+    elementsCount(): number;
+    elide(): Envelope;
+    elideRemovingArray(target: DigestProvider[]): Envelope;
+    elideRemovingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
+    elideRemovingSet(target: Set<Digest>): Envelope;
+    elideRemovingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
+    elideRemovingTarget(target: DigestProvider): Envelope;
+    elideRemovingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
+    elideRevealingArray(target: DigestProvider[]): Envelope;
+    elideRevealingArrayWithAction(target: DigestProvider[], action: ObscureAction): Envelope;
+    elideRevealingSet(target: Set<Digest>): Envelope;
+    elideRevealingSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
+    elideRevealingTarget(target: DigestProvider): Envelope;
+    elideRevealingTargetWithAction(target: DigestProvider, action: ObscureAction): Envelope;
+    elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
+    encrypt(key: SymmetricKey): Envelope;
     // (undocumented)
-    digests: (levelLimit: number) => Set<Digest>;
+    encryptSubject(key: SymmetricKey): Envelope;
+    expectLeaf(): unknown;
     // (undocumented)
-    edgeIsA: () => Envelope;
+    extractBoolean(): boolean;
     // (undocumented)
-    edges: () => Envelope[];
+    extractBytes(): Uint8Array;
     // (undocumented)
-    edgesMatching: (isA?: Envelope, source?: Envelope, target?: Envelope, subject?: Envelope) => Envelope[];
+    extractNull(): null;
     // (undocumented)
-    edgeSource: () => Envelope;
-    // (undocumented)
-    edgeSubject: () => Envelope;
-    // (undocumented)
-    edgeTarget: () => Envelope;
-    // (undocumented)
-    elementsCount: () => number;
-    // (undocumented)
-    elide: () => Envelope;
-    // (undocumented)
-    elideRemovingArray: (target: DigestProvider[]) => Envelope;
-    // (undocumented)
-    elideRemovingArrayWithAction: (target: DigestProvider[], action: ObscureAction) => Envelope;
-    // (undocumented)
-    elideRemovingSet: (target: Set<Digest>) => Envelope;
-    // (undocumented)
-    elideRemovingSetWithAction: (target: Set<Digest>, action: ObscureAction) => Envelope;
-    // (undocumented)
-    elideRemovingTarget: (target: DigestProvider) => Envelope;
-    // (undocumented)
-    elideRemovingTargetWithAction: (target: DigestProvider, action: ObscureAction) => Envelope;
-    // (undocumented)
-    elideRevealingArray: (target: DigestProvider[]) => Envelope;
-    // (undocumented)
-    elideRevealingArrayWithAction: (target: DigestProvider[], action: ObscureAction) => Envelope;
-    // (undocumented)
-    elideRevealingSet: (target: Set<Digest>) => Envelope;
-    // (undocumented)
-    elideRevealingSetWithAction: (target: Set<Digest>, action: ObscureAction) => Envelope;
-    // (undocumented)
-    elideRevealingTarget: (target: DigestProvider) => Envelope;
-    // (undocumented)
-    elideRevealingTargetWithAction: (target: DigestProvider, action: ObscureAction) => Envelope;
-    // (undocumented)
-    elideSetWithAction: (target: Set<Digest>, action: ObscureAction) => Envelope;
-    // (undocumented)
-    encrypt: (key: SymmetricKey) => Envelope;
-    // (undocumented)
-    encryptSubject: (key: SymmetricKey) => Envelope;
-    // (undocumented)
-    encryptSubjectToRecipient: (recipient: Encrypter) => Envelope;
-    // (undocumented)
-    encryptSubjectToRecipients: (recipients: Encrypter[]) => Envelope;
-    // (undocumented)
-    encryptToRecipient: (recipient: Encrypter) => Envelope;
-    // (undocumented)
-    encryptToRecipients: (recipients: Encrypter[]) => Envelope;
-    // (undocumented)
-    expectLeaf: () => unknown;
-    // (undocumented)
-    extractBoolean: () => boolean;
-    // (undocumented)
-    extractBytes: () => Uint8Array;
-    // (undocumented)
-    extractNull: () => null;
-    // (undocumented)
-    extractNumber: () => number;
-    // (undocumented)
-    extractObjectForPredicateWithDefault: <T>(predicate: EnvelopeEncodableValue, decoder: (cbor: Cbor) => T, defaultValue: T) => T;
-    // (undocumented)
-    extractObjectsForPredicate: <T>(predicate: EnvelopeEncodableValue, decoder: (cbor: Cbor) => T) => T[];
-    // (undocumented)
-    extractString: () => string;
-    // (undocumented)
-    extractSubject: <T>(decoder: (cbor: Cbor) => T) => T;
-    // (undocumented)
-    format: () => string;
-    // (undocumented)
-    formatFlat: () => string;
-    // (undocumented)
-    formatOpt: (opts: EnvelopeFormatOpts) => string;
+    extractNumber(): number;
+    extractObjectForPredicateWithDefault<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
+    extractObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+    extractString(): string;
+    extractSubject<T>(decoder: CborDecoder<T>): T;
+    static false(): Envelope;
     // (undocumented)
     static fromCase(envelopeCase: EnvelopeCase): Envelope;
     // (undocumented)
     static fromTaggedCbor(cbor: Cbor): Envelope;
     // (undocumented)
     static fromUntaggedCbor(cbor: Cbor): Envelope;
+    static fromUR(ur: UR): Envelope;
     // (undocumented)
-    static fromUR: (ur: UR) => Envelope;
-    // (undocumented)
-    static fromURString: (urString: string) => Envelope;
-    // (undocumented)
-    static fromUrString: (urString: string) => Envelope;
-    // (undocumented)
-    getType: () => Envelope;
-    // (undocumented)
-    hasAssertions: () => boolean;
-    // (undocumented)
-    hasSignatureFrom: (verifier: Verifier) => boolean;
-    // (undocumented)
-    hasSignatureFromReturningMetadata: (verifier: Verifier) => Envelope | undefined;
-    // (undocumented)
-    hasSignaturesFrom: (verifiers: Verifier[]) => boolean;
-    // (undocumented)
-    hasSignaturesFromThreshold: (verifiers: Verifier[], threshold?: number) => boolean;
-    // (undocumented)
-    hasType: (t: EnvelopeEncodableValue) => boolean;
-    // (undocumented)
-    hasTypeValue: (t: KnownValue) => boolean;
-    // (undocumented)
-    hex: () => string;
-    // (undocumented)
-    hexOpt: (annotate: boolean, context?: FormatContext) => string;
-    // (undocumented)
-    isAssertion: () => boolean;
-    // (undocumented)
-    isBool: () => boolean;
-    // (undocumented)
-    isCompressed: () => boolean;
-    // (undocumented)
-    isElided: () => boolean;
-    // (undocumented)
-    isEncrypted: () => boolean;
-    // (undocumented)
-    isEquivalentTo: (other: Envelope) => boolean;
-    // (undocumented)
-    isFalse: () => boolean;
-    // (undocumented)
-    isIdenticalTo: (other: Envelope) => boolean;
-    // (undocumented)
-    isInternal: () => boolean;
-    // (undocumented)
-    isKnownValue: () => boolean;
-    // (undocumented)
-    isLeaf: () => boolean;
-    // (undocumented)
-    isLockedWithPassword: () => boolean;
-    // (undocumented)
-    isLockedWithSshAgent: () => boolean;
-    // (undocumented)
-    isNaN: () => boolean;
-    // (undocumented)
-    isNode: () => boolean;
-    // (undocumented)
-    isNull: () => boolean;
-    // (undocumented)
-    isNumber: () => boolean;
-    // (undocumented)
-    isObscured: () => boolean;
+    static fromURString(urString: string): Envelope;
+    static fromUrString(urString: string): Envelope;
+    hasAssertions(): boolean;
+    isAssertion(): boolean;
+    isBool(): boolean;
+    isCompressed(): boolean;
+    isElided(): boolean;
+    isEncrypted(): boolean;
+    isEquivalentTo(other: Envelope): boolean;
+    isFalse(): boolean;
+    isIdenticalTo(other: Envelope): boolean;
+    isInternal(): boolean;
+    isKnownValue(): boolean;
+    isLeaf(): boolean;
+    isNaN(): boolean;
+    isNode(): boolean;
+    isNull(): boolean;
+    isNumber(): boolean;
+    isObscured(): boolean;
     // (undocumented)
     isSubjectAssertion(): boolean;
-    // (undocumented)
-    isSubjectCompressed: () => boolean;
-    // (undocumented)
-    isSubjectElided: () => boolean;
-    // (undocumented)
-    isSubjectEncrypted: () => boolean;
-    // (undocumented)
-    isSubjectNaN: () => boolean;
-    // (undocumented)
-    isSubjectNumber: () => boolean;
+    isSubjectCompressed(): boolean;
+    isSubjectElided(): boolean;
+    isSubjectEncrypted(): boolean;
+    isSubjectNaN(): boolean;
+    isSubjectNumber(): boolean;
     // (undocumented)
     isSubjectObscured(): boolean;
-    // (undocumented)
-    isSubjectUnit: () => boolean;
-    // (undocumented)
-    isTrue: () => boolean;
-    // (undocumented)
-    isVerifiedSignature: (signature: Signature, verifier: Verifier) => boolean;
-    // (undocumented)
-    isWrapped: () => boolean;
-    // (undocumented)
-    lock: (method: KeyDerivationMethod, secret: Uint8Array) => Envelope;
-    // (undocumented)
-    lockSubject: (method: KeyDerivationMethod, secret: Uint8Array) => Envelope;
-    // (undocumented)
-    makeSignedAssertion: (signature: Signature, note?: string) => Envelope;
-    // (undocumented)
-    mermaidFormat: () => string;
-    // (undocumented)
-    mermaidFormatOpt: (opts: MermaidFormatOpts) => string;
+    isSubjectUnit(): boolean;
+    isTrue(): boolean;
+    isWrapped(): boolean;
     // (undocumented)
     static new(subject: EnvelopeEncodableValue): Envelope;
     // (undocumented)
     static newAssertion(predicate: EnvelopeEncodableValue, object: EnvelopeEncodableValue): Envelope;
-    // (undocumented)
-    static newAttachment: (payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string) => Envelope;
     // (undocumented)
     static newElided(digest: Digest): Envelope;
     // (undocumented)
@@ -576,155 +207,55 @@ export class Envelope implements DigestProvider {
     static newWithUncheckedAssertions(subject: Envelope, uncheckedAssertions: Envelope[]): Envelope;
     // (undocumented)
     static newWrapped(envelope: Envelope): Envelope;
-    // (undocumented)
-    nodesMatching: (targetDigests: Set<Digest> | undefined, obscureTypes: ObscureType[]) => Set<Digest>;
+    nodesMatching(targetDigests: Set<Digest> | undefined, obscureTypes: ObscureType[]): Set<Digest>;
     // (undocumented)
     static null(): Envelope;
-    // (undocumented)
-    object: () => Envelope;
-    // (undocumented)
-    objectForPredicate: (predicate: EnvelopeEncodableValue) => Envelope;
-    // (undocumented)
-    objectsForPredicate: (predicate: EnvelopeEncodableValue) => Envelope[];
-    // (undocumented)
-    optionalAssertionWithPredicate: (predicate: EnvelopeEncodableValue) => Envelope | undefined;
-    // (undocumented)
-    optionalObjectForPredicate: (predicate: EnvelopeEncodableValue) => Envelope | undefined;
-    // (undocumented)
-    position: () => number;
-    // (undocumented)
-    predicate: () => Envelope;
-    // (undocumented)
-    proofContainsSet: (target: Set<Digest>) => Envelope | undefined;
-    // (undocumented)
-    proofContainsTarget: (target: Envelope) => Envelope | undefined;
-    // (undocumented)
-    recipients: () => SealedMessage[];
-    // (undocumented)
-    removeAssertion: (target: Envelope) => Envelope;
-    // (undocumented)
-    removePosition: () => Envelope;
-    // (undocumented)
-    replaceAssertion: (assertion: Envelope, newAssertion: Envelope) => Envelope;
-    // (undocumented)
-    replaceSubject: (subject: Envelope) => Envelope;
-    // (undocumented)
-    seal: (sender: Signer, recipient: Encrypter) => Envelope;
-    // (undocumented)
-    sealOpt: (sender: Signer, recipient: Encrypter, options?: SigningOptions) => Envelope;
-    // (undocumented)
-    setPosition: (position: number) => Envelope;
-    // (undocumented)
-    shallowDigests: () => Set<Digest>;
-    // (undocumented)
-    shortId: (format?: "short" | "full" | "ur") => string;
-    // (undocumented)
-    sign: (signer: Signer) => Envelope;
-    // (undocumented)
-    signatures: () => Envelope[];
-    // (undocumented)
-    signOpt: (signer: Signer, options?: SigningOptions) => Envelope;
-    // (undocumented)
-    signWithMetadata: (signer: Signer, metadata?: SignatureMetadata) => Envelope;
-    // (undocumented)
-    static sskrJoin: (envelopes: Envelope[]) => Envelope;
-    // (undocumented)
-    sskrSplit: (spec: Spec, contentKey: SymmetricKey) => Envelope[][];
-    // (undocumented)
-    sskrSplitFlattened: (spec: Spec, contentKey: SymmetricKey) => Envelope[];
-    // (undocumented)
-    sskrSplitUsing: (spec: Spec, contentKey: SymmetricKey, rng: RandomNumberGenerator) => Envelope[][];
-    // (undocumented)
-    structuralDigest: () => Digest;
+    object(): Envelope;
+    objectForPredicate(predicate: EnvelopeEncodableValue): Envelope;
+    objectsForPredicate(predicate: EnvelopeEncodableValue): Envelope[];
+    optionalAssertionWithPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    optionalObjectForPredicate(predicate: EnvelopeEncodableValue): Envelope | undefined;
+    position(): number;
+    predicate(): Envelope;
+    removeAssertion(target: Envelope): Envelope;
+    removePosition(): Envelope;
+    replaceAssertion(assertion: Envelope, newAssertion: Envelope): Envelope;
+    replaceSubject(subject: Envelope): Envelope;
+    setPosition(position: number): Envelope;
+    shallowDigests(): Set<Digest>;
+    structuralDigest(): Digest;
     // (undocumented)
     subject(): Envelope;
     // (undocumented)
-    summary: (maxLength?: number) => string;
-    // (undocumented)
-    summaryWithContext: (maxLength: number, context: FormatContext) => string;
-    // (undocumented)
     taggedCbor(): Cbor;
-    // (undocumented)
-    taggedCborData: () => Uint8Array;
-    // (undocumented)
-    toCbor: () => unknown;
+    taggedCborData(): Uint8Array;
+    toCbor(): unknown;
     // (undocumented)
     toString(): string;
-    // (undocumented)
-    treeFormat: (options?: TreeFormatOptions) => string;
-    // (undocumented)
-    tryAssertion: () => Envelope;
-    // (undocumented)
-    tryByteString: () => Uint8Array;
-    // (undocumented)
-    tryKnownValue: () => KnownValue;
-    // (undocumented)
-    tryLeaf: () => Cbor;
-    // (undocumented)
-    tryObject: () => Envelope;
-    // (undocumented)
-    tryObjectForPredicate: <T>(predicate: EnvelopeEncodableValue, decoder: (cbor: Cbor) => T) => T;
-    // (undocumented)
-    tryObjectsForPredicate: <T>(predicate: EnvelopeEncodableValue, decoder: (cbor: Cbor) => T) => T[];
-    // (undocumented)
-    tryOptionalObjectForPredicate: <T>(predicate: EnvelopeEncodableValue, decoder: (cbor: Cbor) => T) => T | undefined;
-    // (undocumented)
-    tryPredicate: () => Envelope;
-    // (undocumented)
-    tryUnwrap: () => Envelope;
-    // (undocumented)
-    types: () => Envelope[];
-    // (undocumented)
-    unelide: (envelope: Envelope) => Envelope;
-    // (undocumented)
-    static unit: () => Envelope;
-    // (undocumented)
-    unlock: (secret: Uint8Array) => Envelope;
-    // (undocumented)
-    unlockSubject: (secret: Uint8Array) => Envelope;
-    // (undocumented)
-    unseal: (senderPublicKey: Verifier, recipient: Decrypter) => Envelope;
+    static true(): Envelope;
+    tryAssertion(): Envelope;
+    tryByteString(): Uint8Array;
+    tryKnownValue(): KnownValue;
+    tryLeaf(): Cbor;
+    tryObject(): Envelope;
+    tryObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+    tryObjectsForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+    tryOptionalObjectForPredicate<T>(predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
+    tryPredicate(): Envelope;
+    tryUnwrap(): Envelope;
+    unelide(envelope: Envelope): Envelope;
+    static unit(): Envelope;
     // (undocumented)
     untaggedCbor(): Cbor;
-    // (undocumented)
-    unwrap: () => Envelope;
-    // (undocumented)
-    ur: () => UR;
-    // (undocumented)
-    urString: () => string;
-    // (undocumented)
-    validateAttachment: () => void;
-    // (undocumented)
-    validateEdge: () => void;
-    // (undocumented)
-    verify: (verifier: Verifier) => Envelope;
-    // (undocumented)
-    verifyReturningMetadata: (verifier: Verifier) => {
-        envelope: Envelope;
-        metadata: Envelope;
-    };
-    // (undocumented)
-    verifySignature: (signature: Signature, verifier: Verifier) => Envelope;
-    // (undocumented)
-    verifySignatureFrom: (verifier: Verifier) => Envelope;
-    // (undocumented)
-    verifySignatureFromReturningMetadata: (verifier: Verifier) => Envelope;
-    // (undocumented)
-    verifySignaturesFrom: (verifiers: Verifier[]) => Envelope;
-    // (undocumented)
-    verifySignaturesFromThreshold: (verifiers: Verifier[], threshold?: number) => Envelope;
-    // (undocumented)
-    walk: <State>(hideNodes: boolean, state: State, visit: Visitor<State>) => void;
-    // (undocumented)
-    walkDecompress: (targetDigests?: Set<Digest>) => Envelope;
-    // (undocumented)
-    walkDecrypt: (keys: SymmetricKey[]) => Envelope;
-    // (undocumented)
-    walkReplace: (target: Set<Digest>, replacement: Envelope) => Envelope;
-    // (undocumented)
-    walkUnelide: (envelopes: Envelope[]) => Envelope;
-    // (undocumented)
-    wrap: () => Envelope;
+    unwrap(): Envelope;
+    ur(): UR;
+    urString(): string;
+    walk<State>(hideNodes: boolean, state: State, visit: Visitor<State>): void;
+    walkDecompress(targetDigests?: Set<Digest>): Envelope;
+    walkDecrypt(keys: SymmetricKey[]): Envelope;
+    walkReplace(target: Set<Digest>, replacement: Envelope): Envelope;
+    walkUnelide(envelopes: Envelope[]): Envelope;
+    wrap(): Envelope;
 }
 
 // @public (undocumented)
@@ -919,56 +450,16 @@ export class EnvelopeError extends Error {
 }
 
 // @public (undocumented)
-export type EnvelopeFormatItem = {
-    type: "begin";
-    value: string;
-} | {
-    type: "end";
-    value: string;
-} | {
-    type: "item";
-    value: string;
-} | {
-    type: "separator";
-} | {
-    type: "list";
-    items: EnvelopeFormatItem[];
-};
-
-// @public (undocumented)
-export interface EnvelopeFormatOpts {
-    // (undocumented)
-    context: FormatContextOpt;
-    // (undocumented)
-    flat: boolean;
-}
-
-// @public (undocumented)
 export function envelopeFromBytes(bytes: Uint8Array): Envelope;
 
 // @public (undocumented)
 export function envelopeFromCbor(cbor: Cbor): Envelope;
 
 // @public (undocumented)
-export interface EnvelopeSummary {
-    // (undocumented)
-    envelopeSummary(maxLength: number, context: FormatContextOpt): string;
-}
-
-// @public (undocumented)
 export function envelopeToBytes(envelope: Envelope): Uint8Array;
 
 // @public (undocumented)
 export function envelopeToCbor(envelope: Envelope): Cbor;
-
-// @public (undocumented)
-export const EQ: Function_2;
-
-// @public (undocumented)
-export function eq(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const EQ_VALUE: number;
 
 // @public
 export enum ErrorCode {
@@ -1062,69 +553,6 @@ export enum ErrorCode {
     UNVERIFIED_SIGNATURE = "UNVERIFIED_SIGNATURE"
 }
 
-// @public
-class Event_2<T extends EnvelopeEncodableValue> implements EventBehavior<T>, EnvelopeEncodable {
-    // (undocumented)
-    content(): T;
-    // (undocumented)
-    date(): Date | undefined;
-    equals(other: Event_2<T>): boolean;
-    static fromEnvelope<T extends EnvelopeEncodableValue>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
-    // (undocumented)
-    id(): ARID;
-    intoEnvelope(): Envelope;
-    static new<T extends EnvelopeEncodableValue>(content: T, id: ARID): Event_2<T>;
-    // (undocumented)
-    note(): string;
-    static stringFromEnvelope(envelope: Envelope): Event_2<string>;
-    summary(): string;
-    toEnvelope(): Envelope;
-    toString(): string;
-    // (undocumented)
-    withDate(date: Date): Event_2<T>;
-    // (undocumented)
-    withNote(note: string): Event_2<T>;
-}
-export { Event_2 as Event }
-
-// @public
-export interface EventBehavior<T extends EnvelopeEncodableValue> {
-    content(): T;
-    date(): Date | undefined;
-    id(): ARID;
-    note(): string;
-    toEnvelope(): Envelope;
-    withDate(date: Date): Event_2<T>;
-    withNote(note: string): Event_2<T>;
-}
-
-// @public (undocumented)
-export class Expression implements EnvelopeEncodable {
-    constructor(func: Function_2);
-    // (undocumented)
-    envelope(): Envelope;
-    // (undocumented)
-    static fromEnvelope(envelope: Envelope): Expression;
-    // (undocumented)
-    function(): Function_2;
-    // (undocumented)
-    getParameter(param: ParameterID): Envelope | undefined;
-    // (undocumented)
-    hasParameter(param: ParameterID): boolean;
-    // (undocumented)
-    intoEnvelope(): Envelope;
-    // (undocumented)
-    objectsForParameter(param: ParameterID): Envelope[];
-    // (undocumented)
-    parameters(): Parameter[];
-    // (undocumented)
-    toString(): string;
-    // (undocumented)
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression;
-    // (undocumented)
-    withParameters(params: Record<string, EnvelopeEncodableValue>): Expression;
-}
-
 // @public (undocumented)
 export function extractBoolean(envelope: Envelope): boolean;
 
@@ -1153,314 +581,7 @@ export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): 
 export function flanked(str: string, left: string, right: string): string;
 
 // @public (undocumented)
-export const flatFormatOpts: () => EnvelopeFormatOpts;
-
-// @public (undocumented)
-export const formatAssertion: (assertion: Assertion, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
-
-// @public (undocumented)
-export const formatBegin: (value: string) => EnvelopeFormatItem;
-
-// @public (undocumented)
-export const formatCbor: (cbor: Cbor, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
-
-// Warning: (ae-forgotten-export) The symbol "ReadonlyTagsStore" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export class FormatContext implements ReadonlyTagsStore {
-    // Warning: (ae-forgotten-export) The symbol "TagsStore" needs to be exported by the entry point index.d.ts
-    constructor(tags?: TagsStore, knownValues?: KnownValuesStore);
-    // Warning: (ae-forgotten-export) The symbol "Tag" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    assignedNameForTag(tag: Tag): string | undefined;
-    // (undocumented)
-    clone(): FormatContext;
-    // (undocumented)
-    knownValues(): KnownValuesStore;
-    // (undocumented)
-    nameForTag(tag: Tag): string;
-    // (undocumented)
-    nameForValue(value: CborNumber): string;
-    // (undocumented)
-    registerTag(value: number | bigint, name: string): void;
-    // Warning: (ae-forgotten-export) The symbol "CborSummarizer" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    summarizer(tag: CborNumber): CborSummarizer | undefined;
-    // (undocumented)
-    tagForName(name: string): Tag | undefined;
-    // Warning: (ae-forgotten-export) The symbol "CborNumber" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    tagForValue(value: CborNumber): Tag | undefined;
-    // (undocumented)
-    tags(): TagsStore;
-}
-
-// @public (undocumented)
-export const formatContextCustom: (context: FormatContext) => FormatContextOpt;
-
-// @public (undocumented)
-export const formatContextGlobal: () => FormatContextOpt;
-
-// @public (undocumented)
-export const formatContextNone: () => FormatContextOpt;
-
-// @public (undocumented)
-export type FormatContextOpt = {
-    type: "none";
-} | {
-    type: "global";
-} | {
-    type: "custom";
-    context: FormatContext;
-};
-
-// @public (undocumented)
-export const formatEnd: (value: string) => EnvelopeFormatItem;
-
-// @public (undocumented)
-export const formatEnvelope: (envelope: Envelope, opts: EnvelopeFormatOpts) => EnvelopeFormatItem;
-
-// @public (undocumented)
-export const formatItem: (value: string) => EnvelopeFormatItem;
-
-// @public (undocumented)
-export const formatList: (items: EnvelopeFormatItem[]) => EnvelopeFormatItem;
-
-// @public (undocumented)
-export const formatSeparator: () => EnvelopeFormatItem;
-
-// @public (undocumented)
-class Function_2 implements EnvelopeEncodable {
-    // (undocumented)
-    assignedName(): string | undefined;
-    // (undocumented)
-    envelope(): Envelope;
-    // (undocumented)
-    equals(other: Function_2): boolean;
-    // (undocumented)
-    static fromNumeric(id: number): Function_2;
-    // (undocumented)
-    static fromString(name: string): Function_2;
-    // (undocumented)
-    hashCode(): number;
-    // (undocumented)
-    id(): FunctionID;
-    // (undocumented)
-    intoEnvelope(): Envelope;
-    // (undocumented)
-    isKnown(): boolean;
-    // (undocumented)
-    isNamed(): boolean;
-    // (undocumented)
-    isNumeric(): boolean;
-    // (undocumented)
-    isString(): boolean;
-    // (undocumented)
-    name(): string;
-    // (undocumented)
-    namedName(): string | undefined;
-    // (undocumented)
-    static newKnown(value: number, name?: string): Function_2;
-    // (undocumented)
-    static newNamed(name: string): Function_2;
-    // (undocumented)
-    toString(): string;
-    // (undocumented)
-    value(): number | undefined;
-    // (undocumented)
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression;
-}
-export { Function_2 as Function }
-
-// @public (undocumented)
-export const FUNCTION_IDS: {
-    readonly ADD: 1;
-    readonly SUB: 2;
-    readonly MUL: 3;
-    readonly DIV: 4;
-    readonly NEG: 5;
-    readonly LT: 6;
-    readonly LE: 7;
-    readonly GT: 8;
-    readonly GE: 9;
-    readonly EQ: 10;
-    readonly NE: 11;
-    readonly AND: 12;
-    readonly OR: 13;
-    readonly XOR: 14;
-    readonly NOT: 15;
-};
-
-// @public (undocumented)
-export type FunctionID = number | string;
-
-// @public (undocumented)
-export class FunctionsStore {
-    constructor(functions?: Iterable<Function_2>);
-    // (undocumented)
-    assignedName(func: Function_2): string | undefined;
-    // (undocumented)
-    insert(func: Function_2): void;
-    // (undocumented)
-    name(func: Function_2): string;
-    // (undocumented)
-    static nameForFunction(func: Function_2, store?: FunctionsStore): string;
-}
-
-// @public (undocumented)
-export const GE: Function_2;
-
-// @public (undocumented)
-export function ge(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const GE_VALUE: number;
-
-// @public (undocumented)
-export const getGlobalFormatContext: () => FormatContext;
-
-// @public (undocumented)
-export const GLOBAL_FORMAT_CONTEXT: {
-    get: () => FormatContext;
-};
-
-// @public (undocumented)
-export const GLOBAL_FUNCTIONS: LazyStore<FunctionsStore>;
-
-// @public (undocumented)
-export const GLOBAL_PARAMETERS: LazyStore<ParametersStore>;
-
-// @public (undocumented)
-export const globalFormatContext: () => FormatContext;
-
-// @public (undocumented)
-export const GT: Function_2;
-
-// @public (undocumented)
-export function gt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const GT_VALUE: number;
-
-// @public
-export const HAS_RECIPIENT: KnownValue;
-
-export { IS_A }
-
-// @public (undocumented)
 export function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable;
-
-// @public (undocumented)
-export class LazyStore<T> {
-    constructor(initializer: () => T);
-    // (undocumented)
-    get(): T;
-}
-
-// @public (undocumented)
-export const LE: Function_2;
-
-// @public (undocumented)
-export function le(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const LE_VALUE: number;
-
-// @public (undocumented)
-export const LHS: Parameter;
-
-// @public (undocumented)
-export const LHS_VALUE: number;
-
-// @public (undocumented)
-export const LT: Function_2;
-
-// @public (undocumented)
-export function lt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const LT_VALUE: number;
-
-// @public (undocumented)
-export interface MermaidFormatOpts {
-    // (undocumented)
-    hideNodes?: boolean;
-    // (undocumented)
-    highlightingTarget?: Set<Digest>;
-    // (undocumented)
-    monochrome?: boolean;
-    // (undocumented)
-    orientation?: MermaidOrientation;
-    // (undocumented)
-    theme?: MermaidTheme;
-}
-
-// @public (undocumented)
-export enum MermaidOrientation {
-    // (undocumented)
-    BottomToTop = "BT",
-    // (undocumented)
-    LeftToRight = "LR",
-    // (undocumented)
-    RightToLeft = "RL",
-    // (undocumented)
-    TopToBottom = "TB"
-}
-
-// @public (undocumented)
-export enum MermaidTheme {
-    // (undocumented)
-    Base = "base",
-    // (undocumented)
-    Dark = "dark",
-    // (undocumented)
-    Default = "default",
-    // (undocumented)
-    Forest = "forest",
-    // (undocumented)
-    Neutral = "neutral"
-}
-
-// @public (undocumented)
-export const MUL: Function_2;
-
-// @public (undocumented)
-export function mul(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const MUL_VALUE: number;
-
-// @public (undocumented)
-export const NE: Function_2;
-
-// @public (undocumented)
-export function ne(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const NE_VALUE: number;
-
-// @public (undocumented)
-export const NEG: Function_2;
-
-// @public (undocumented)
-export function neg(value: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const NEG_VALUE: number;
-
-// @public (undocumented)
-export const NOT: Function_2;
-
-// @public (undocumented)
-export function not(value: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const NOT_VALUE: number;
-
-export { NOTE }
 
 // @public (undocumented)
 export type ObscureAction = {
@@ -1483,276 +604,6 @@ export enum ObscureType {
 }
 
 // @public (undocumented)
-export const OR: Function_2;
-
-// @public (undocumented)
-export function or(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const OR_VALUE: number;
-
-// @public (undocumented)
-export class Parameter implements EnvelopeEncodable {
-    // (undocumented)
-    assignedName(): string | undefined;
-    // (undocumented)
-    static blank(value: EnvelopeEncodableValue): Parameter;
-    // (undocumented)
-    envelope(): Envelope;
-    // (undocumented)
-    equals(other: Parameter): boolean;
-    // (undocumented)
-    hashCode(): number;
-    // (undocumented)
-    id(): ParameterID;
-    // (undocumented)
-    intoEnvelope(): Envelope;
-    // (undocumented)
-    isKnown(): boolean;
-    // (undocumented)
-    isNamed(): boolean;
-    // (undocumented)
-    isNumeric(): boolean;
-    // (undocumented)
-    isString(): boolean;
-    // (undocumented)
-    static lhs(value: EnvelopeEncodableValue): Parameter;
-    // (undocumented)
-    name(): string;
-    // (undocumented)
-    namedName(): string | undefined;
-    // (undocumented)
-    static newKnown(value: number, name?: string): Parameter;
-    // (undocumented)
-    static newNamed(name: string): Parameter;
-    // (undocumented)
-    paramValue(): Envelope | undefined;
-    // (undocumented)
-    static rhs(value: EnvelopeEncodableValue): Parameter;
-    // (undocumented)
-    toString(): string;
-    // (undocumented)
-    value(): number | undefined;
-    // (undocumented)
-    static withValue(id: ParameterID, value: Envelope): Parameter;
-}
-
-// @public (undocumented)
-export const PARAMETER_IDS: {
-    readonly BLANK: 1;
-    readonly LHS: 2;
-    readonly RHS: 3;
-};
-
-// @public (undocumented)
-export type ParameterID = number | string;
-
-// @public (undocumented)
-export class ParametersStore {
-    constructor(parameters?: Iterable<Parameter>);
-    // (undocumented)
-    assignedName(param: Parameter): string | undefined;
-    // (undocumented)
-    insert(param: Parameter): void;
-    // (undocumented)
-    name(param: Parameter): string;
-    // (undocumented)
-    static nameForParameter(param: Parameter, store?: ParametersStore): string;
-}
-
-export { PrivateKeyBase }
-
-export { PublicKeyBase }
-
-// @public (undocumented)
-export function registerCompressExtension(): void;
-
-// @public (undocumented)
-export function registerEncryptExtension(): void;
-
-// @public (undocumented)
-export const registerMermaidExtension: () => void;
-
-// @public (undocumented)
-export function registerProofExtension(): void;
-
-// @public (undocumented)
-export const registerSealExtension: () => void;
-
-// @public (undocumented)
-export const registerSecretExtension: () => void;
-
-// @public (undocumented)
-export const registerSskrExtension: () => void;
-
-// @public (undocumented)
-export const registerTags: () => void;
-
-// @public (undocumented)
-export const registerTagsIn: (context: FormatContext) => void;
-
-// @public
-class Request_2 implements RequestBehavior, EnvelopeEncodable {
-    // (undocumented)
-    body(): Expression;
-    // (undocumented)
-    date(): Date | undefined;
-    equals(other: Request_2): boolean;
-    // (undocumented)
-    expressionEnvelope(): Envelope;
-    static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Request_2;
-    // (undocumented)
-    function(): Function_2;
-    // (undocumented)
-    id(): ARID;
-    intoEnvelope(): Envelope;
-    static new(func: Function_2 | string | number, id: ARID): Request_2;
-    static newWithBody(body: Expression, id: ARID): Request_2;
-    // (undocumented)
-    note(): string;
-    summary(): string;
-    toEnvelope(): Envelope;
-    toString(): string;
-    // (undocumented)
-    withDate(date: Date): Request_2;
-    // (undocumented)
-    withNote(note: string): Request_2;
-    // (undocumented)
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request_2;
-}
-export { Request_2 as Request }
-
-// @public
-export interface RequestBehavior {
-    body(): Expression;
-    date(): Date | undefined;
-    expressionEnvelope(): Envelope;
-    function(): Function_2;
-    id(): ARID;
-    note(): string;
-    toEnvelope(): Envelope;
-    withDate(date: Date): Request_2;
-    withNote(note: string): Request_2;
-    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request_2;
-}
-
-// @public
-class Response_2 implements ResponseBehavior, EnvelopeEncodable {
-    equals(other: Response_2): boolean;
-    // (undocumented)
-    error(): Envelope;
-    // (undocumented)
-    expectId(): ARID;
-    extractError<T>(decoder: (cbor: unknown) => T): T;
-    extractResult<T>(decoder: (cbor: unknown) => T): T;
-    static fromEnvelope(envelope: Envelope): Response_2;
-    // (undocumented)
-    id(): ARID | undefined;
-    intoEnvelope(): Envelope;
-    // (undocumented)
-    isErr(): boolean;
-    // (undocumented)
-    isOk(): boolean;
-    static newEarlyFailure(): Response_2;
-    static newFailure(id: ARID): Response_2;
-    static newSuccess(id: ARID): Response_2;
-    static ok(): Envelope;
-    // (undocumented)
-    result(): Envelope;
-    summary(): string;
-    toEnvelope(): Envelope;
-    toString(): string;
-    static unknown(): Envelope;
-    // (undocumented)
-    withError(error: EnvelopeEncodableValue): Response_2;
-    // (undocumented)
-    withOptionalError(error: EnvelopeEncodableValue | undefined): Response_2;
-    // (undocumented)
-    withOptionalResult(result: EnvelopeEncodableValue | undefined): Response_2;
-    // (undocumented)
-    withResult(result: EnvelopeEncodableValue): Response_2;
-}
-export { Response_2 as Response }
-
-// @public
-export interface ResponseBehavior {
-    error(): Envelope;
-    id(): ARID | undefined;
-    isErr(): boolean;
-    isOk(): boolean;
-    result(): Envelope;
-    toEnvelope(): Envelope;
-    withError(error: EnvelopeEncodableValue): Response_2;
-    withResult(result: EnvelopeEncodableValue): Response_2;
-}
-
-// @public (undocumented)
-export const RHS: Parameter;
-
-// @public (undocumented)
-export const RHS_VALUE: number;
-
-// @public (undocumented)
-export const SALT: KnownValue;
-
-// @public
-export class SealedMessage {
-    constructor(sealedMessage: ComponentsSealedMessage);
-    data(): Uint8Array;
-    decrypt(recipient: Decrypter): Uint8Array;
-    static fromData(data: Uint8Array): SealedMessage;
-    inner(): ComponentsSealedMessage;
-    static seal(contentKey: SymmetricKey, recipient: Encrypter, testNonce?: Nonce): SealedMessage;
-}
-
-export { Signature }
-
-// @public
-export class SignatureMetadata {
-    assertions(): readonly [EnvelopeEncodableValue, unknown][];
-    hasAssertions(): boolean;
-    static new(): SignatureMetadata;
-    withAssertion(predicate: EnvelopeEncodableValue, object: unknown): SignatureMetadata;
-}
-
-export { SIGNED }
-
-export { Signer }
-
-export { SigningOptions }
-
-export { SigningPrivateKey }
-
-export { SigningPublicKey }
-
-export { SOURCE }
-
-// @public (undocumented)
-export const SUB: Function_2;
-
-// @public (undocumented)
-export function sub(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const SUB_VALUE: number;
-
-export { SymmetricKey }
-
-export { TARGET }
-
-// @public (undocumented)
-export interface TreeFormatOptions {
-    // (undocumented)
-    context?: FormatContext;
-    // (undocumented)
-    digestDisplay?: DigestDisplayFormat | "short" | "full" | "ur";
-    // (undocumented)
-    hideNodes?: boolean;
-    // (undocumented)
-    highlightDigests?: Set<string>;
-}
-
-// @public (undocumented)
 export function tryObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
 
 // @public (undocumented)
@@ -1761,30 +612,8 @@ export function tryObjectsForPredicate<T>(envelope: Envelope, predicate: Envelop
 // @public (undocumented)
 export function tryOptionalObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
 
-export { VENDOR }
-
-export { Verifier }
-
-// @public (undocumented)
-export const VERSION = "0.37.0";
-
 // @public (undocumented)
 export type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
-
-// @public (undocumented)
-export const withFormatContext: <T>(action: (context: FormatContext) => T) => T;
-
-// @public (undocumented)
-export const withFormatContextMut: <T>(action: (context: FormatContext) => T) => T;
-
-// @public (undocumented)
-export const XOR: Function_2;
-
-// @public (undocumented)
-export function xor(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
-
-// @public (undocumented)
-export const XOR_VALUE: number;
 
 // (No @packageDocumentation comment for this package)
 

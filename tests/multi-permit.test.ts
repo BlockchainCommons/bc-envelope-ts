@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Envelope, PrivateKeyBase, SigningPrivateKey } from "../src/index.js";
+import { Envelope } from "../src/index.js";
+import { PrivateKeys as PrivateKeyBase, SigningPrivateKey } from "@blockchaincommons/components";
 import { SymmetricKey } from "@blockchaincommons/components";
 import { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
 import { Spec, GroupSpec } from "@blockchaincommons/sskr";
+import "../src/all.js";
 
 /**
  * Multi-permit tests - TypeScript port of bc-envelope-rust/tests/multi_permit_tests.rs

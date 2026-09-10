@@ -13,10 +13,11 @@
 /// The Mermaid format displays each component of an envelope as nodes in a
 /// flowchart graph, with edges showing relationships between components.
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { EdgeType, edgeLabel } from "../base/envelope";
 import type { Digest } from "../base/digest";
 import { withFormatContext } from "./format-context";
+import { summaryWithContext } from "./envelope-summary.js";
 
 // ============================================================================
 // Mermaid Types
@@ -82,12 +83,12 @@ interface MermaidElement {
 // ============================================================================
 
 /// Implementation of mermaidFormat
-Envelope.prototype.mermaidFormat = function (this: Envelope): string {
-  return this.mermaidFormatOpt(defaultMermaidOpts());
-};
+export function mermaidFormat(envelope: Envelope): string {
+  return mermaidFormatOpt(envelope, defaultMermaidOpts());
+}
 
 /// Implementation of mermaidFormatOpt
-Envelope.prototype.mermaidFormatOpt = function (this: Envelope, opts: MermaidFormatOpts): string {
+export function mermaidFormatOpt(envelope: Envelope, opts: MermaidFormatOpts): string {
   const hideNodes = opts.hideNodes ?? false;
   const monochrome = opts.monochrome ?? false;
   const theme = opts.theme ?? MermaidTheme.Default;
@@ -101,7 +102,7 @@ Envelope.prototype.mermaidFormatOpt = function (this: Envelope, opts: MermaidFor
   const parentStack: MermaidElement[] = [];
 
   // Walk the envelope and collect elements
-  this.walk(hideNodes, undefined, (envelope, level, incomingEdge, _state) => {
+  envelope.walk(hideNodes, undefined, (envelope, level, incomingEdge, _state) => {
     const id = nextId++;
 
     // Find the parent (last element at level - 1)
@@ -205,7 +206,7 @@ Envelope.prototype.mermaidFormatOpt = function (this: Envelope, opts: MermaidFor
   }
 
   return lines.join("\n");
-};
+}
 
 // ============================================================================
 // Helper Functions
@@ -230,7 +231,7 @@ const formatNode = (element: MermaidElement, formattedIds: Set<number>): string 
 
     // Get summary
     const summary = withFormatContext((ctx) => {
-      return element.envelope.summaryWithContext(20, ctx).replace(/"/g, "&quot;");
+      return summaryWithContext(element.envelope, 20, ctx).replace(/"/g, "&quot;");
     });
     lines.push(summary);
 

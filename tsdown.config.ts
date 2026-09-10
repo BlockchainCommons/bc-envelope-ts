@@ -1,7 +1,22 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: {
+    index: "src/index.ts",
+    all: "src/all.ts",
+    format: "src/format/index.ts",
+    expression: "src/expression.ts",
+    attachment: "src/extension/attachment.ts",
+    edge: "src/extension/edge.ts",
+    proof: "src/extension/proof.ts",
+    recipient: "src/extension/recipient.ts",
+    salt: "src/extension/salt.ts",
+    secret: "src/extension/secret.ts",
+    signature: "src/extension/signature.ts",
+    sskr: "src/extension/sskr.ts",
+    types: "src/extension/types.ts",
+    seal: "src/seal.ts",
+  },
   outDir: "dist",
   format: ["cjs", "esm"],
   dts: true,

@@ -1,4 +1,5 @@
 import { Envelope } from "../src";
+import "../src/all.js";
 
 describe("Proofs (Inclusion Proofs)", () => {
   describe("Basic inclusion proof", () => {

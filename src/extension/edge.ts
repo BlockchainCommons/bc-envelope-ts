@@ -21,7 +21,7 @@
  * @module edge
  */
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { type Digest } from "../base/digest";
 import { EnvelopeError } from "../base/error";
 import {
@@ -150,12 +150,11 @@ export class Edges {
    * @returns A new Edges container with the envelope's edges
    */
   static fromEnvelope(envelope: Envelope): Edges {
-    const edgeEnvelopes = envelope.edges();
-    const edges = new Edges();
-    for (const edge of edgeEnvelopes) {
-      edges._envelopes.set(edge.digest().toHex(), edge);
+    const result = new Edges();
+    for (const edge of edges(envelope)) {
+      result._envelopes.set(edge.digest().toHex(), edge);
     }
-    return edges;
+    return result;
   }
 }
 
@@ -198,18 +197,18 @@ export interface Edgeable {
  *
  * Equivalent to Rust's `Envelope::add_edge_envelope()`.
  */
-Envelope.prototype.addEdgeEnvelope = function (this: Envelope, edge: Envelope): Envelope {
-  return this.addAssertion(EDGE, edge);
-};
+export function addEdgeEnvelope(envelope: Envelope, edge: Envelope): Envelope {
+  return envelope.addAssertion(EDGE, edge);
+}
 
 /**
  * Returns all edge object envelopes (assertions with predicate `'edge'`).
  *
  * Equivalent to Rust's `Envelope::edges()`.
  */
-Envelope.prototype.edges = function (this: Envelope): Envelope[] {
-  return this.objectsForPredicate(EDGE);
-};
+export function edges(envelope: Envelope): Envelope[] {
+  return envelope.objectsForPredicate(EDGE);
+}
 
 /**
  * Validates an edge envelope's structure per BCR-2026-003.
@@ -224,8 +223,8 @@ Envelope.prototype.edges = function (this: Envelope): Envelope[] {
  *   duplicated, or if any other assertion is present
  *   (`edgeUnexpectedAssertion`).
  */
-Envelope.prototype.validateEdge = function (this: Envelope): void {
-  const inner = this.subject().isWrapped() ? this.subject().tryUnwrap() : this;
+export function validateEdge(envelope: Envelope): void {
+  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
 
   let seenIsA = false;
   let seenSource = false;
@@ -273,47 +272,47 @@ Envelope.prototype.validateEdge = function (this: Envelope): void {
   if (!seenTarget) {
     throw EnvelopeError.edgeMissingTarget();
   }
-};
+}
 
 /**
  * Extracts the `'isA'` assertion object from an edge envelope.
  *
  * Equivalent to Rust's `Envelope::edge_is_a()`.
  */
-Envelope.prototype.edgeIsA = function (this: Envelope): Envelope {
-  const inner = this.subject().isWrapped() ? this.subject().tryUnwrap() : this;
+export function edgeIsA(envelope: Envelope): Envelope {
+  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
   return inner.objectForPredicate(IS_A);
-};
+}
 
 /**
  * Extracts the `'source'` assertion object from an edge envelope.
  *
  * Equivalent to Rust's `Envelope::edge_source()`.
  */
-Envelope.prototype.edgeSource = function (this: Envelope): Envelope {
-  const inner = this.subject().isWrapped() ? this.subject().tryUnwrap() : this;
+export function edgeSource(envelope: Envelope): Envelope {
+  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
   return inner.objectForPredicate(SOURCE);
-};
+}
 
 /**
  * Extracts the `'target'` assertion object from an edge envelope.
  *
  * Equivalent to Rust's `Envelope::edge_target()`.
  */
-Envelope.prototype.edgeTarget = function (this: Envelope): Envelope {
-  const inner = this.subject().isWrapped() ? this.subject().tryUnwrap() : this;
+export function edgeTarget(envelope: Envelope): Envelope {
+  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
   return inner.objectForPredicate(TARGET);
-};
+}
 
 /**
  * Extracts the edge's subject identifier (the inner envelope's subject).
  *
  * Equivalent to Rust's `Envelope::edge_subject()`.
  */
-Envelope.prototype.edgeSubject = function (this: Envelope): Envelope {
-  const inner = this.subject().isWrapped() ? this.subject().tryUnwrap() : this;
+export function edgeSubject(envelope: Envelope): Envelope {
+  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
   return inner.subject();
-};
+}
 
 /**
  * Filters edges by optional criteria.
@@ -329,21 +328,21 @@ Envelope.prototype.edgeSubject = function (this: Envelope): Envelope {
  * @param subject - Optional subject envelope to match
  * @returns Array of matching edge envelopes
  */
-Envelope.prototype.edgesMatching = function (
-  this: Envelope,
+export function edgesMatching(
+  envelope: Envelope,
   isA?: Envelope,
   source?: Envelope,
   target?: Envelope,
   subject?: Envelope,
 ): Envelope[] {
-  const allEdges = this.edges();
+  const allEdges = edges(envelope);
   const matching: Envelope[] = [];
 
   for (const edge of allEdges) {
     if (isA !== undefined) {
       try {
-        const edgeIsA = edge.edgeIsA();
-        if (!edgeIsA.isEquivalentTo(isA)) {
+        const isAValue = edgeIsA(edge);
+        if (!isAValue.isEquivalentTo(isA)) {
           continue;
         }
       } catch {
@@ -353,8 +352,8 @@ Envelope.prototype.edgesMatching = function (
 
     if (source !== undefined) {
       try {
-        const edgeSource = edge.edgeSource();
-        if (!edgeSource.isEquivalentTo(source)) {
+        const sourceValue = edgeSource(edge);
+        if (!sourceValue.isEquivalentTo(source)) {
           continue;
         }
       } catch {
@@ -364,8 +363,8 @@ Envelope.prototype.edgesMatching = function (
 
     if (target !== undefined) {
       try {
-        const edgeTarget = edge.edgeTarget();
-        if (!edgeTarget.isEquivalentTo(target)) {
+        const targetValue = edgeTarget(edge);
+        if (!targetValue.isEquivalentTo(target)) {
           continue;
         }
       } catch {
@@ -375,8 +374,8 @@ Envelope.prototype.edgesMatching = function (
 
     if (subject !== undefined) {
       try {
-        const edgeSubject = edge.edgeSubject();
-        if (!edgeSubject.isEquivalentTo(subject)) {
+        const subjectValue = edgeSubject(edge);
+        if (!subjectValue.isEquivalentTo(subject)) {
           continue;
         }
       } catch {
@@ -388,4 +387,4 @@ Envelope.prototype.edgesMatching = function (
   }
 
   return matching;
-};
+}

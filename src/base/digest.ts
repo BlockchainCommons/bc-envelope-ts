@@ -13,8 +13,9 @@
  * This re-export ensures type compatibility between @blockchaincommons/envelope
  * and @blockchaincommons/components when used together.
  */
-export { Digest } from "@blockchaincommons/components";
 import { Digest } from "@blockchaincommons/components";
+// Internal modules take Digest from here; the public barrels do not re-export it.
+export { Digest };
 
 /// Trait for types that can provide a digest.
 ///

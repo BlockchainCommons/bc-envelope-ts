@@ -26,6 +26,7 @@ import { RESULT, ERROR, OK_VALUE, UNKNOWN_VALUE } from "@blockchaincommons/known
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
+import { formatFlat } from "../format/notation.js";
 
 /**
  * Type representing a successful response: (ARID, result envelope)
@@ -191,11 +192,11 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
    */
   summary(): string {
     if (this._result.ok) {
-      return `id: ${this._result.id.shortDescription()}, result: ${this._result.result.formatFlat()}`;
+      return `id: ${this._result.id.shortDescription()}, result: ${formatFlat(this._result.result)}`;
     } else {
       const idStr =
         this._result.id !== undefined ? this._result.id.shortDescription() : "'Unknown'";
-      return `id: ${idStr}, error: ${this._result.error.formatFlat()}`;
+      return `id: ${idStr}, error: ${formatFlat(this._result.error)}`;
     }
   }
 

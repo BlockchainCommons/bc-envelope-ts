@@ -24,7 +24,7 @@ import {
 } from "@blockchaincommons/dcbor";
 import { diagnostic, type DiagFormatOpts } from "@blockchaincommons/dcbor/diagnostic";
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import {
   type FormatContext,
   type FormatContextOpt,
@@ -117,12 +117,12 @@ export const cborEnvelopeSummary = (
 // ============================================================================
 
 /// Implementation of summaryWithContext
-Envelope.prototype.summaryWithContext = function (
-  this: Envelope,
+export function summaryWithContext(
+  envelope: Envelope,
   maxLength: number,
   context: FormatContext,
 ): string {
-  const c = this.case();
+  const c = envelope.case();
 
   switch (c.type) {
     case "node":
@@ -158,7 +158,7 @@ Envelope.prototype.summaryWithContext = function (
     default:
       return "UNKNOWN";
   }
-};
+}
 
 // ============================================================================
 // Exports

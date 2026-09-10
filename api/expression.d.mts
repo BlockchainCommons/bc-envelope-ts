@@ -1,3 +1,4 @@
+import { ARID } from '@blockchaincommons/components';
 import { Compressed } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
 import { EncryptedMessage } from '@blockchaincommons/components';
@@ -5,7 +6,19 @@ import { KnownValue } from '@blockchaincommons/known-values';
 import { SymmetricKey } from '@blockchaincommons/components';
 import { UR } from '@blockchaincommons/uniform-resources';
 
-export declare class Assertion implements DigestProvider {
+export declare const ADD: Function_2;
+
+export declare function add(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const ADD_VALUE: number;
+
+export declare const AND: Function_2;
+
+export declare function and(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const AND_VALUE: number;
+
+declare class Assertion implements DigestProvider {
     private readonly _predicate;
     private readonly _object;
     private readonly _digest;
@@ -20,6 +33,10 @@ export declare class Assertion implements DigestProvider {
     toString(): string;
     clone(): Assertion;
 }
+
+export declare const BLANK: Parameter;
+
+export declare const BLANK_VALUE: number;
 
 /**
  * Represents a CBOR byte string (major type 2).
@@ -212,6 +229,14 @@ declare class ByteString {
  * `decodeCbor(bytes)`.
  */
 declare type Cbor = (CborUnsignedType | CborNegativeType | CborByteStringType | CborTextType | CborArrayType | CborMapType | CborTaggedType | CborSimpleType) & CborMethods;
+
+export declare const CBOR_TAG_FUNCTION = 40006;
+
+export declare const CBOR_TAG_PARAMETER = 40007;
+
+export declare const CBOR_TAG_PLACEHOLDER = 40008;
+
+export declare const CBOR_TAG_REPLACEMENT = 40009;
 
 declare interface CborArrayType {
     readonly isCbor: true;
@@ -589,7 +614,7 @@ declare class CborDate implements CborTagged {
     private constructor();
 }
 
-export declare type CborDecoder<T> = (cbor: Cbor) => T;
+declare type CborDecoder<T> = (cbor: Cbor) => T;
 
 /**
  * Type for values that can be converted to CBOR.
@@ -786,12 +811,6 @@ declare interface CborTagged {
     cborTags(): Tag[];
 }
 
-/** The pre-redesign tagged-decodable shape (replaced by a codec in Phase 3). */
-declare interface CborTaggedDecodable<T> extends CborTagged {
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
 /** The pre-redesign tagged-encodable shape (replaced by dcbor's ToCbor in Phase 3). */
 declare interface CborTaggedEncodable extends CborTagged {
     untaggedCbor(): Cbor;
@@ -817,13 +836,17 @@ declare interface CborUnsignedType {
     readonly value: CborNumber;
 }
 
-export declare interface DigestProvider {
+declare interface DigestProvider {
     digest(): Digest;
 }
 
-export declare function edgeLabel(edgeType: EdgeType): string | undefined;
+export declare const DIV: Function_2;
 
-export declare enum EdgeType {
+export declare function div(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const DIV_VALUE: number;
+
+declare enum EdgeType {
     None = "none",
     Subject = "subject",
     Assertion = "assertion",
@@ -832,9 +855,7 @@ export declare enum EdgeType {
     Content = "content"
 }
 
-export declare function elideAction(): ObscureAction;
-
-export declare class Envelope implements DigestProvider {
+declare class Envelope implements DigestProvider {
     private readonly _case;
     private constructor();
     case(): EnvelopeCase;
@@ -1412,7 +1433,7 @@ export declare class Envelope implements DigestProvider {
     isCompressed(): boolean;
 }
 
-export declare type EnvelopeCase = {
+declare type EnvelopeCase = {
     type: "node";
     subject: Envelope;
     assertions: Envelope[];
@@ -1443,192 +1464,239 @@ export declare type EnvelopeCase = {
     value: Compressed;
 };
 
-export declare class EnvelopeCBORTagged implements CborTagged {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static cborTags(): number[];
-}
-
-export declare class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDecodable<T> {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
-export declare class EnvelopeCBORTaggedEncodable implements CborTaggedEncodable {
-    private readonly envelope;
-    constructor(envelope: Envelope);
-    cborTags(): ReturnType<typeof tagsForValues>;
-    untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
-}
-
-export declare class EnvelopeDecoder {
-    static tryFromCbor(cbor: Cbor): Envelope;
-    static tryFromCborData(data: Uint8Array): Envelope;
-}
-
-export declare interface EnvelopeEncodable {
+declare interface EnvelopeEncodable {
     intoEnvelope(): Envelope;
 }
 
-export declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
+declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
 
-export declare class EnvelopeError extends Error {
-    readonly code: ErrorCode;
-    readonly cause?: Error;
-    constructor(code: ErrorCode, message: string, cause?: Error);
-    static alreadyElided(): EnvelopeError;
-    static ambiguousPredicate(): EnvelopeError;
-    static invalidDigest(): EnvelopeError;
-    static invalidFormat(): EnvelopeError;
-    static missingDigest(): EnvelopeError;
-    static nonexistentPredicate(): EnvelopeError;
-    static notWrapped(): EnvelopeError;
-    static notLeaf(): EnvelopeError;
-    static notAssertion(): EnvelopeError;
-    static invalidAssertion(): EnvelopeError;
-    static invalidAttachment(message?: string): EnvelopeError;
-    static nonexistentAttachment(): EnvelopeError;
-    static ambiguousAttachment(): EnvelopeError;
-    static edgeMissingIsA(): EnvelopeError;
-    static edgeMissingSource(): EnvelopeError;
-    static edgeMissingTarget(): EnvelopeError;
-    static edgeDuplicateIsA(): EnvelopeError;
-    static edgeDuplicateSource(): EnvelopeError;
-    static edgeDuplicateTarget(): EnvelopeError;
-    static edgeUnexpectedAssertion(): EnvelopeError;
-    static nonexistentEdge(): EnvelopeError;
-    static ambiguousEdge(): EnvelopeError;
-    static alreadyCompressed(): EnvelopeError;
-    static notCompressed(): EnvelopeError;
-    static alreadyEncrypted(): EnvelopeError;
-    static notEncrypted(): EnvelopeError;
-    static notKnownValue(): EnvelopeError;
-    static unknownRecipient(): EnvelopeError;
-    static unknownSecret(): EnvelopeError;
-    static unverifiedSignature(): EnvelopeError;
-    static invalidOuterSignatureType(): EnvelopeError;
-    static invalidInnerSignatureType(): EnvelopeError;
-    static unverifiedInnerSignature(): EnvelopeError;
-    static invalidSignatureType(): EnvelopeError;
-    static invalidShares(): EnvelopeError;
-    static sskr(message: string, cause?: Error): EnvelopeError;
-    static invalidType(): EnvelopeError;
-    static ambiguousType(): EnvelopeError;
-    static subjectNotUnit(): EnvelopeError;
-    static unexpectedResponseId(): EnvelopeError;
-    static invalidResponse(): EnvelopeError;
-    static cbor(message: string, cause?: Error): EnvelopeError;
-    static components(message: string, cause?: Error): EnvelopeError;
-    static general(message: string, cause?: Error): EnvelopeError;
-    static msg(message: string): EnvelopeError;
-}
+export declare const EQ: Function_2;
 
-export declare function envelopeFromBytes(bytes: Uint8Array): Envelope;
+export declare function eq(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
 
-export declare function envelopeFromCbor(cbor: Cbor): Envelope;
-
-export declare function envelopeToBytes(envelope: Envelope): Uint8Array;
-
-export declare function envelopeToCbor(envelope: Envelope): Cbor;
+export declare const EQ_VALUE: number;
 
 /**
- * Copyright © 2023-2026 Blockchain Commons, LLC
- * Copyright © 2025-2026 Parity Technologies
- *
- */
-export declare enum ErrorCode {
-    ALREADY_ELIDED = "ALREADY_ELIDED",
-    AMBIGUOUS_PREDICATE = "AMBIGUOUS_PREDICATE",
-    INVALID_DIGEST = "INVALID_DIGEST",
-    INVALID_FORMAT = "INVALID_FORMAT",
-    MISSING_DIGEST = "MISSING_DIGEST",
-    NONEXISTENT_PREDICATE = "NONEXISTENT_PREDICATE",
-    NOT_WRAPPED = "NOT_WRAPPED",
-    NOT_LEAF = "NOT_LEAF",
-    NOT_ASSERTION = "NOT_ASSERTION",
-    INVALID_ASSERTION = "INVALID_ASSERTION",
-    INVALID_ATTACHMENT = "INVALID_ATTACHMENT",
-    NONEXISTENT_ATTACHMENT = "NONEXISTENT_ATTACHMENT",
-    AMBIGUOUS_ATTACHMENT = "AMBIGUOUS_ATTACHMENT",
-    EDGE_MISSING_IS_A = "EDGE_MISSING_IS_A",
-    EDGE_MISSING_SOURCE = "EDGE_MISSING_SOURCE",
-    EDGE_MISSING_TARGET = "EDGE_MISSING_TARGET",
-    EDGE_DUPLICATE_IS_A = "EDGE_DUPLICATE_IS_A",
-    EDGE_DUPLICATE_SOURCE = "EDGE_DUPLICATE_SOURCE",
-    EDGE_DUPLICATE_TARGET = "EDGE_DUPLICATE_TARGET",
-    EDGE_UNEXPECTED_ASSERTION = "EDGE_UNEXPECTED_ASSERTION",
-    NONEXISTENT_EDGE = "NONEXISTENT_EDGE",
-    AMBIGUOUS_EDGE = "AMBIGUOUS_EDGE",
-    ALREADY_COMPRESSED = "ALREADY_COMPRESSED",
-    NOT_COMPRESSED = "NOT_COMPRESSED",
-    ALREADY_ENCRYPTED = "ALREADY_ENCRYPTED",
-    NOT_ENCRYPTED = "NOT_ENCRYPTED",
-    NOT_KNOWN_VALUE = "NOT_KNOWN_VALUE",
-    UNKNOWN_RECIPIENT = "UNKNOWN_RECIPIENT",
-    UNKNOWN_SECRET = "UNKNOWN_SECRET",
-    UNVERIFIED_SIGNATURE = "UNVERIFIED_SIGNATURE",
-    INVALID_OUTER_SIGNATURE_TYPE = "INVALID_OUTER_SIGNATURE_TYPE",
-    INVALID_INNER_SIGNATURE_TYPE = "INVALID_INNER_SIGNATURE_TYPE",
-    UNVERIFIED_INNER_SIGNATURE = "UNVERIFIED_INNER_SIGNATURE",
-    INVALID_SIGNATURE_TYPE = "INVALID_SIGNATURE_TYPE",
-    INVALID_SHARES = "INVALID_SHARES",
-    SSKR = "SSKR",
-    INVALID_TYPE = "INVALID_TYPE",
-    AMBIGUOUS_TYPE = "AMBIGUOUS_TYPE",
-    SUBJECT_NOT_UNIT = "SUBJECT_NOT_UNIT",
-    UNEXPECTED_RESPONSE_ID = "UNEXPECTED_RESPONSE_ID",
-    INVALID_RESPONSE = "INVALID_RESPONSE",
-    CBOR = "CBOR",
-    COMPONENTS = "COMPONENTS",
-    GENERAL = "GENERAL"
-}
-
-export declare function extractBoolean(envelope: Envelope): boolean;
-
-export declare function extractBytes(envelope: Envelope): Uint8Array;
-
-export declare function extractNull(envelope: Envelope): null;
-
-export declare function extractNumber(envelope: Envelope): number;
-
-export declare function extractObjectForPredicateWithDefault<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
-
-export declare function extractObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-export declare function extractString(envelope: Envelope): string;
-
-export declare function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T;
-
-/**
- * Copyright © 2023-2026 Blockchain Commons, LLC
- * Copyright © 2025-2026 Parity Technologies
- *
- *
- * String utility functions used throughout the envelope library.
- *
- * Provides helper methods for string formatting and manipulation.
- */
-/**
- * Flanks a string with specified left and right delimiters.
- *
- * @param str - The string to flank
- * @param left - The left delimiter
- * @param right - The right delimiter
- * @returns The flanked string
+ * An Event represents a notification or message that doesn't expect a response.
  *
  * @example
  * ```typescript
- * flanked('hello', '"', '"')  // Returns: "hello"
- * flanked('name', "'", "'")   // Returns: 'name'
- * flanked('item', '[', ']')   // Returns: [item]
+ * import { Event, ARID } from '@blockchaincommons/envelope';
+ *
+ * // Create a status update event
+ * const eventId = ARID.new();
+ * const timestamp = new Date("2024-08-15T13:45:30Z");
+ *
+ * const statusEvent = Event.new("System online", eventId)
+ *   .withNote("Regular status update")
+ *   .withDate(timestamp);
+ *
+ * // Convert to an envelope for transmission
+ * const envelope = statusEvent.toEnvelope();
  * ```
+ *
+ * @typeParam T - The type of content this event carries
  */
-export declare function flanked(str: string, left: string, right: string): string;
+declare class Event_2<T extends EnvelopeEncodableValue> implements EventBehavior<T>, EnvelopeEncodable {
+    private readonly _content;
+    private readonly _id;
+    private _note;
+    private _date;
+    private constructor();
+    /**
+     * Creates a new event with the specified content and ID.
+     */
+    static new<T extends EnvelopeEncodableValue>(content: T, id: ARID): Event_2<T>;
+    /**
+     * Returns a human-readable summary of the event.
+     */
+    summary(): string;
+    withNote(note: string): Event_2<T>;
+    withDate(date: Date): Event_2<T>;
+    content(): T;
+    id(): ARID;
+    note(): string;
+    date(): Date | undefined;
+    /**
+     * Converts the event to an envelope.
+     *
+     * The envelope's subject is the event's ID tagged with TAG_EVENT,
+     * and assertions include the event's content, note (if not empty), and date
+     * (if present).
+     */
+    toEnvelope(): Envelope;
+    /**
+     * Converts this event into an envelope (EnvelopeEncodable implementation).
+     */
+    intoEnvelope(): Envelope;
+    /**
+     * Creates an event from an envelope.
+     *
+     * @typeParam T - The type to extract the content as
+     */
+    static fromEnvelope<T extends EnvelopeEncodableValue>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
+    /**
+     * Creates a string event from an envelope.
+     */
+    static stringFromEnvelope(envelope: Envelope): Event_2<string>;
+    /**
+     * Returns a string representation of the event.
+     */
+    toString(): string;
+    /**
+     * Checks equality with another event.
+     */
+    equals(other: Event_2<T>): boolean;
+}
+export { Event_2 as Event }
 
-export declare function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable;
+/**
+ * Interface that defines the behavior of an event.
+ */
+export declare interface EventBehavior<T extends EnvelopeEncodableValue> {
+    /**
+     * Adds a note to the event.
+     */
+    withNote(note: string): Event_2<T>;
+    /**
+     * Adds a date to the event.
+     */
+    withDate(date: Date): Event_2<T>;
+    /**
+     * Returns the content of the event.
+     */
+    content(): T;
+    /**
+     * Returns the unique identifier (ARID) of the event.
+     */
+    id(): ARID;
+    /**
+     * Returns the note attached to the event, or an empty string if none exists.
+     */
+    note(): string;
+    /**
+     * Returns the date attached to the event, if any.
+     */
+    date(): Date | undefined;
+    /**
+     * Converts the event to an envelope.
+     */
+    toEnvelope(): Envelope;
+}
+
+export declare class Expression implements EnvelopeEncodable {
+    private readonly _function;
+    private readonly _parameters;
+    private _envelope;
+    constructor(func: Function_2);
+    function(): Function_2;
+    parameters(): Parameter[];
+    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression;
+    withParameters(params: Record<string, EnvelopeEncodableValue>): Expression;
+    private static parameterIdMatches;
+    getParameter(param: ParameterID): Envelope | undefined;
+    objectsForParameter(param: ParameterID): Envelope[];
+    hasParameter(param: ParameterID): boolean;
+    envelope(): Envelope;
+    intoEnvelope(): Envelope;
+    static fromEnvelope(envelope: Envelope): Expression;
+    toString(): string;
+}
+
+declare class Function_2 implements EnvelopeEncodable {
+    private readonly _variant;
+    private readonly _value;
+    private readonly _name;
+    private constructor();
+    static newKnown(value: number, name?: string): Function_2;
+    static newNamed(name: string): Function_2;
+    static fromNumeric(id: number): Function_2;
+    static fromString(name: string): Function_2;
+    isKnown(): boolean;
+    isNamed(): boolean;
+    value(): number | undefined;
+    id(): FunctionID;
+    name(): string;
+    namedName(): string | undefined;
+    assignedName(): string | undefined;
+    isNumeric(): boolean;
+    isString(): boolean;
+    envelope(): Envelope;
+    intoEnvelope(): Envelope;
+    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression;
+    equals(other: Function_2): boolean;
+    hashCode(): number;
+    toString(): string;
+}
+export { Function_2 as Function }
+
+export declare const FUNCTION_IDS: {
+    readonly ADD: 1;
+    readonly SUB: 2;
+    readonly MUL: 3;
+    readonly DIV: 4;
+    readonly NEG: 5;
+    readonly LT: 6;
+    readonly LE: 7;
+    readonly GT: 8;
+    readonly GE: 9;
+    readonly EQ: 10;
+    readonly NE: 11;
+    readonly AND: 12;
+    readonly OR: 13;
+    readonly XOR: 14;
+    readonly NOT: 15;
+};
+
+export declare type FunctionID = number | string;
+
+export declare class FunctionsStore {
+    private readonly _dict;
+    constructor(functions?: Iterable<Function_2>);
+    insert(func: Function_2): void;
+    assignedName(func: Function_2): string | undefined;
+    name(func: Function_2): string;
+    static nameForFunction(func: Function_2, store?: FunctionsStore): string;
+}
+
+export declare const GE: Function_2;
+
+export declare function ge(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const GE_VALUE: number;
+
+export declare const GLOBAL_FUNCTIONS: LazyStore<FunctionsStore>;
+
+export declare const GLOBAL_PARAMETERS: LazyStore<ParametersStore>;
+
+export declare const GT: Function_2;
+
+export declare function gt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const GT_VALUE: number;
+
+export declare class LazyStore<T> {
+    private _store;
+    private readonly _initializer;
+    constructor(initializer: () => T);
+    get(): T;
+}
+
+export declare const LE: Function_2;
+
+export declare function le(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const LE_VALUE: number;
+
+export declare const LHS: Parameter;
+
+export declare const LHS_VALUE: number;
+
+export declare const LT: Function_2;
+
+export declare function lt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const LT_VALUE: number;
 
 declare const MajorType: {
     readonly Unsigned: 0;
@@ -1648,7 +1716,31 @@ declare interface MapEntry {
     readonly value: Cbor;
 }
 
-export declare type ObscureAction = {
+export declare const MUL: Function_2;
+
+export declare function mul(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const MUL_VALUE: number;
+
+export declare const NE: Function_2;
+
+export declare function ne(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const NE_VALUE: number;
+
+export declare const NEG: Function_2;
+
+export declare function neg(value: EnvelopeEncodableValue): Expression;
+
+export declare const NEG_VALUE: number;
+
+export declare const NOT: Function_2;
+
+export declare function not(value: EnvelopeEncodableValue): Expression;
+
+export declare const NOT_VALUE: number;
+
+declare type ObscureAction = {
     type: "elide";
 } | {
     type: "encrypt";
@@ -1657,11 +1749,339 @@ export declare type ObscureAction = {
     type: "compress";
 };
 
-export declare enum ObscureType {
+declare enum ObscureType {
     Elided = "elided",
     Encrypted = "encrypted",
     Compressed = "compressed"
 }
+
+export declare const OR: Function_2;
+
+export declare function or(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const OR_VALUE: number;
+
+export declare class Parameter implements EnvelopeEncodable {
+    private readonly _variant;
+    private readonly _value;
+    private readonly _name;
+    private readonly _paramValue;
+    private constructor();
+    static newKnown(value: number, name?: string): Parameter;
+    static newNamed(name: string): Parameter;
+    static withValue(id: ParameterID, value: Envelope): Parameter;
+    isKnown(): boolean;
+    isNamed(): boolean;
+    value(): number | undefined;
+    id(): ParameterID;
+    name(): string;
+    namedName(): string | undefined;
+    assignedName(): string | undefined;
+    paramValue(): Envelope | undefined;
+    isNumeric(): boolean;
+    isString(): boolean;
+    envelope(): Envelope;
+    intoEnvelope(): Envelope;
+    equals(other: Parameter): boolean;
+    hashCode(): number;
+    toString(): string;
+    static blank(value: EnvelopeEncodableValue): Parameter;
+    static lhs(value: EnvelopeEncodableValue): Parameter;
+    static rhs(value: EnvelopeEncodableValue): Parameter;
+}
+
+export declare const PARAMETER_IDS: {
+    readonly BLANK: 1;
+    readonly LHS: 2;
+    readonly RHS: 3;
+};
+
+export declare type ParameterID = number | string;
+
+export declare class ParametersStore {
+    private readonly _dict;
+    constructor(parameters?: Iterable<Parameter>);
+    insert(param: Parameter): void;
+    assignedName(param: Parameter): string | undefined;
+    name(param: Parameter): string;
+    static nameForParameter(param: Parameter, store?: ParametersStore): string;
+}
+
+/**
+ * A Request represents a message requesting execution of a function with parameters.
+ *
+ * @example
+ * ```typescript
+ * import { Request, ARID } from '@blockchaincommons/envelope';
+ *
+ * // Create a random request ID
+ * const requestId = ARID.new();
+ *
+ * // Create a request to execute a function with parameters
+ * const request = Request.new("getBalance", requestId)
+ *   .withParameter("account", "alice")
+ *   .withParameter("currency", "USD")
+ *   .withNote("Monthly balance check");
+ *
+ * // Convert to an envelope
+ * const envelope = request.toEnvelope();
+ * ```
+ */
+declare class Request_2 implements RequestBehavior, EnvelopeEncodable {
+    private readonly _body;
+    private readonly _id;
+    private _note;
+    private _date;
+    private constructor();
+    /**
+     * Creates a new request with the specified expression body and ID.
+     */
+    static newWithBody(body: Expression, id: ARID): Request_2;
+    /**
+     * Creates a new request with a function and ID.
+     *
+     * This is a convenience method that creates an expression from the
+     * function and then creates a request with that expression.
+     */
+    static new(func: Function_2 | string | number, id: ARID): Request_2;
+    /**
+     * Returns a human-readable summary of the request.
+     */
+    summary(): string;
+    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request_2;
+    withNote(note: string): Request_2;
+    withDate(date: Date): Request_2;
+    body(): Expression;
+    id(): ARID;
+    note(): string;
+    date(): Date | undefined;
+    function(): Function_2;
+    expressionEnvelope(): Envelope;
+    /**
+     * Converts the request to an envelope.
+     *
+     * The envelope's subject is the request's ID tagged with TAG_REQUEST,
+     * and assertions include the request's body, note (if not empty), and date (if present).
+     */
+    toEnvelope(): Envelope;
+    /**
+     * Converts this request into an envelope (EnvelopeEncodable implementation).
+     */
+    intoEnvelope(): Envelope;
+    /**
+     * Creates a request from an envelope.
+     */
+    static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Request_2;
+    /**
+     * Returns a string representation of the request.
+     */
+    toString(): string;
+    /**
+     * Checks equality with another request.
+     */
+    equals(other: Request_2): boolean;
+}
+export { Request_2 as Request }
+
+/**
+ * Interface that defines the behavior of a request.
+ *
+ * This interface extends expression behavior to add methods specific to requests,
+ * including metadata management and access to request properties.
+ */
+export declare interface RequestBehavior {
+    /**
+     * Adds a parameter to the request.
+     */
+    withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request_2;
+    /**
+     * Adds a note to the request.
+     */
+    withNote(note: string): Request_2;
+    /**
+     * Adds a date to the request.
+     */
+    withDate(date: Date): Request_2;
+    /**
+     * Returns the body of the request (the expression to be evaluated).
+     */
+    body(): Expression;
+    /**
+     * Returns the unique identifier (ARID) of the request.
+     */
+    id(): ARID;
+    /**
+     * Returns the note attached to the request, or an empty string if none exists.
+     */
+    note(): string;
+    /**
+     * Returns the date attached to the request, if any.
+     */
+    date(): Date | undefined;
+    /**
+     * Returns the function of the request.
+     */
+    function(): Function_2;
+    /**
+     * Returns the expression envelope of the request.
+     */
+    expressionEnvelope(): Envelope;
+    /**
+     * Converts the request to an envelope.
+     */
+    toEnvelope(): Envelope;
+}
+
+/**
+ * A Response represents a reply to a Request containing either a
+ * successful result or an error.
+ *
+ * @example
+ * ```typescript
+ * import { Response, ARID } from '@blockchaincommons/envelope';
+ *
+ * // Create a request ID (normally this would come from the original request)
+ * const requestId = ARID.new();
+ *
+ * // Create a successful response
+ * const successResponse = Response.newSuccess(requestId)
+ *   .withResult("Transaction completed");
+ *
+ * // Create an error response
+ * const errorResponse = Response.newFailure(requestId)
+ *   .withError("Insufficient funds");
+ *
+ * // Convert to envelopes
+ * const successEnvelope = successResponse.toEnvelope();
+ * const errorEnvelope = errorResponse.toEnvelope();
+ * ```
+ */
+declare class Response_2 implements ResponseBehavior, EnvelopeEncodable {
+    private _result;
+    private constructor();
+    /**
+     * Creates a new successful response with the specified request ID.
+     *
+     * By default, the result will be the 'OK' known value. Use `withResult`
+     * to set a specific result value.
+     */
+    static newSuccess(id: ARID): Response_2;
+    /**
+     * Creates a new failure response with the specified request ID.
+     *
+     * By default, the error will be the 'Unknown' known value. Use
+     * `withError` to set a specific error message.
+     */
+    static newFailure(id: ARID): Response_2;
+    /**
+     * Creates a new early failure response without a request ID.
+     *
+     * An early failure occurs when the error happens before the request
+     * has been fully processed, so the request ID is not known.
+     */
+    static newEarlyFailure(): Response_2;
+    /**
+     * Creates an envelope containing the 'Unknown' known value.
+     */
+    static unknown(): Envelope;
+    /**
+     * Creates an envelope containing the 'OK' known value.
+     */
+    static ok(): Envelope;
+    /**
+     * Returns a human-readable summary of the response.
+     */
+    summary(): string;
+    withResult(result: EnvelopeEncodableValue): Response_2;
+    withOptionalResult(result: EnvelopeEncodableValue | undefined): Response_2;
+    withError(error: EnvelopeEncodableValue): Response_2;
+    withOptionalError(error: EnvelopeEncodableValue | undefined): Response_2;
+    isOk(): boolean;
+    isErr(): boolean;
+    id(): ARID | undefined;
+    expectId(): ARID;
+    result(): Envelope;
+    error(): Envelope;
+    /**
+     * Extracts a typed result value from a successful response.
+     */
+    extractResult<T>(decoder: (cbor: unknown) => T): T;
+    /**
+     * Extracts a typed error value from a failure response.
+     */
+    extractError<T>(decoder: (cbor: unknown) => T): T;
+    /**
+     * Converts the response to an envelope.
+     *
+     * Successful responses have the request ID as the subject and a 'result'
+     * assertion. Failure responses have the request ID (or 'Unknown' if not known)
+     * as the subject and an 'error' assertion.
+     */
+    toEnvelope(): Envelope;
+    /**
+     * Converts this response into an envelope (EnvelopeEncodable implementation).
+     */
+    intoEnvelope(): Envelope;
+    /**
+     * Creates a response from an envelope.
+     */
+    static fromEnvelope(envelope: Envelope): Response_2;
+    /**
+     * Returns a string representation of the response.
+     */
+    toString(): string;
+    /**
+     * Checks equality with another response.
+     */
+    equals(other: Response_2): boolean;
+}
+export { Response_2 as Response }
+
+/**
+ * Interface that defines the behavior of a response.
+ */
+export declare interface ResponseBehavior {
+    /**
+     * Sets the result value for a successful response.
+     * @throws Error if called on a failure response.
+     */
+    withResult(result: EnvelopeEncodableValue): Response_2;
+    /**
+     * Sets the error value for a failure response.
+     * @throws Error if called on a successful response.
+     */
+    withError(error: EnvelopeEncodableValue): Response_2;
+    /**
+     * Returns true if this is a successful response.
+     */
+    isOk(): boolean;
+    /**
+     * Returns true if this is a failure response.
+     */
+    isErr(): boolean;
+    /**
+     * Returns the ID of the request this response corresponds to, if known.
+     */
+    id(): ARID | undefined;
+    /**
+     * Returns the result envelope if this is a successful response.
+     * @throws Error if this is a failure response.
+     */
+    result(): Envelope;
+    /**
+     * Returns the error envelope if this is a failure response.
+     * @throws Error if this is a successful response.
+     */
+    error(): Envelope;
+    /**
+     * Converts the response to an envelope.
+     */
+    toEnvelope(): Envelope;
+}
+
+export declare const RHS: Parameter;
+
+export declare const RHS_VALUE: number;
 
 /**
  * Represents CBOR simple values (major type 7).
@@ -1689,6 +2109,12 @@ declare type Simple = {
     readonly type: "Float";
     readonly value: number;
 };
+
+export declare const SUB: Function_2;
+
+export declare function sub(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
+
+export declare const SUB_VALUE: number;
 
 /**
  * A CBOR tag with an optional name.
@@ -1729,36 +2155,6 @@ declare const Tag: {
 };
 
 /**
- * Converts an array of tag values to their corresponding Tag objects.
- *
- * This function looks up each tag value in the global tag registry and returns
- * an array of complete Tag objects. For any tag values that aren't
- * registered in the global registry, it creates a basic Tag with just the
- * value (no name).
- *
- * @param values - Array of numeric tag values to convert
- * @returns Array of Tag objects corresponding to the input values
- *
- * @example
- * ```typescript
- * // Register some tags first
- * registerStandardTags();
- *
- * // Convert tag values to Tag objects
- * const tags = tagsForValues([1, 42, 999]);
- *
- * // The first tag (value 1) should be registered as "date"
- * console.log(tags[0].value); // 1
- * console.log(tags[0].name); // "date"
- *
- * // Unregistered tags will have a value but no name
- * console.log(tags[1].value); // 42
- * console.log(tags[2].value); // 999
- * ```
- */
-declare const tagsForValues: (values: (number | bigint)[]) => Tag[];
-
-/**
  * Numeric tag value type alias.
  *
  * A tag value is a u64. Since JavaScript has no native u64, this accepts the
@@ -1779,12 +2175,12 @@ declare interface ToCbor {
     toCbor(): Cbor;
 }
 
-export declare function tryObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
 
-export declare function tryObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
+export declare const XOR: Function_2;
 
-export declare function tryOptionalObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
+export declare function xor(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression;
 
-export declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
+export declare const XOR_VALUE: number;
 
 export { }

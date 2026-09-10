@@ -14,9 +14,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, PrivateKeyBase } from "../src";
+import { Envelope } from "../src/index.js";
+import { PrivateKeys as PrivateKeyBase } from "@blockchaincommons/components";
 import { EncapsulationScheme, createEncapsulationKeypair } from "@blockchaincommons/components";
 import { MLKEMLevel, MLKEMPrivateKey } from "@blockchaincommons/components/pq";
+import "../src/all.js";
 
 /**
  * Helper function to create a hello envelope (equivalent to Rust's hello_envelope())

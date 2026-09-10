@@ -1,11 +1,16 @@
 import { Compressed } from '@blockchaincommons/components';
+import { Decrypter } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
 import { EncryptedMessage } from '@blockchaincommons/components';
+import { Encrypter } from '@blockchaincommons/components';
 import { KnownValue } from '@blockchaincommons/known-values';
+import { Signer } from '@blockchaincommons/components';
+import { SigningOptions } from '@blockchaincommons/components';
 import { SymmetricKey } from '@blockchaincommons/components';
 import { UR } from '@blockchaincommons/uniform-resources';
+import { Verifier } from '@blockchaincommons/components';
 
-export declare class Assertion implements DigestProvider {
+declare class Assertion implements DigestProvider {
     private readonly _predicate;
     private readonly _object;
     private readonly _digest;
@@ -589,7 +594,7 @@ declare class CborDate implements CborTagged {
     private constructor();
 }
 
-export declare type CborDecoder<T> = (cbor: Cbor) => T;
+declare type CborDecoder<T> = (cbor: Cbor) => T;
 
 /**
  * Type for values that can be converted to CBOR.
@@ -786,12 +791,6 @@ declare interface CborTagged {
     cborTags(): Tag[];
 }
 
-/** The pre-redesign tagged-decodable shape (replaced by a codec in Phase 3). */
-declare interface CborTaggedDecodable<T> extends CborTagged {
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
 /** The pre-redesign tagged-encodable shape (replaced by dcbor's ToCbor in Phase 3). */
 declare interface CborTaggedEncodable extends CborTagged {
     untaggedCbor(): Cbor;
@@ -817,13 +816,11 @@ declare interface CborUnsignedType {
     readonly value: CborNumber;
 }
 
-export declare interface DigestProvider {
+declare interface DigestProvider {
     digest(): Digest;
 }
 
-export declare function edgeLabel(edgeType: EdgeType): string | undefined;
-
-export declare enum EdgeType {
+declare enum EdgeType {
     None = "none",
     Subject = "subject",
     Assertion = "assertion",
@@ -832,9 +829,9 @@ export declare enum EdgeType {
     Content = "content"
 }
 
-export declare function elideAction(): ObscureAction;
+export declare function encryptToRecipient(envelope: Envelope, recipient: Encrypter): Envelope;
 
-export declare class Envelope implements DigestProvider {
+declare class Envelope implements DigestProvider {
     private readonly _case;
     private constructor();
     case(): EnvelopeCase;
@@ -1412,7 +1409,7 @@ export declare class Envelope implements DigestProvider {
     isCompressed(): boolean;
 }
 
-export declare type EnvelopeCase = {
+declare type EnvelopeCase = {
     type: "node";
     subject: Envelope;
     assertions: Envelope[];
@@ -1443,192 +1440,11 @@ export declare type EnvelopeCase = {
     value: Compressed;
 };
 
-export declare class EnvelopeCBORTagged implements CborTagged {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static cborTags(): number[];
-}
-
-export declare class EnvelopeCBORTaggedDecodable<T = Envelope> implements CborTaggedDecodable<T> {
-    cborTags(): ReturnType<typeof tagsForValues>;
-    static fromUntaggedCbor(cbor: Cbor): Envelope;
-    static fromTaggedCbor(cbor: Cbor): Envelope;
-    fromUntaggedCbor(cbor: Cbor): T;
-    fromTaggedCbor(cbor: Cbor): T;
-}
-
-export declare class EnvelopeCBORTaggedEncodable implements CborTaggedEncodable {
-    private readonly envelope;
-    constructor(envelope: Envelope);
-    cborTags(): ReturnType<typeof tagsForValues>;
-    untaggedCbor(): Cbor;
-    taggedCbor(): Cbor;
-}
-
-export declare class EnvelopeDecoder {
-    static tryFromCbor(cbor: Cbor): Envelope;
-    static tryFromCborData(data: Uint8Array): Envelope;
-}
-
-export declare interface EnvelopeEncodable {
+declare interface EnvelopeEncodable {
     intoEnvelope(): Envelope;
 }
 
-export declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
-
-export declare class EnvelopeError extends Error {
-    readonly code: ErrorCode;
-    readonly cause?: Error;
-    constructor(code: ErrorCode, message: string, cause?: Error);
-    static alreadyElided(): EnvelopeError;
-    static ambiguousPredicate(): EnvelopeError;
-    static invalidDigest(): EnvelopeError;
-    static invalidFormat(): EnvelopeError;
-    static missingDigest(): EnvelopeError;
-    static nonexistentPredicate(): EnvelopeError;
-    static notWrapped(): EnvelopeError;
-    static notLeaf(): EnvelopeError;
-    static notAssertion(): EnvelopeError;
-    static invalidAssertion(): EnvelopeError;
-    static invalidAttachment(message?: string): EnvelopeError;
-    static nonexistentAttachment(): EnvelopeError;
-    static ambiguousAttachment(): EnvelopeError;
-    static edgeMissingIsA(): EnvelopeError;
-    static edgeMissingSource(): EnvelopeError;
-    static edgeMissingTarget(): EnvelopeError;
-    static edgeDuplicateIsA(): EnvelopeError;
-    static edgeDuplicateSource(): EnvelopeError;
-    static edgeDuplicateTarget(): EnvelopeError;
-    static edgeUnexpectedAssertion(): EnvelopeError;
-    static nonexistentEdge(): EnvelopeError;
-    static ambiguousEdge(): EnvelopeError;
-    static alreadyCompressed(): EnvelopeError;
-    static notCompressed(): EnvelopeError;
-    static alreadyEncrypted(): EnvelopeError;
-    static notEncrypted(): EnvelopeError;
-    static notKnownValue(): EnvelopeError;
-    static unknownRecipient(): EnvelopeError;
-    static unknownSecret(): EnvelopeError;
-    static unverifiedSignature(): EnvelopeError;
-    static invalidOuterSignatureType(): EnvelopeError;
-    static invalidInnerSignatureType(): EnvelopeError;
-    static unverifiedInnerSignature(): EnvelopeError;
-    static invalidSignatureType(): EnvelopeError;
-    static invalidShares(): EnvelopeError;
-    static sskr(message: string, cause?: Error): EnvelopeError;
-    static invalidType(): EnvelopeError;
-    static ambiguousType(): EnvelopeError;
-    static subjectNotUnit(): EnvelopeError;
-    static unexpectedResponseId(): EnvelopeError;
-    static invalidResponse(): EnvelopeError;
-    static cbor(message: string, cause?: Error): EnvelopeError;
-    static components(message: string, cause?: Error): EnvelopeError;
-    static general(message: string, cause?: Error): EnvelopeError;
-    static msg(message: string): EnvelopeError;
-}
-
-export declare function envelopeFromBytes(bytes: Uint8Array): Envelope;
-
-export declare function envelopeFromCbor(cbor: Cbor): Envelope;
-
-export declare function envelopeToBytes(envelope: Envelope): Uint8Array;
-
-export declare function envelopeToCbor(envelope: Envelope): Cbor;
-
-/**
- * Copyright © 2023-2026 Blockchain Commons, LLC
- * Copyright © 2025-2026 Parity Technologies
- *
- */
-export declare enum ErrorCode {
-    ALREADY_ELIDED = "ALREADY_ELIDED",
-    AMBIGUOUS_PREDICATE = "AMBIGUOUS_PREDICATE",
-    INVALID_DIGEST = "INVALID_DIGEST",
-    INVALID_FORMAT = "INVALID_FORMAT",
-    MISSING_DIGEST = "MISSING_DIGEST",
-    NONEXISTENT_PREDICATE = "NONEXISTENT_PREDICATE",
-    NOT_WRAPPED = "NOT_WRAPPED",
-    NOT_LEAF = "NOT_LEAF",
-    NOT_ASSERTION = "NOT_ASSERTION",
-    INVALID_ASSERTION = "INVALID_ASSERTION",
-    INVALID_ATTACHMENT = "INVALID_ATTACHMENT",
-    NONEXISTENT_ATTACHMENT = "NONEXISTENT_ATTACHMENT",
-    AMBIGUOUS_ATTACHMENT = "AMBIGUOUS_ATTACHMENT",
-    EDGE_MISSING_IS_A = "EDGE_MISSING_IS_A",
-    EDGE_MISSING_SOURCE = "EDGE_MISSING_SOURCE",
-    EDGE_MISSING_TARGET = "EDGE_MISSING_TARGET",
-    EDGE_DUPLICATE_IS_A = "EDGE_DUPLICATE_IS_A",
-    EDGE_DUPLICATE_SOURCE = "EDGE_DUPLICATE_SOURCE",
-    EDGE_DUPLICATE_TARGET = "EDGE_DUPLICATE_TARGET",
-    EDGE_UNEXPECTED_ASSERTION = "EDGE_UNEXPECTED_ASSERTION",
-    NONEXISTENT_EDGE = "NONEXISTENT_EDGE",
-    AMBIGUOUS_EDGE = "AMBIGUOUS_EDGE",
-    ALREADY_COMPRESSED = "ALREADY_COMPRESSED",
-    NOT_COMPRESSED = "NOT_COMPRESSED",
-    ALREADY_ENCRYPTED = "ALREADY_ENCRYPTED",
-    NOT_ENCRYPTED = "NOT_ENCRYPTED",
-    NOT_KNOWN_VALUE = "NOT_KNOWN_VALUE",
-    UNKNOWN_RECIPIENT = "UNKNOWN_RECIPIENT",
-    UNKNOWN_SECRET = "UNKNOWN_SECRET",
-    UNVERIFIED_SIGNATURE = "UNVERIFIED_SIGNATURE",
-    INVALID_OUTER_SIGNATURE_TYPE = "INVALID_OUTER_SIGNATURE_TYPE",
-    INVALID_INNER_SIGNATURE_TYPE = "INVALID_INNER_SIGNATURE_TYPE",
-    UNVERIFIED_INNER_SIGNATURE = "UNVERIFIED_INNER_SIGNATURE",
-    INVALID_SIGNATURE_TYPE = "INVALID_SIGNATURE_TYPE",
-    INVALID_SHARES = "INVALID_SHARES",
-    SSKR = "SSKR",
-    INVALID_TYPE = "INVALID_TYPE",
-    AMBIGUOUS_TYPE = "AMBIGUOUS_TYPE",
-    SUBJECT_NOT_UNIT = "SUBJECT_NOT_UNIT",
-    UNEXPECTED_RESPONSE_ID = "UNEXPECTED_RESPONSE_ID",
-    INVALID_RESPONSE = "INVALID_RESPONSE",
-    CBOR = "CBOR",
-    COMPONENTS = "COMPONENTS",
-    GENERAL = "GENERAL"
-}
-
-export declare function extractBoolean(envelope: Envelope): boolean;
-
-export declare function extractBytes(envelope: Envelope): Uint8Array;
-
-export declare function extractNull(envelope: Envelope): null;
-
-export declare function extractNumber(envelope: Envelope): number;
-
-export declare function extractObjectForPredicateWithDefault<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>, defaultValue: T): T;
-
-export declare function extractObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-export declare function extractString(envelope: Envelope): string;
-
-export declare function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T;
-
-/**
- * Copyright © 2023-2026 Blockchain Commons, LLC
- * Copyright © 2025-2026 Parity Technologies
- *
- *
- * String utility functions used throughout the envelope library.
- *
- * Provides helper methods for string formatting and manipulation.
- */
-/**
- * Flanks a string with specified left and right delimiters.
- *
- * @param str - The string to flank
- * @param left - The left delimiter
- * @param right - The right delimiter
- * @returns The flanked string
- *
- * @example
- * ```typescript
- * flanked('hello', '"', '"')  // Returns: "hello"
- * flanked('name', "'", "'")   // Returns: 'name'
- * flanked('item', '[', ']')   // Returns: [item]
- * ```
- */
-export declare function flanked(str: string, left: string, right: string): string;
-
-export declare function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable;
+declare type EnvelopeEncodableValue = EnvelopeEncodable | string | number | boolean | bigint | Uint8Array | null | undefined | Envelope | KnownValue | CborTaggedEncodable | ToCbor;
 
 declare const MajorType: {
     readonly Unsigned: 0;
@@ -1648,7 +1464,7 @@ declare interface MapEntry {
     readonly value: Cbor;
 }
 
-export declare type ObscureAction = {
+declare type ObscureAction = {
     type: "elide";
 } | {
     type: "encrypt";
@@ -1657,11 +1473,17 @@ export declare type ObscureAction = {
     type: "compress";
 };
 
-export declare enum ObscureType {
+declare enum ObscureType {
     Elided = "elided",
     Encrypted = "encrypted",
     Compressed = "compressed"
 }
+
+export declare const registerSealExtension: () => void;
+
+export declare function seal(envelope: Envelope, sender: Signer, recipient: Encrypter): Envelope;
+
+export declare function sealOpt(envelope: Envelope, sender: Signer, recipient: Encrypter, options?: SigningOptions): Envelope;
 
 /**
  * Represents CBOR simple values (major type 7).
@@ -1729,36 +1551,6 @@ declare const Tag: {
 };
 
 /**
- * Converts an array of tag values to their corresponding Tag objects.
- *
- * This function looks up each tag value in the global tag registry and returns
- * an array of complete Tag objects. For any tag values that aren't
- * registered in the global registry, it creates a basic Tag with just the
- * value (no name).
- *
- * @param values - Array of numeric tag values to convert
- * @returns Array of Tag objects corresponding to the input values
- *
- * @example
- * ```typescript
- * // Register some tags first
- * registerStandardTags();
- *
- * // Convert tag values to Tag objects
- * const tags = tagsForValues([1, 42, 999]);
- *
- * // The first tag (value 1) should be registered as "date"
- * console.log(tags[0].value); // 1
- * console.log(tags[0].name); // "date"
- *
- * // Unregistered tags will have a value but no name
- * console.log(tags[1].value); // 42
- * console.log(tags[2].value); // 999
- * ```
- */
-declare const tagsForValues: (values: (number | bigint)[]) => Tag[];
-
-/**
  * Numeric tag value type alias.
  *
  * A tag value is a u64. Since JavaScript has no native u64, this accepts the
@@ -1779,12 +1571,8 @@ declare interface ToCbor {
     toCbor(): Cbor;
 }
 
-export declare function tryObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T;
+export declare function unseal(envelope: Envelope, senderPublicKey: Verifier, recipient: Decrypter): Envelope;
 
-export declare function tryObjectsForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T[];
-
-export declare function tryOptionalObjectForPredicate<T>(envelope: Envelope, predicate: EnvelopeEncodableValue, decoder: CborDecoder<T>): T | undefined;
-
-export declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
+declare type Visitor<State> = (envelope: Envelope, level: number, incomingEdge: EdgeType, state: State) => [State, boolean];
 
 export { }

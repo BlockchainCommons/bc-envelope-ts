@@ -37,28 +37,12 @@ import {
   Nonce,
   AuthenticationTag,
   Compressed,
-  type Encrypter,
-  type Decrypter,
-  type Salt,
 } from "@blockchaincommons/components";
 import { UR } from "@blockchaincommons/uniform-resources";
 import { chacha20Poly1305, SYMMETRIC_NONCE_SIZE } from "@blockchaincommons/crypto";
-import { secureRng, randomBytes, type RandomNumberGenerator } from "@blockchaincommons/rand";
+import { secureRng, randomBytes } from "@blockchaincommons/rand";
 import { ENCODED_CBOR, ENVELOPE, LEAF, ENCRYPTED, COMPRESSED } from "@blockchaincommons/tags";
-import type { KeyDerivationMethod } from "@blockchaincommons/components/kdf";
-import type { Spec } from "@blockchaincommons/sskr";
-import type {
-  SealedMessage,
-  Signer,
-  Verifier,
-  Signature,
-  SignatureMetadata,
-  SigningOptions,
-} from "../extension";
-import type { TreeFormatOptions } from "../format/tree";
-import type { EnvelopeFormatOpts } from "../format/notation";
-import type { MermaidFormatOpts } from "../format/mermaid";
-import type { FormatContext } from "../format/format-context";
+import { cborBytes } from "../format/hex.js";
 
 // Type imports for extension method declarations
 // These are imported as types only to avoid circular dependencies at runtime
@@ -820,19 +804,16 @@ export class Envelope implements DigestProvider {
   ///
   /// @param options - Optional formatting options
   /// @returns A tree-formatted string
-  declare treeFormat: (options?: TreeFormatOptions) => string;
 
   /// Returns a short identifier for this envelope based on its digest.
   ///
   /// @param format - Format for the digest ('short', 'full', or 'ur')
   /// @returns A digest identifier string
-  declare shortId: (format?: "short" | "full" | "ur") => string;
 
   /// Returns a summary string for this envelope.
   ///
   /// @param maxLength - Maximum length of the summary
   /// @returns A summary string
-  declare summary: (maxLength?: number) => string;
 
   /// Returns an annotated hex representation of the envelope's CBOR encoding.
   ///
@@ -842,12 +823,10 @@ export class Envelope implements DigestProvider {
   /// {@link Envelope.hexOpt} for a plain, flat hex string.
   ///
   /// @returns A multi-line annotated hex string
-  declare hex: () => string;
 
   /// Returns the CBOR-encoded bytes of the envelope.
   ///
   /// @returns The CBOR bytes
-  declare cborBytes: () => Uint8Array;
 
   /// Returns a hex representation with explicit annotate flag and optional
   /// {@link FormatContext} for tag-name resolution.
@@ -859,7 +838,6 @@ export class Envelope implements DigestProvider {
   /// @param context - Optional format context for resolving tag names.
   ///   Defaults to the global format context.
   /// @returns A hex string in the requested format
-  declare hexOpt: (annotate: boolean, context?: FormatContext) => string;
 
   /// Returns a CBOR diagnostic notation string for the envelope.
   ///
@@ -869,7 +847,6 @@ export class Envelope implements DigestProvider {
   /// {@link Envelope.diagnosticAnnotated}.
   ///
   /// @returns A diagnostic string
-  declare diagnostic: () => string;
 
   /// Returns a CBOR diagnostic notation string with explicit tag annotation
   /// and an optional {@link FormatContext} for tag-name resolution.
@@ -879,210 +856,19 @@ export class Envelope implements DigestProvider {
   /// @param context - Optional format context for resolving tag names.
   ///   Defaults to the global format context.
   /// @returns An annotated diagnostic string
-  declare diagnosticAnnotated: (context?: FormatContext) => string;
 
   //
   // Extension methods (implemented via prototype extension in extension modules)
   // These declarations ensure TypeScript recognizes the methods when consuming the package
   //
 
-  // From assertions.ts
-  // From salt.ts - assertion methods with optional salting
-  declare addAssertionSalted: (
-    predicate: EnvelopeEncodableValue,
-    object: EnvelopeEncodableValue,
-    salted: boolean,
-  ) => Envelope;
-  declare addAssertionEnvelopeSalted: (assertionEnvelope: Envelope, salted: boolean) => Envelope;
-  declare addOptionalAssertionEnvelopeSalted: (
-    assertionEnvelope: Envelope | undefined,
-    salted: boolean,
-  ) => Envelope;
-
-  // From elide.ts
-
-  // From leaf.ts
-
   // Generic typed extraction methods from envelope-decodable.ts
-
-  // From queries.ts
-
-  // From walk.ts
 
   // Digest-related methods
 
   // Alias methods for Rust API compatibility
 
   // Additional elision method
-
-  // From ur.ts - UR (Uniform Resource) support
-
-  // From wrap.ts
-
-  // From attachment.ts
-  declare addAttachment: (
-    payload: EnvelopeEncodableValue,
-    vendor: string,
-    conformsTo?: string,
-  ) => Envelope;
-  declare attachmentPayload: () => Envelope;
-  declare attachmentVendor: () => string;
-  declare attachmentConformsTo: () => string | undefined;
-  declare attachments: () => Envelope[];
-  declare attachmentsWithVendorAndConformsTo: (vendor?: string, conformsTo?: string) => Envelope[];
-  declare attachmentWithVendorAndConformsTo: (vendor?: string, conformsTo?: string) => Envelope;
-  declare validateAttachment: () => void;
-
-  // From edge.ts (BCR-2026-003)
-  declare addEdgeEnvelope: (edge: Envelope) => Envelope;
-  declare edges: () => Envelope[];
-  declare validateEdge: () => void;
-  declare edgeIsA: () => Envelope;
-  declare edgeSource: () => Envelope;
-  declare edgeTarget: () => Envelope;
-  declare edgeSubject: () => Envelope;
-  declare edgesMatching: (
-    isA?: Envelope,
-    source?: Envelope,
-    target?: Envelope,
-    subject?: Envelope,
-  ) => Envelope[];
-
-  // From compress.ts
-
-  // From encrypt.ts
-
-  // From proof.ts
-  declare proofContainsSet: (target: Set<Digest>) => Envelope | undefined;
-  declare proofContainsTarget: (target: Envelope) => Envelope | undefined;
-  declare confirmContainsSet: (target: Set<Digest>, proof: Envelope) => boolean;
-  declare confirmContainsTarget: (target: Envelope, proof: Envelope) => boolean;
-
-  // From recipient.ts - uses Encrypter/Decrypter interfaces for PQ support
-  declare encryptSubjectToRecipient: (recipient: Encrypter) => Envelope;
-  declare encryptSubjectToRecipients: (recipients: Encrypter[]) => Envelope;
-  declare addRecipient: (
-    recipient: Encrypter,
-    contentKey: SymmetricKey,
-    testNonce?: Nonce,
-  ) => Envelope;
-  declare decryptSubjectToRecipient: (recipient: Decrypter) => Envelope;
-  declare decryptToRecipient: (recipient: Decrypter) => Envelope;
-  declare encryptToRecipients: (recipients: Encrypter[]) => Envelope;
-  declare recipients: () => SealedMessage[];
-
-  // From seal.ts
-  declare encryptToRecipient: (recipient: Encrypter) => Envelope;
-  declare seal: (sender: Signer, recipient: Encrypter) => Envelope;
-  declare sealOpt: (sender: Signer, recipient: Encrypter, options?: SigningOptions) => Envelope;
-  declare unseal: (senderPublicKey: Verifier, recipient: Decrypter) => Envelope;
-
-  // From salt.ts
-  declare addSalt: () => Envelope;
-  declare addSaltInstance: (salt: Salt) => Envelope;
-  declare addSaltWithLength: (count: number) => Envelope;
-  declare addSaltWithLen: (count: number) => Envelope;
-  declare addSaltBytes: (saltBytes: Uint8Array) => Envelope;
-  declare addSaltInRange: (min: number, max: number) => Envelope;
-  // Test-determinism overloads matching Rust's `*_using` variants.
-  declare addSaltUsing: (rng: RandomNumberGenerator) => Envelope;
-  declare addSaltWithLenUsing: (count: number, rng: RandomNumberGenerator) => Envelope;
-  declare addSaltInRangeUsing: (min: number, max: number, rng: RandomNumberGenerator) => Envelope;
-
-  // From signature.ts — matches bc-envelope-rust/src/extension/signature/signature_impl.rs
-  declare addSignature: (signer: Signer) => Envelope;
-  declare addSignatureOpt: (
-    signer: Signer,
-    options?: SigningOptions,
-    metadata?: SignatureMetadata,
-  ) => Envelope;
-  declare addSignatureWithMetadata: (signer: Signer, metadata?: SignatureMetadata) => Envelope;
-  declare addSignatures: (signers: Signer[]) => Envelope;
-  declare addSignaturesOpt: (
-    signersWithOptions: {
-      signer: Signer;
-      options?: SigningOptions;
-      metadata?: SignatureMetadata;
-    }[],
-  ) => Envelope;
-  declare addSignaturesWithMetadata: (
-    signersWithMetadata: { signer: Signer; metadata?: SignatureMetadata }[],
-  ) => Envelope;
-  declare makeSignedAssertion: (signature: Signature, note?: string) => Envelope;
-  declare isVerifiedSignature: (signature: Signature, verifier: Verifier) => boolean;
-  declare verifySignature: (signature: Signature, verifier: Verifier) => Envelope;
-  declare hasSignatureFrom: (verifier: Verifier) => boolean;
-  declare hasSignatureFromReturningMetadata: (verifier: Verifier) => Envelope | undefined;
-  declare verifySignatureFrom: (verifier: Verifier) => Envelope;
-  declare verifySignatureFromReturningMetadata: (verifier: Verifier) => Envelope;
-  declare hasSignaturesFrom: (verifiers: Verifier[]) => boolean;
-  declare hasSignaturesFromThreshold: (verifiers: Verifier[], threshold?: number) => boolean;
-  declare verifySignaturesFrom: (verifiers: Verifier[]) => Envelope;
-  declare verifySignaturesFromThreshold: (verifiers: Verifier[], threshold?: number) => Envelope;
-  declare signatures: () => Envelope[];
-  declare sign: (signer: Signer) => Envelope;
-  declare signOpt: (signer: Signer, options?: SigningOptions) => Envelope;
-  declare signWithMetadata: (signer: Signer, metadata?: SignatureMetadata) => Envelope;
-  declare verify: (verifier: Verifier) => Envelope;
-  declare verifyReturningMetadata: (verifier: Verifier) => {
-    envelope: Envelope;
-    metadata: Envelope;
-  };
-
-  // From types.ts
-  declare addType: (object: EnvelopeEncodableValue) => Envelope;
-  declare types: () => Envelope[];
-  declare getType: () => Envelope;
-  declare hasType: (t: EnvelopeEncodableValue) => boolean;
-  declare checkType: (t: EnvelopeEncodableValue) => void;
-  declare hasTypeValue: (t: KnownValue) => boolean;
-
-  // Static methods from extensions
-  declare static newAttachment: (
-    payload: EnvelopeEncodableValue,
-    vendor: string,
-    conformsTo?: string,
-  ) => Envelope;
-
-  // Static methods from leaf.ts
-
-  // From format/notation.ts
-  declare format: () => string;
-  declare formatOpt: (opts: EnvelopeFormatOpts) => string;
-  declare formatFlat: () => string;
-
-  // From format/mermaid.ts
-  declare mermaidFormat: () => string;
-  declare mermaidFormatOpt: (opts: MermaidFormatOpts) => string;
-
-  // From format/envelope-summary.ts
-  declare summaryWithContext: (maxLength: number, context: FormatContext) => string;
-
-  // From secret.ts
-  declare lockSubject: (method: KeyDerivationMethod, secret: Uint8Array) => Envelope;
-  declare unlockSubject: (secret: Uint8Array) => Envelope;
-  declare isLockedWithPassword: () => boolean;
-  declare isLockedWithSshAgent: () => boolean;
-  declare addSecret: (
-    method: KeyDerivationMethod,
-    secret: Uint8Array,
-    contentKey: SymmetricKey,
-  ) => Envelope;
-  declare lock: (method: KeyDerivationMethod, secret: Uint8Array) => Envelope;
-  declare unlock: (secret: Uint8Array) => Envelope;
-
-  // From extension/sskr.ts
-  declare sskrSplit: (spec: Spec, contentKey: SymmetricKey) => Envelope[][];
-  declare sskrSplitFlattened: (spec: Spec, contentKey: SymmetricKey) => Envelope[];
-  declare sskrSplitUsing: (
-    spec: Spec,
-    contentKey: SymmetricKey,
-    rng: RandomNumberGenerator,
-  ) => Envelope[][];
-  declare static sskrJoin: (envelopes: Envelope[]) => Envelope;
-
-  // CBOR methods
-  declare checkTypeValue: (t: KnownValue) => void;
 
   /**
    * Implementation of static false()
@@ -2518,7 +2304,7 @@ export class Envelope implements DigestProvider {
    * Implementation of taggedCborData (alias for cborBytes)
    */
   taggedCborData(): Uint8Array {
-    return this.cborBytes();
+    return cborBytes(this);
   }
 
   encryptSubject(key: SymmetricKey): Envelope {

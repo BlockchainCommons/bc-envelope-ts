@@ -17,7 +17,7 @@
 ///     .addAssertion("knows", "Carol");
 ///
 /// // Format the envelope as human-readable envelope notation
-/// const formatted = envelope.format();
+/// const formatted = format(envelope);
 /// // Will output: "Alice" [ "knows": "Bob", "knows": "Carol" ]
 /// ```
 
@@ -30,6 +30,7 @@ import {
   type FormatContextOpt,
   getGlobalFormatContext,
   formatContextGlobal,
+  setEnvelopeFormatHook,
 } from "./format-context";
 import { cborEnvelopeSummary } from "./envelope-summary";
 
@@ -146,7 +147,7 @@ const addSpaceAtEndIfNeeded = (s: string): string => {
 };
 
 /// Format items in flat mode (single line)
-const formatFlat = (item: EnvelopeFormatItem): string => {
+const formatItemFlat = (item: EnvelopeFormatItem): string => {
   let line = "";
   const items = flatten(item);
 
@@ -168,7 +169,7 @@ const formatFlat = (item: EnvelopeFormatItem): string => {
         break;
       case "list":
         for (const subItem of i.items) {
-          line += formatFlat(subItem);
+          line += formatItemFlat(subItem);
         }
         break;
     }
@@ -234,7 +235,7 @@ const formatHierarchical = (item: EnvelopeFormatItem): string => {
 /// Format a format item according to options
 const formatFormatItem = (item: EnvelopeFormatItem, opts: EnvelopeFormatOpts): string => {
   if (opts.flat) {
-    return formatFlat(item);
+    return formatItemFlat(item);
   }
   return formatHierarchical(item);
 };
@@ -509,19 +510,24 @@ const compareFormatItemArrays = (
 // ============================================================================
 
 /// Implementation of formatOpt
-Envelope.prototype.formatOpt = function (this: Envelope, opts: EnvelopeFormatOpts): string {
-  const item = formatEnvelope(this, opts);
+export function formatOpt(envelope: Envelope, opts: EnvelopeFormatOpts): string {
+  const item = formatEnvelope(envelope, opts);
   return formatFormatItem(item, opts).trim();
-};
+}
 
 /// Implementation of format
-Envelope.prototype.format = function (this: Envelope): string {
-  return this.formatOpt(defaultFormatOpts());
-};
+export function format(envelope: Envelope): string {
+  return formatOpt(envelope, defaultFormatOpts());
+}
 
 /// Implementation of formatFlat
-Envelope.prototype.formatFlat = function (this: Envelope): string {
-  return this.formatOpt(flatFormatOpts());
-};
+export function formatFlat(envelope: Envelope): string {
+  return formatOpt(envelope, flatFormatOpts());
+}
 
 // All exports are done inline above with 'export const' and 'export interface'
+
+// The request/response/event tag summarizers in the format context need to
+// format an inner envelope; installing the hook here (the module that owns
+// the formatter) keeps format-context free of a value import of this module.
+setEnvelopeFormatHook((cbor, _flat) => format(Envelope.newLeaf(cbor)));

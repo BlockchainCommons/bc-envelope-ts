@@ -13,7 +13,7 @@
 // Core types
 export { Envelope, type EnvelopeCase } from "./envelope";
 export { Assertion } from "./envelope";
-export { Digest, type DigestProvider } from "./digest";
+export type { DigestProvider } from "./digest";
 
 // Error handling
 export { EnvelopeError, ErrorCode } from "./error";

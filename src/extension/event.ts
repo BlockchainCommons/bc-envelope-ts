@@ -31,6 +31,7 @@ import { CONTENT, NOTE, DATE } from "@blockchaincommons/known-values";
 import { Envelope } from "../base/envelope";
 import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
+import { formatFlat } from "../format/notation.js";
 
 /**
  * Interface that defines the behavior of an event.
@@ -120,7 +121,7 @@ export class Event<T extends EnvelopeEncodableValue>
    */
   summary(): string {
     const contentEnvelope = Envelope.new(this._content);
-    return `id: ${this._id.shortDescription()}, content: ${contentEnvelope.formatFlat()}`;
+    return `id: ${this._id.shortDescription()}, content: ${formatFlat(contentEnvelope)}`;
   }
 
   // EventBehavior implementation

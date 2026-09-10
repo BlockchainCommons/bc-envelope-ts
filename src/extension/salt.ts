@@ -11,6 +11,7 @@ import { secureRng, randomBytes, type RandomNumberGenerator } from "@blockchainc
 import { nextInClosedRangeI32 } from "@blockchaincommons/rand/samplers";
 import { SALT as SALT_KV, type KnownValue } from "@blockchaincommons/known-values";
 import { Salt as SaltComponent } from "@blockchaincommons/components";
+import { cborBytes } from "../format/hex.js";
 
 /// Extension for adding salt to envelopes to prevent correlation.
 ///
@@ -32,7 +33,7 @@ import { Salt as SaltComponent } from "@blockchaincommons/components";
 /// const envelope = Envelope.new("Hello");
 ///
 /// // Create a decorrelated version by adding salt
-/// const salted = envelope.addSalt();
+/// const salted = addSalt(envelope);
 ///
 /// // The salted envelope has a different digest than the original
 /// console.log(envelope.digest().equals(salted.digest())); // false
@@ -70,203 +71,195 @@ function calculateProportionalSaltSize(envelopeSize: number, rng?: RandomNumberG
 }
 
 /// Implementation of addSalt()
-// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-if (Envelope?.prototype) {
-  Envelope.prototype.addSalt = function (this: Envelope): Envelope {
-    const rng = createSecureRng();
-    const envelopeSize = this.cborBytes().length;
-    const saltSize = calculateProportionalSaltSize(envelopeSize, rng);
-    const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
+export function addSalt(envelope: Envelope): Envelope {
+  const rng = createSecureRng();
+  const envelopeSize = cborBytes(envelope).length;
+  const saltSize = calculateProportionalSaltSize(envelopeSize, rng);
+  const saltBytes = generateRandomBytes(saltSize, rng);
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
 
-  /// Implementation of addSaltInstance() — mirrors Rust
-  /// `Envelope::add_salt_instance(salt)`
-  /// (`bc-envelope-rust/src/extension/salt.rs:125`).
-  /// Used by callers that need a specific salt value (e.g. for digest
-  /// stability across calls), most notably `xid::Key` /
-  /// `xid::Provenance` whose salts are constructed once and stored on
-  /// the value type.
-  Envelope.prototype.addSaltInstance = function (this: Envelope, salt: SaltComponent): Envelope {
-    return this.addAssertion(SALT, salt);
-  };
+/// Implementation of addSaltInstance() — mirrors Rust
+/// `Envelope::add_salt_instance(salt)`
+/// (`bc-envelope-rust/src/extension/salt.rs:125`).
+/// Used by callers that need a specific salt value (e.g. for digest
+/// stability across calls), most notably `xid::Key` /
+/// `xid::Provenance` whose salts are constructed once and stored on
+/// the value type.
+export function addSaltInstance(envelope: Envelope, salt: SaltComponent): Envelope {
+  return envelope.addAssertion(SALT, salt);
+}
 
-  /// Implementation of addSaltWithLength()
-  Envelope.prototype.addSaltWithLength = function (this: Envelope, count: number): Envelope {
-    if (count < MIN_SALT_SIZE) {
-      throw EnvelopeError.general(`Salt must be at least ${MIN_SALT_SIZE} bytes, got ${count}`);
+/// Implementation of addSaltWithLength()
+export function addSaltWithLength(envelope: Envelope, count: number): Envelope {
+  if (count < MIN_SALT_SIZE) {
+    throw EnvelopeError.general(`Salt must be at least ${MIN_SALT_SIZE} bytes, got ${count}`);
+  }
+  const saltBytes = generateRandomBytes(count);
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
+
+/// Alias for addSaltWithLength (Rust API compatibility)
+export function addSaltWithLen(envelope: Envelope, count: number): Envelope {
+  return addSaltWithLength(envelope, count);
+}
+
+/// Implementation of addSaltBytes()
+export function addSaltBytes(envelope: Envelope, saltBytes: Uint8Array): Envelope {
+  if (saltBytes.length < MIN_SALT_SIZE) {
+    throw EnvelopeError.general(
+      `Salt must be at least ${MIN_SALT_SIZE} bytes, got ${saltBytes.length}`,
+    );
+  }
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
+
+/// Implementation of addSaltInRange()
+export function addSaltInRange(envelope: Envelope, min: number, max: number): Envelope {
+  if (min < MIN_SALT_SIZE) {
+    throw EnvelopeError.general(
+      `Minimum salt size must be at least ${MIN_SALT_SIZE} bytes, got ${min}`,
+    );
+  }
+  if (max < min) {
+    throw EnvelopeError.general(
+      `Maximum salt size must be at least minimum, got min=${min} max=${max}`,
+    );
+  }
+  const rng = createSecureRng();
+  const saltSize = nextInClosedRangeI32(rng, min, max);
+  const saltBytes = generateRandomBytes(saltSize, rng);
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
+
+/// Test-determinism overloads for the salt builders, mirroring Rust's
+/// `*_using` variants (`bc-envelope-rust/src/extension/salt.rs`):
+/// `add_salt_using`, `add_salt_with_len_using`, `add_salt_in_range_using`.
+/// They thread a caller-supplied {@link RandomNumberGenerator} through
+/// the salt-bytes generation so tests can pin the entropy and assert on
+/// exact share / digest bytes.
+
+/// Implementation of addSaltUsing()
+export function addSaltUsing(envelope: Envelope, rng: RandomNumberGenerator): Envelope {
+  const envelopeSize = cborBytes(envelope).length;
+  const saltSize = calculateProportionalSaltSize(envelopeSize, rng);
+  const saltBytes = generateRandomBytes(saltSize, rng);
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
+
+/// Implementation of addSaltWithLenUsing()
+export function addSaltWithLenUsing(
+  envelope: Envelope,
+  count: number,
+  rng: RandomNumberGenerator,
+): Envelope {
+  if (count < MIN_SALT_SIZE) {
+    throw EnvelopeError.general(`Salt must be at least ${MIN_SALT_SIZE} bytes, got ${count}`);
+  }
+  const saltBytes = generateRandomBytes(count, rng);
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
+
+/// Implementation of addSaltInRangeUsing()
+export function addSaltInRangeUsing(
+  envelope: Envelope,
+  min: number,
+  max: number,
+  rng: RandomNumberGenerator,
+): Envelope {
+  if (min < MIN_SALT_SIZE) {
+    throw EnvelopeError.general(
+      `Minimum salt size must be at least ${MIN_SALT_SIZE} bytes, got ${min}`,
+    );
+  }
+  if (max < min) {
+    throw EnvelopeError.general(
+      `Maximum salt size must be at least minimum, got min=${min} max=${max}`,
+    );
+  }
+  const saltSize = nextInClosedRangeI32(rng, min, max);
+  const saltBytes = generateRandomBytes(saltSize, rng);
+  return envelope.addAssertion(SALT, SaltComponent.from(saltBytes));
+}
+
+/// Implementation of addAssertionSalted()
+export function addAssertionSalted(
+  envelope: Envelope,
+  predicate: EnvelopeEncodableValue,
+  object: EnvelopeEncodableValue,
+  salted: boolean,
+): Envelope {
+  // Create the assertion envelope
+  const assertion = Envelope.newAssertion(predicate, object);
+
+  // If not salted, use the normal addAssertionEnvelope
+  if (!salted) {
+    return envelope.addAssertionEnvelope(assertion);
+  }
+
+  // Add salt to the assertion envelope (envelope creates a node with assertion as subject)
+  const saltedAssertion = addSalt(assertion);
+
+  // When salted, we need to use newWithUncheckedAssertions because the salted
+  // assertion is a node (not pure assertion type) and would fail normal validation
+  const c = envelope.case();
+  if (c.type === "node") {
+    return Envelope.newWithUncheckedAssertions(c.subject, [...c.assertions, saltedAssertion]);
+  }
+  return Envelope.newWithUncheckedAssertions(envelope, [saltedAssertion]);
+}
+
+/// Implementation of addAssertionEnvelopeSalted()
+export function addAssertionEnvelopeSalted(
+  envelope: Envelope,
+  assertionEnvelope: Envelope,
+  salted: boolean,
+): Envelope {
+  // If not salted, use the normal addAssertionEnvelope
+  if (!salted) {
+    return envelope.addAssertionEnvelope(assertionEnvelope);
+  }
+
+  // Add salt to the assertion envelope (envelope creates a node with assertion as subject)
+  const saltedAssertion = addSalt(assertionEnvelope);
+
+  // When salted, we need to use newWithUncheckedAssertions because the salted
+  // assertion is a node (not pure assertion type) and would fail normal validation
+  const c = envelope.case();
+  if (c.type === "node") {
+    return Envelope.newWithUncheckedAssertions(c.subject, [...c.assertions, saltedAssertion]);
+  }
+  return Envelope.newWithUncheckedAssertions(envelope, [saltedAssertion]);
+}
+
+/// Implementation of addOptionalAssertionEnvelopeSalted()
+export function addOptionalAssertionEnvelopeSalted(
+  envelope: Envelope,
+  assertionEnvelope: Envelope | undefined,
+  salted: boolean,
+): Envelope {
+  if (assertionEnvelope === undefined) {
+    return envelope;
+  }
+
+  // If not salted, use the normal addOptionalAssertionEnvelope
+  if (!salted) {
+    return envelope.addOptionalAssertionEnvelope(assertionEnvelope);
+  }
+
+  // Add salt to the assertion envelope (envelope creates a node with assertion as subject)
+  const saltedAssertion = addSalt(assertionEnvelope);
+
+  // When salted, we need to use newWithUncheckedAssertions because the salted
+  // assertion is a node (not pure assertion type) and would fail normal validation
+  const c = envelope.case();
+  if (c.type === "node") {
+    // Check for duplicate assertions
+    const isDuplicate = c.assertions.some((a) => a.digest().equals(saltedAssertion.digest()));
+    if (isDuplicate) {
+      return envelope;
     }
-    const saltBytes = generateRandomBytes(count);
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
-
-  /// Alias for addSaltWithLength (Rust API compatibility)
-  Envelope.prototype.addSaltWithLen = Envelope.prototype.addSaltWithLength;
-
-  /// Implementation of addSaltBytes()
-  Envelope.prototype.addSaltBytes = function (this: Envelope, saltBytes: Uint8Array): Envelope {
-    if (saltBytes.length < MIN_SALT_SIZE) {
-      throw EnvelopeError.general(
-        `Salt must be at least ${MIN_SALT_SIZE} bytes, got ${saltBytes.length}`,
-      );
-    }
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
-
-  /// Implementation of addSaltInRange()
-  Envelope.prototype.addSaltInRange = function (
-    this: Envelope,
-    min: number,
-    max: number,
-  ): Envelope {
-    if (min < MIN_SALT_SIZE) {
-      throw EnvelopeError.general(
-        `Minimum salt size must be at least ${MIN_SALT_SIZE} bytes, got ${min}`,
-      );
-    }
-    if (max < min) {
-      throw EnvelopeError.general(
-        `Maximum salt size must be at least minimum, got min=${min} max=${max}`,
-      );
-    }
-    const rng = createSecureRng();
-    const saltSize = nextInClosedRangeI32(rng, min, max);
-    const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
-
-  /// Test-determinism overloads for the salt builders, mirroring Rust's
-  /// `*_using` variants (`bc-envelope-rust/src/extension/salt.rs`):
-  /// `add_salt_using`, `add_salt_with_len_using`, `add_salt_in_range_using`.
-  /// They thread a caller-supplied {@link RandomNumberGenerator} through
-  /// the salt-bytes generation so tests can pin the entropy and assert on
-  /// exact share / digest bytes.
-
-  /// Implementation of addSaltUsing()
-  Envelope.prototype.addSaltUsing = function (
-    this: Envelope,
-    rng: RandomNumberGenerator,
-  ): Envelope {
-    const envelopeSize = this.cborBytes().length;
-    const saltSize = calculateProportionalSaltSize(envelopeSize, rng);
-    const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
-
-  /// Implementation of addSaltWithLenUsing()
-  Envelope.prototype.addSaltWithLenUsing = function (
-    this: Envelope,
-    count: number,
-    rng: RandomNumberGenerator,
-  ): Envelope {
-    if (count < MIN_SALT_SIZE) {
-      throw EnvelopeError.general(`Salt must be at least ${MIN_SALT_SIZE} bytes, got ${count}`);
-    }
-    const saltBytes = generateRandomBytes(count, rng);
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
-
-  /// Implementation of addSaltInRangeUsing()
-  Envelope.prototype.addSaltInRangeUsing = function (
-    this: Envelope,
-    min: number,
-    max: number,
-    rng: RandomNumberGenerator,
-  ): Envelope {
-    if (min < MIN_SALT_SIZE) {
-      throw EnvelopeError.general(
-        `Minimum salt size must be at least ${MIN_SALT_SIZE} bytes, got ${min}`,
-      );
-    }
-    if (max < min) {
-      throw EnvelopeError.general(
-        `Maximum salt size must be at least minimum, got min=${min} max=${max}`,
-      );
-    }
-    const saltSize = nextInClosedRangeI32(rng, min, max);
-    const saltBytes = generateRandomBytes(saltSize, rng);
-    return this.addAssertion(SALT, SaltComponent.from(saltBytes));
-  };
-
-  /// Implementation of addAssertionSalted()
-  Envelope.prototype.addAssertionSalted = function (
-    this: Envelope,
-    predicate: EnvelopeEncodableValue,
-    object: EnvelopeEncodableValue,
-    salted: boolean,
-  ): Envelope {
-    // Create the assertion envelope
-    const assertion = Envelope.newAssertion(predicate, object);
-
-    // If not salted, use the normal addAssertionEnvelope
-    if (!salted) {
-      return this.addAssertionEnvelope(assertion);
-    }
-
-    // Add salt to the assertion envelope (this creates a node with assertion as subject)
-    const saltedAssertion = assertion.addSalt();
-
-    // When salted, we need to use newWithUncheckedAssertions because the salted
-    // assertion is a node (not pure assertion type) and would fail normal validation
-    const c = this.case();
-    if (c.type === "node") {
-      return Envelope.newWithUncheckedAssertions(c.subject, [...c.assertions, saltedAssertion]);
-    }
-    return Envelope.newWithUncheckedAssertions(this, [saltedAssertion]);
-  };
-
-  /// Implementation of addAssertionEnvelopeSalted()
-  Envelope.prototype.addAssertionEnvelopeSalted = function (
-    this: Envelope,
-    assertionEnvelope: Envelope,
-    salted: boolean,
-  ): Envelope {
-    // If not salted, use the normal addAssertionEnvelope
-    if (!salted) {
-      return this.addAssertionEnvelope(assertionEnvelope);
-    }
-
-    // Add salt to the assertion envelope (this creates a node with assertion as subject)
-    const saltedAssertion = assertionEnvelope.addSalt();
-
-    // When salted, we need to use newWithUncheckedAssertions because the salted
-    // assertion is a node (not pure assertion type) and would fail normal validation
-    const c = this.case();
-    if (c.type === "node") {
-      return Envelope.newWithUncheckedAssertions(c.subject, [...c.assertions, saltedAssertion]);
-    }
-    return Envelope.newWithUncheckedAssertions(this, [saltedAssertion]);
-  };
-
-  /// Implementation of addOptionalAssertionEnvelopeSalted()
-  Envelope.prototype.addOptionalAssertionEnvelopeSalted = function (
-    this: Envelope,
-    assertionEnvelope: Envelope | undefined,
-    salted: boolean,
-  ): Envelope {
-    if (assertionEnvelope === undefined) {
-      return this;
-    }
-
-    // If not salted, use the normal addOptionalAssertionEnvelope
-    if (!salted) {
-      return this.addOptionalAssertionEnvelope(assertionEnvelope);
-    }
-
-    // Add salt to the assertion envelope (this creates a node with assertion as subject)
-    const saltedAssertion = assertionEnvelope.addSalt();
-
-    // When salted, we need to use newWithUncheckedAssertions because the salted
-    // assertion is a node (not pure assertion type) and would fail normal validation
-    const c = this.case();
-    if (c.type === "node") {
-      // Check for duplicate assertions
-      const isDuplicate = c.assertions.some((a) => a.digest().equals(saltedAssertion.digest()));
-      if (isDuplicate) {
-        return this;
-      }
-      return Envelope.newWithUncheckedAssertions(c.subject, [...c.assertions, saltedAssertion]);
-    }
-    return Envelope.newWithUncheckedAssertions(this.subject(), [saltedAssertion]);
-  };
+    return Envelope.newWithUncheckedAssertions(c.subject, [...c.assertions, saltedAssertion]);
+  }
+  return Envelope.newWithUncheckedAssertions(envelope.subject(), [saltedAssertion]);
 }

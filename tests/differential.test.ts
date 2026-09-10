@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import * as baselineMod from "./baseline/envelope-baseline.mjs";
-import * as src from "../src/index.js";
+import * as src from "../src/all.js";
 import { categories } from "./corpus/corpus";
 import {
   baselineAdapterFor,

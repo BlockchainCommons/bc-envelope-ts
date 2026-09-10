@@ -122,13 +122,13 @@ export class SignatureMetadata {
 /// envelope with a `'signed': Signature` assertion.
 ///
 /// Matches Rust: add_signature_opt()
-Envelope.prototype.addSignatureOpt = function (
-  this: Envelope,
+export function addSignatureOpt(
+  envelope: Envelope,
   signer: Signer,
   options?: SigningOptions,
   metadata?: SignatureMetadata,
 ): Envelope {
-  const digest = this.subject().digest();
+  const digest = envelope.subject().digest();
   let signatureEnvelope = Envelope.new(signer.signWithOptions(digest.bytes, options));
 
   if (metadata?.hasAssertions() === true) {
@@ -152,98 +152,98 @@ Envelope.prototype.addSignatureOpt = function (
     signatureEnvelope = signatureEnvelope.addAssertion(SIGNED, outerSignature);
   }
 
-  return this.addAssertion(SIGNED, signatureEnvelope);
-};
+  return envelope.addAssertion(SIGNED, signatureEnvelope);
+}
 
 /// Creates a signature without options or metadata.
 ///
 /// Matches Rust: add_signature()
-Envelope.prototype.addSignature = function (this: Envelope, signer: Signer): Envelope {
-  return this.addSignatureOpt(signer, undefined, undefined);
-};
+export function addSignature(envelope: Envelope, signer: Signer): Envelope {
+  return addSignatureOpt(envelope, signer, undefined, undefined);
+}
 
 /// Creates a signature with optional metadata but no options.
 ///
 /// Convenience method matching the common use case.
-Envelope.prototype.addSignatureWithMetadata = function (
-  this: Envelope,
+export function addSignatureWithMetadata(
+  envelope: Envelope,
   signer: Signer,
   metadata?: SignatureMetadata,
 ): Envelope {
-  return this.addSignatureOpt(signer, undefined, metadata);
-};
+  return addSignatureOpt(envelope, signer, undefined, metadata);
+}
 
 /// Creates several signatures for the envelope's subject.
 ///
 /// Matches Rust: add_signatures()
-Envelope.prototype.addSignatures = function (this: Envelope, signers: Signer[]): Envelope {
-  return signers.reduce<Envelope>((envelope, signer) => envelope.addSignature(signer), this);
-};
+export function addSignatures(envelope: Envelope, signers: Signer[]): Envelope {
+  return signers.reduce<Envelope>((envelope, signer) => addSignature(envelope, signer), envelope);
+}
 
 /// Creates several signatures with individual options and metadata.
 ///
 /// Matches Rust: add_signatures_opt()
-Envelope.prototype.addSignaturesOpt = function (
-  this: Envelope,
+export function addSignaturesOpt(
+  envelope: Envelope,
   signersWithOptions: { signer: Signer; options?: SigningOptions; metadata?: SignatureMetadata }[],
 ): Envelope {
   return signersWithOptions.reduce<Envelope>(
     (envelope, { signer, options, metadata }) =>
-      envelope.addSignatureOpt(signer, options, metadata),
-    this,
+      addSignatureOpt(envelope, signer, options, metadata),
+    envelope,
   );
-};
+}
 
 /// Creates several signatures with metadata (no options).
-Envelope.prototype.addSignaturesWithMetadata = function (
-  this: Envelope,
+export function addSignaturesWithMetadata(
+  envelope: Envelope,
   signersWithMetadata: { signer: Signer; metadata?: SignatureMetadata }[],
 ): Envelope {
   return signersWithMetadata.reduce<Envelope>(
-    (envelope, { signer, metadata }) => envelope.addSignatureWithMetadata(signer, metadata),
-    this,
+    (envelope, { signer, metadata }) => addSignatureWithMetadata(envelope, signer, metadata),
+    envelope,
   );
-};
+}
 
 /// Convenience constructor for a `'signed': Signature` assertion envelope.
 ///
 /// Matches Rust: make_signed_assertion()
-Envelope.prototype.makeSignedAssertion = function (
-  this: Envelope,
+export function makeSignedAssertion(
+  _envelope: Envelope,
   signature: Signature,
   note?: string,
 ): Envelope {
-  let envelope = Envelope.newAssertion(SIGNED, signature);
+  let assertion = Envelope.newAssertion(SIGNED, signature);
   if (note !== undefined) {
-    envelope = envelope.addAssertion(NOTE, note);
+    assertion = assertion.addAssertion(NOTE, note);
   }
-  return envelope;
-};
+  return assertion;
+}
 
 /// Returns whether the given signature is valid.
 ///
 /// Matches Rust: is_verified_signature()
-Envelope.prototype.isVerifiedSignature = function (
-  this: Envelope,
+export function isVerifiedSignature(
+  envelope: Envelope,
   signature: Signature,
   verifier: Verifier,
 ): boolean {
-  return verifier.verify(signature, this.subject().digest().bytes);
-};
+  return verifier.verify(signature, envelope.subject().digest().bytes);
+}
 
 /// Checks whether the given signature is valid for the given public key.
 ///
 /// Matches Rust: verify_signature()
-Envelope.prototype.verifySignature = function (
-  this: Envelope,
+export function verifySignature(
+  envelope: Envelope,
   signature: Signature,
   verifier: Verifier,
 ): Envelope {
-  if (!verifier.verify(signature, this.subject().digest().bytes)) {
+  if (!verifier.verify(signature, envelope.subject().digest().bytes)) {
     throw EnvelopeError.unverifiedSignature();
   }
-  return this;
-};
+  return envelope;
+}
 
 // ============================================================================
 // Internal: Core signature verification with metadata support
@@ -256,15 +256,15 @@ Envelope.prototype.verifySignature = function (
 /// with metadata.
 ///
 /// Matches Rust: has_some_signature_from_key_returning_metadata()
-Envelope.prototype.hasSignatureFromReturningMetadata = function (
-  this: Envelope,
+export function hasSignatureFromReturningMetadata(
+  envelope: Envelope,
   verifier: Verifier,
 ): Envelope | undefined {
   // Valid signature objects are either:
   // - `Signature` objects, or
   // - `Signature` objects with additional metadata assertions, wrapped
   //   and then signed by the same key.
-  const signatureObjects = this.objectsForPredicate(SIGNED);
+  const signatureObjects = envelope.objectsForPredicate(SIGNED);
 
   for (const signatureObject of signatureObjects) {
     const signatureObjectSubject = signatureObject.subject();
@@ -300,7 +300,7 @@ Envelope.prototype.hasSignatureFromReturningMetadata = function (
         const innerSignature = signatureMetadataEnvelope.extractSubject((cbor) =>
           Signature.fromCbor(cbor),
         );
-        if (!verifier.verify(innerSignature, this.subject().digest().bytes)) {
+        if (!verifier.verify(innerSignature, envelope.subject().digest().bytes)) {
           throw EnvelopeError.unverifiedInnerSignature();
         }
         return signatureMetadataEnvelope;
@@ -312,7 +312,7 @@ Envelope.prototype.hasSignatureFromReturningMetadata = function (
       // Simple case: no metadata
       try {
         const signature = signatureObject.extractSubject((cbor) => Signature.fromCbor(cbor));
-        if (verifier.verify(signature, this.subject().digest().bytes)) {
+        if (verifier.verify(signature, envelope.subject().digest().bytes)) {
           return signatureObject;
         }
       } catch {
@@ -322,36 +322,36 @@ Envelope.prototype.hasSignatureFromReturningMetadata = function (
   }
 
   return undefined;
-};
+}
 
 /// Returns whether the envelope's subject has a valid signature from the
 /// given public key.
 ///
 /// Matches Rust: has_signature_from()
-Envelope.prototype.hasSignatureFrom = function (this: Envelope, verifier: Verifier): boolean {
-  return this.hasSignatureFromReturningMetadata(verifier) !== undefined;
-};
+export function hasSignatureFrom(envelope: Envelope, verifier: Verifier): boolean {
+  return hasSignatureFromReturningMetadata(envelope, verifier) !== undefined;
+}
 
 /// Returns whether the envelope's subject has a valid signature from all
 /// the given public keys.
 ///
 /// Matches Rust: has_signatures_from()
-Envelope.prototype.hasSignaturesFrom = function (this: Envelope, verifiers: Verifier[]): boolean {
-  return verifiers.every((verifier) => this.hasSignatureFrom(verifier));
-};
+export function hasSignaturesFrom(envelope: Envelope, verifiers: Verifier[]): boolean {
+  return verifiers.every((verifier) => hasSignatureFrom(envelope, verifier));
+}
 
 /// Returns whether the envelope's subject has some threshold of signatures.
 ///
 /// Matches Rust: has_signatures_from_threshold()
-Envelope.prototype.hasSignaturesFromThreshold = function (
-  this: Envelope,
+export function hasSignaturesFromThreshold(
+  envelope: Envelope,
   verifiers: Verifier[],
   threshold?: number,
 ): boolean {
   const t = threshold ?? verifiers.length;
   let count = 0;
   for (const verifier of verifiers) {
-    if (this.hasSignatureFrom(verifier)) {
+    if (hasSignatureFrom(envelope, verifier)) {
       count++;
       if (count >= t) {
         return true;
@@ -359,67 +359,64 @@ Envelope.prototype.hasSignaturesFromThreshold = function (
     }
   }
   return false;
-};
+}
 
 /// Checks whether the envelope's subject has a valid signature from the
 /// given public key.
 ///
 /// Matches Rust: verify_signature_from()
-Envelope.prototype.verifySignatureFrom = function (this: Envelope, verifier: Verifier): Envelope {
-  if (!this.hasSignatureFrom(verifier)) {
+export function verifySignatureFrom(envelope: Envelope, verifier: Verifier): Envelope {
+  if (!hasSignatureFrom(envelope, verifier)) {
     throw EnvelopeError.unverifiedSignature();
   }
-  return this;
-};
+  return envelope;
+}
 
 /// Verifies signature and returns the metadata envelope.
 ///
 /// Matches Rust: verify_signature_from_returning_metadata()
-Envelope.prototype.verifySignatureFromReturningMetadata = function (
-  this: Envelope,
+export function verifySignatureFromReturningMetadata(
+  envelope: Envelope,
   verifier: Verifier,
 ): Envelope {
-  const metadata = this.hasSignatureFromReturningMetadata(verifier);
+  const metadata = hasSignatureFromReturningMetadata(envelope, verifier);
   if (metadata === undefined) {
     throw EnvelopeError.unverifiedSignature();
   }
   return metadata;
-};
+}
 
 /// Checks whether the envelope's subject has a set of signatures.
 ///
 /// Matches Rust: verify_signatures_from()
-Envelope.prototype.verifySignaturesFrom = function (
-  this: Envelope,
-  verifiers: Verifier[],
-): Envelope {
-  if (!this.hasSignaturesFrom(verifiers)) {
+export function verifySignaturesFrom(envelope: Envelope, verifiers: Verifier[]): Envelope {
+  if (!hasSignaturesFrom(envelope, verifiers)) {
     throw EnvelopeError.unverifiedSignature();
   }
-  return this;
-};
+  return envelope;
+}
 
 /// Checks whether the envelope's subject has some threshold of signatures.
 ///
 /// Matches Rust: verify_signatures_from_threshold()
-Envelope.prototype.verifySignaturesFromThreshold = function (
-  this: Envelope,
+export function verifySignaturesFromThreshold(
+  envelope: Envelope,
   verifiers: Verifier[],
   threshold?: number,
 ): Envelope {
   const t = threshold ?? verifiers.length;
-  if (!this.hasSignaturesFromThreshold(verifiers, t)) {
+  if (!hasSignaturesFromThreshold(envelope, verifiers, t)) {
     throw EnvelopeError.unverifiedSignature();
   }
-  return this;
-};
+  return envelope;
+}
 
 /// Returns all signature assertion objects.
 ///
 /// Matches Rust: objects_for_predicate(SIGNED) via signatures()
-Envelope.prototype.signatures = function (this: Envelope): Envelope[] {
-  return this.objectsForPredicate(SIGNED);
-};
+export function signatures(envelope: Envelope): Envelope[] {
+  return envelope.objectsForPredicate(SIGNED);
+}
 
 // ============================================================================
 // Convenience methods for signing and verifying entire envelopes.
@@ -431,46 +428,42 @@ Envelope.prototype.signatures = function (this: Envelope): Envelope[] {
 /// Signs the entire envelope by wrapping it first.
 ///
 /// Matches Rust: sign()
-Envelope.prototype.sign = function (this: Envelope, signer: Signer): Envelope {
-  return this.signOpt(signer, undefined);
-};
+export function sign(envelope: Envelope, signer: Signer): Envelope {
+  return signOpt(envelope, signer, undefined);
+}
 
 /// Signs the entire envelope with options but no metadata.
 ///
 /// Matches Rust: sign_opt()
-Envelope.prototype.signOpt = function (
-  this: Envelope,
-  signer: Signer,
-  options?: SigningOptions,
-): Envelope {
-  return this.wrap().addSignatureOpt(signer, options, undefined);
-};
+export function signOpt(envelope: Envelope, signer: Signer, options?: SigningOptions): Envelope {
+  return addSignatureOpt(envelope.wrap(), signer, options, undefined);
+}
 
 /// Signs the entire envelope with optional metadata.
-Envelope.prototype.signWithMetadata = function (
-  this: Envelope,
+export function signWithMetadata(
+  envelope: Envelope,
   signer: Signer,
   metadata?: SignatureMetadata,
 ): Envelope {
-  return this.wrap().addSignatureOpt(signer, undefined, metadata);
-};
+  return addSignatureOpt(envelope.wrap(), signer, undefined, metadata);
+}
 
 /// Verifies that the envelope has a valid signature from the specified
 /// verifier, and unwraps it.
 ///
 /// Matches Rust: verify()
-Envelope.prototype.verify = function (this: Envelope, verifier: Verifier): Envelope {
-  return this.verifySignatureFrom(verifier).tryUnwrap();
-};
+export function verify(envelope: Envelope, verifier: Verifier): Envelope {
+  return verifySignatureFrom(envelope, verifier).tryUnwrap();
+}
 
 /// Verifies the envelope's signature and returns both the unwrapped
 /// envelope and signature metadata.
 ///
 /// Matches Rust: verify_returning_metadata()
-Envelope.prototype.verifyReturningMetadata = function (
-  this: Envelope,
+export function verifyReturningMetadata(
+  envelope: Envelope,
   verifier: Verifier,
 ): { envelope: Envelope; metadata: Envelope } {
-  const metadata = this.verifySignatureFromReturningMetadata(verifier);
-  return { envelope: this.tryUnwrap(), metadata };
-};
+  const metadata = verifySignatureFromReturningMetadata(envelope, verifier);
+  return { envelope: envelope.tryUnwrap(), metadata };
+}

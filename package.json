@@ -2,7 +2,12 @@
   "name": "@blockchaincommons/envelope",
   "version": "1.0.0-beta.1",
   "type": "module",
-  "sideEffects": true,
+  "sideEffects": [
+    "./dist/all.mjs",
+    "./dist/all.cjs",
+    "./dist/format.mjs",
+    "./dist/format.cjs"
+  ],
   "description": "Gordian Envelope for TypeScript",
   "license": "BSD-2-Clause-Patent",
   "homepage": "https://github.com/BlockchainCommons/bc-envelope-ts",
@@ -30,6 +35,149 @@
         "default": "./dist/index.cjs"
       },
       "default": "./dist/index.mjs"
+    },
+    "./all": {
+      "import": {
+        "types": "./dist/all.d.mts",
+        "default": "./dist/all.mjs"
+      },
+      "require": {
+        "types": "./dist/all.d.cts",
+        "default": "./dist/all.cjs"
+      },
+      "default": "./dist/all.mjs"
+    },
+    "./format": {
+      "import": {
+        "types": "./dist/format.d.mts",
+        "default": "./dist/format.mjs"
+      },
+      "require": {
+        "types": "./dist/format.d.cts",
+        "default": "./dist/format.cjs"
+      },
+      "default": "./dist/format.mjs"
+    },
+    "./expression": {
+      "import": {
+        "types": "./dist/expression.d.mts",
+        "default": "./dist/expression.mjs"
+      },
+      "require": {
+        "types": "./dist/expression.d.cts",
+        "default": "./dist/expression.cjs"
+      },
+      "default": "./dist/expression.mjs"
+    },
+    "./attachment": {
+      "import": {
+        "types": "./dist/attachment.d.mts",
+        "default": "./dist/attachment.mjs"
+      },
+      "require": {
+        "types": "./dist/attachment.d.cts",
+        "default": "./dist/attachment.cjs"
+      },
+      "default": "./dist/attachment.mjs"
+    },
+    "./edge": {
+      "import": {
+        "types": "./dist/edge.d.mts",
+        "default": "./dist/edge.mjs"
+      },
+      "require": {
+        "types": "./dist/edge.d.cts",
+        "default": "./dist/edge.cjs"
+      },
+      "default": "./dist/edge.mjs"
+    },
+    "./proof": {
+      "import": {
+        "types": "./dist/proof.d.mts",
+        "default": "./dist/proof.mjs"
+      },
+      "require": {
+        "types": "./dist/proof.d.cts",
+        "default": "./dist/proof.cjs"
+      },
+      "default": "./dist/proof.mjs"
+    },
+    "./recipient": {
+      "import": {
+        "types": "./dist/recipient.d.mts",
+        "default": "./dist/recipient.mjs"
+      },
+      "require": {
+        "types": "./dist/recipient.d.cts",
+        "default": "./dist/recipient.cjs"
+      },
+      "default": "./dist/recipient.mjs"
+    },
+    "./salt": {
+      "import": {
+        "types": "./dist/salt.d.mts",
+        "default": "./dist/salt.mjs"
+      },
+      "require": {
+        "types": "./dist/salt.d.cts",
+        "default": "./dist/salt.cjs"
+      },
+      "default": "./dist/salt.mjs"
+    },
+    "./secret": {
+      "import": {
+        "types": "./dist/secret.d.mts",
+        "default": "./dist/secret.mjs"
+      },
+      "require": {
+        "types": "./dist/secret.d.cts",
+        "default": "./dist/secret.cjs"
+      },
+      "default": "./dist/secret.mjs"
+    },
+    "./signature": {
+      "import": {
+        "types": "./dist/signature.d.mts",
+        "default": "./dist/signature.mjs"
+      },
+      "require": {
+        "types": "./dist/signature.d.cts",
+        "default": "./dist/signature.cjs"
+      },
+      "default": "./dist/signature.mjs"
+    },
+    "./sskr": {
+      "import": {
+        "types": "./dist/sskr.d.mts",
+        "default": "./dist/sskr.mjs"
+      },
+      "require": {
+        "types": "./dist/sskr.d.cts",
+        "default": "./dist/sskr.cjs"
+      },
+      "default": "./dist/sskr.mjs"
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types.d.mts",
+        "default": "./dist/types.mjs"
+      },
+      "require": {
+        "types": "./dist/types.d.cts",
+        "default": "./dist/types.cjs"
+      },
+      "default": "./dist/types.mjs"
+    },
+    "./seal": {
+      "import": {
+        "types": "./dist/seal.d.mts",
+        "default": "./dist/seal.mjs"
+      },
+      "require": {
+        "types": "./dist/seal.d.cts",
+        "default": "./dist/seal.cjs"
+      },
+      "default": "./dist/seal.mjs"
     },
     "./package.json": "./package.json"
   },

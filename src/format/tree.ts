@@ -4,9 +4,10 @@
  *
  */
 
-import { Envelope } from "../base/envelope";
+import { type Envelope } from "../base/envelope";
 import { type EdgeType, edgeLabel } from "../base/envelope";
 import { getGlobalFormatContext, type FormatContext } from "./format-context";
+import { summaryWithContext } from "./envelope-summary.js";
 
 // ============================================================================
 // DigestDisplayFormat - Enum for digest display formatting
@@ -84,11 +85,8 @@ interface TreeElement {
 // This module provides the prototype implementations.
 
 /// Implementation of shortId()
-Envelope.prototype.shortId = function (
-  this: Envelope,
-  format: "short" | "full" | "ur" = "short",
-): string {
-  const digest = this.digest();
+export function shortId(envelope: Envelope, format: "short" | "full" | "ur" = "short"): string {
+  const digest = envelope.digest();
   if (format === "full") {
     return digest.toHex();
   }
@@ -96,7 +94,7 @@ Envelope.prototype.shortId = function (
     return digest.toUR().toString();
   }
   return digest.short();
-};
+}
 
 /// Implementation of summary()
 ///
@@ -105,9 +103,9 @@ Envelope.prototype.shortId = function (
 /// global_context)`. KnownValue rendering, tag-name resolution for
 /// arrays/maps/tagged values, and the truncation rules all live in the
 /// context-aware path; the no-arg variant just uses the global context.
-Envelope.prototype.summary = function (this: Envelope, maxLength = 40): string {
-  return this.summaryWithContext(maxLength, getGlobalFormatContext());
-};
+export function summary(envelope: Envelope, maxLength = 40): string {
+  return summaryWithContext(envelope, maxLength, getGlobalFormatContext());
+}
 
 /// Implementation of treeFormat()
 ///
@@ -122,7 +120,7 @@ Envelope.prototype.summary = function (this: Envelope, maxLength = 40): string {
 /// placeholder string `KNOWN_VALUE`. The format context defaults to the
 /// global one (via {@link getGlobalFormatContext}); callers can override
 /// per-call via {@link TreeFormatOptions.context}.
-Envelope.prototype.treeFormat = function (this: Envelope, options: TreeFormatOptions = {}): string {
+export function treeFormat(envelope: Envelope, options: TreeFormatOptions = {}): string {
   const hideNodes = options.hideNodes ?? false;
   const highlightDigests = options.highlightDigests ?? new Set<string>();
   const digestDisplay = options.digestDisplay ?? "short";
@@ -131,7 +129,7 @@ Envelope.prototype.treeFormat = function (this: Envelope, options: TreeFormatOpt
   const elements: TreeElement[] = [];
 
   // Walk the envelope and collect elements
-  this.walk(hideNodes, undefined, (envelope, level, incomingEdge, _state) => {
+  envelope.walk(hideNodes, undefined, (envelope, level, incomingEdge, _state) => {
     const digestStr = envelope.digest().short();
     const isHighlighted = highlightDigests.has(digestStr);
 
@@ -155,7 +153,7 @@ Envelope.prototype.treeFormat = function (this: Envelope, options: TreeFormatOpt
     }
 
     if (elem.showId) {
-      parts.push(elem.envelope.shortId(digestDisplay));
+      parts.push(shortId(elem.envelope, digestDisplay));
     }
 
     const label = edgeLabel(elem.incomingEdge);
@@ -163,7 +161,7 @@ Envelope.prototype.treeFormat = function (this: Envelope, options: TreeFormatOpt
       parts.push(label);
     }
 
-    parts.push(elem.envelope.summaryWithContext(40, context));
+    parts.push(summaryWithContext(elem.envelope, 40, context));
 
     const line = parts.join(" ");
     const indent = " ".repeat(elem.level * 4);
@@ -171,4 +169,4 @@ Envelope.prototype.treeFormat = function (this: Envelope, options: TreeFormatOpt
   });
 
   return lines.join("\n");
-};
+}

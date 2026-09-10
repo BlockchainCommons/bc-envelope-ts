@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Envelope, Digest, envelopeToBytes, envelopeFromBytes } from "../src";
+import { Envelope, envelopeToBytes, envelopeFromBytes } from "../src/index.js";
+import { Digest } from "@blockchaincommons/components";
+import "../src/all.js";
 
 /**
  * Helper function to check round-trip encoding of an Envelope.

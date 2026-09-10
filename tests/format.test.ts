@@ -9,6 +9,7 @@ import {
   globalFormatContext,
   withFormatContext,
 } from "../src/format";
+import "../src/all.js";
 
 describe("Mermaid Formatting", () => {
   describe("mermaidFormat()", () => {

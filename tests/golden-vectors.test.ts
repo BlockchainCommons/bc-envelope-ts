@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
-import * as src from "../src/index.js";
+import * as src from "../src/all.js";
 import { materialize, redesignedAdapterFor, type Recipe, type Outcome } from "./vectors/recipes";
 import { currentDeps } from "./vectors/deps";
 

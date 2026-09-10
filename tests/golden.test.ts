@@ -5,7 +5,7 @@
  * human-readable view of them.
  */
 import { describe, it, expect } from "vitest";
-import * as src from "../src/index.js";
+import * as src from "../src/all.js";
 import { HAND } from "./corpus/corpus";
 import {
   materialize,
@@ -15,6 +15,7 @@ import {
   type Out,
 } from "./vectors/recipes";
 import { currentDeps } from "./vectors/deps";
+import "../src/all.js";
 
 const api = redesignedAdapterFor(src, await currentDeps());
 

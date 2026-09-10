@@ -15,7 +15,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, SigningPrivateKey } from "../src";
+import { Envelope } from "../src/index.js";
+import { SigningPrivateKey } from "@blockchaincommons/components";
+import "../src/all.js";
 
 /**
  * The "Hello." plaintext used in many tests, matching the Rust test_data.

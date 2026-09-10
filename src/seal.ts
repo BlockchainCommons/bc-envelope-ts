@@ -45,18 +45,20 @@
  * are essential to undo the two wraps that `seal()` introduced.
  */
 
-import { Envelope } from "./base/envelope";
+import { type Envelope } from "./base/envelope";
 import type { Signer, Verifier, SigningOptions } from "./extension/signature";
 import type { Encrypter, Decrypter } from "@blockchaincommons/components";
+import { decryptToRecipient, encryptSubjectToRecipient } from "./extension/recipient.js";
+import { sign, signOpt, verify } from "./extension/signature.js";
 
 // ============================================================================
 // Envelope Prototype Extensions for Sealing
 // ============================================================================
 
 /// Implementation of encryptToRecipient
-Envelope.prototype.encryptToRecipient = function (this: Envelope, recipient: Encrypter): Envelope {
-  return this.wrap().encryptSubjectToRecipient(recipient);
-};
+export function encryptToRecipient(envelope: Envelope, recipient: Encrypter): Envelope {
+  return encryptSubjectToRecipient(envelope.wrap(), recipient);
+}
 
 /// Implementation of seal
 ///
@@ -66,13 +68,9 @@ Envelope.prototype.encryptToRecipient = function (this: Envelope, recipient: Enc
 /// revisions of this port called `addSignature(sender)` directly (no inner
 /// wrap), which produced sealed envelopes one wrap layer shallower than
 /// Rust's and broke cross-impl unseal.
-Envelope.prototype.seal = function (
-  this: Envelope,
-  sender: Signer,
-  recipient: Encrypter,
-): Envelope {
-  return this.sign(sender).encryptToRecipient(recipient);
-};
+export function seal(envelope: Envelope, sender: Signer, recipient: Encrypter): Envelope {
+  return encryptToRecipient(sign(envelope, sender), recipient);
+}
 
 /// Implementation of sealOpt — `seal_opt` with optional signing options.
 ///
@@ -80,14 +78,14 @@ Envelope.prototype.seal = function (
 /// Same pipeline as {@link Envelope.seal} but threads `options` through to
 /// `signOpt`, used to select alternate signing schemes (e.g.
 /// `SigningOptions::Ssh`).
-Envelope.prototype.sealOpt = function (
-  this: Envelope,
+export function sealOpt(
+  envelope: Envelope,
   sender: Signer,
   recipient: Encrypter,
   options?: SigningOptions,
 ): Envelope {
-  return this.signOpt(sender, options).encryptToRecipient(recipient);
-};
+  return encryptToRecipient(signOpt(envelope, sender, options), recipient);
+}
 
 /// Implementation of unseal
 ///
@@ -95,13 +93,13 @@ Envelope.prototype.sealOpt = function (
 /// `decrypt_to_recipient(recipient)?.verify(sender)`. The `verify` step
 /// performs `verifySignatureFrom(sender)` *and then* `tryUnwrap()` — the
 /// extra unwrap undoes the inner wrap that `sign()` added during seal.
-Envelope.prototype.unseal = function (
-  this: Envelope,
+export function unseal(
+  envelope: Envelope,
   senderPublicKey: Verifier,
   recipient: Decrypter,
 ): Envelope {
-  return this.decryptToRecipient(recipient).verify(senderPublicKey);
-};
+  return verify(decryptToRecipient(envelope, recipient), senderPublicKey);
+}
 
 // ============================================================================
 // Module Registration

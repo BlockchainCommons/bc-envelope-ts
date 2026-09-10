@@ -20,7 +20,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, SigningPrivateKey, SignatureMetadata, NOTE } from "../src";
+import { Envelope } from "../src/index.js";
+import { SigningPrivateKey } from "@blockchaincommons/components";
+import { SignatureMetadata } from "../src/extension/signature.js";
+import { NOTE } from "@blockchaincommons/known-values";
+import "../src/all.js";
 
 // Test data constants matching the Rust reference implementation
 const PLAINTEXT_HELLO = "Hello.";

@@ -161,14 +161,12 @@ export class Attachments {
    * @returns A new Attachments container with the envelope's attachments
    */
   static fromEnvelope(envelope: Envelope): Attachments {
-    const attachments = new Attachments();
-    const attachmentEnvelopes = envelope.attachments();
-
-    for (const attachment of attachmentEnvelopes) {
-      attachments._envelopes.set(attachment.digest().toHex(), attachment);
+    const result = new Attachments();
+    for (const attachment of attachments(envelope)) {
+      result._envelopes.set(attachment.digest().toHex(), attachment);
     }
 
-    return attachments;
+    return result;
   }
 }
 
@@ -177,7 +175,7 @@ export class Attachments {
 /**
  * Creates a new attachment envelope.
  */
-Envelope.newAttachment = function (
+export function newAttachment(
   payload: EnvelopeEncodableValue,
   vendor: string,
   conformsTo?: string,
@@ -194,196 +192,193 @@ Envelope.newAttachment = function (
   // This returns an assertion envelope
   const attachmentPredicate = Envelope.new(ATTACHMENT);
   return attachmentPredicate.addAssertion(ATTACHMENT, attachmentObj).assertions()[0];
-};
+}
 
 /**
  * Adds an attachment to an envelope.
  */
-// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-if (Envelope?.prototype) {
-  Envelope.prototype.addAttachment = function (
-    this: Envelope,
-    payload: EnvelopeEncodableValue,
-    vendor: string,
-    conformsTo?: string,
-  ): Envelope {
-    let attachmentObj = Envelope.new(payload).wrap().addAssertion(VENDOR, vendor);
+export function addAttachment(
+  envelope: Envelope,
+  payload: EnvelopeEncodableValue,
+  vendor: string,
+  conformsTo?: string,
+): Envelope {
+  let attachmentObj = Envelope.new(payload).wrap().addAssertion(VENDOR, vendor);
 
-    if (conformsTo !== undefined) {
-      attachmentObj = attachmentObj.addAssertion(CONFORMS_TO, conformsTo);
+  if (conformsTo !== undefined) {
+    attachmentObj = attachmentObj.addAssertion(CONFORMS_TO, conformsTo);
+  }
+
+  return envelope.addAssertion(ATTACHMENT, attachmentObj);
+}
+
+/**
+ * Returns the payload of an attachment envelope.
+ */
+export function attachmentPayload(envelope: Envelope): Envelope {
+  const c = envelope.case();
+  if (c.type !== "assertion") {
+    throw EnvelopeError.general("Envelope is not an attachment assertion");
+  }
+
+  const obj = c.assertion.object();
+  return obj.unwrap();
+}
+
+/**
+ * Returns the vendor of an attachment envelope.
+ */
+export function attachmentVendor(envelope: Envelope): string {
+  const c = envelope.case();
+  if (c.type !== "assertion") {
+    throw EnvelopeError.general("Envelope is not an attachment assertion");
+  }
+
+  const obj = c.assertion.object();
+  const vendorEnv = obj.objectForPredicate(VENDOR);
+  const vendor = vendorEnv.asText();
+
+  if (vendor === undefined || vendor === "") {
+    throw EnvelopeError.general("Attachment has no vendor");
+  }
+
+  return vendor;
+}
+
+/**
+ * Returns the conformsTo of an attachment envelope.
+ */
+export function attachmentConformsTo(envelope: Envelope): string | undefined {
+  const c = envelope.case();
+  if (c.type !== "assertion") {
+    throw EnvelopeError.general("Envelope is not an attachment assertion");
+  }
+
+  const obj = c.assertion.object();
+  const conformsToEnv = obj.optionalObjectForPredicate(CONFORMS_TO);
+
+  if (conformsToEnv === undefined) {
+    return undefined;
+  }
+
+  return conformsToEnv.asText();
+}
+
+/**
+ * Returns all attachment assertions.
+ */
+export function attachments(envelope: Envelope): Envelope[] {
+  return envelope.assertionsWithPredicate(ATTACHMENT).map((a) => {
+    const c = a.case();
+    if (c.type === "assertion") {
+      return c.assertion.object();
     }
+    throw EnvelopeError.general("Invalid attachment assertion");
+  });
+}
 
-    return this.addAssertion(ATTACHMENT, attachmentObj);
-  };
+/**
+ * Returns attachments matching vendor and/or conformsTo.
+ */
+export function attachmentsWithVendorAndConformsTo(
+  envelope: Envelope,
+  vendor?: string,
+  conformsTo?: string,
+): Envelope[] {
+  const allAttachments = attachments(envelope);
 
-  /**
-   * Returns the payload of an attachment envelope.
-   */
-  Envelope.prototype.attachmentPayload = function (this: Envelope): Envelope {
-    const c = this.case();
-    if (c.type !== "assertion") {
-      throw EnvelopeError.general("Envelope is not an attachment assertion");
-    }
-
-    const obj = c.assertion.object();
-    return obj.unwrap();
-  };
-
-  /**
-   * Returns the vendor of an attachment envelope.
-   */
-  Envelope.prototype.attachmentVendor = function (this: Envelope): string {
-    const c = this.case();
-    if (c.type !== "assertion") {
-      throw EnvelopeError.general("Envelope is not an attachment assertion");
-    }
-
-    const obj = c.assertion.object();
-    const vendorEnv = obj.objectForPredicate(VENDOR);
-    const vendor = vendorEnv.asText();
-
-    if (vendor === undefined || vendor === "") {
-      throw EnvelopeError.general("Attachment has no vendor");
-    }
-
-    return vendor;
-  };
-
-  /**
-   * Returns the conformsTo of an attachment envelope.
-   */
-  Envelope.prototype.attachmentConformsTo = function (this: Envelope): string | undefined {
-    const c = this.case();
-    if (c.type !== "assertion") {
-      throw EnvelopeError.general("Envelope is not an attachment assertion");
-    }
-
-    const obj = c.assertion.object();
-    const conformsToEnv = obj.optionalObjectForPredicate(CONFORMS_TO);
-
-    if (conformsToEnv === undefined) {
-      return undefined;
-    }
-
-    return conformsToEnv.asText();
-  };
-
-  /**
-   * Returns all attachment assertions.
-   */
-  Envelope.prototype.attachments = function (this: Envelope): Envelope[] {
-    return this.assertionsWithPredicate(ATTACHMENT).map((a) => {
-      const c = a.case();
-      if (c.type === "assertion") {
-        return c.assertion.object();
-      }
-      throw EnvelopeError.general("Invalid attachment assertion");
-    });
-  };
-
-  /**
-   * Returns attachments matching vendor and/or conformsTo.
-   */
-  Envelope.prototype.attachmentsWithVendorAndConformsTo = function (
-    this: Envelope,
-    vendor?: string,
-    conformsTo?: string,
-  ): Envelope[] {
-    const allAttachments = this.attachments();
-
-    return allAttachments.filter((attachment) => {
-      try {
-        // The attachment is already a wrapped envelope with vendor/conformsTo assertions
-        // Check vendor if specified
-        if (vendor !== undefined) {
-          const vendorEnv = attachment.objectForPredicate(VENDOR);
-          const attachmentVendor = vendorEnv.asText();
-          if (attachmentVendor !== vendor) {
-            return false;
-          }
+  return allAttachments.filter((attachment) => {
+    try {
+      // The attachment is already a wrapped envelope with vendor/conformsTo assertions
+      // Check vendor if specified
+      if (vendor !== undefined) {
+        const vendorEnv = attachment.objectForPredicate(VENDOR);
+        const attachmentVendor = vendorEnv.asText();
+        if (attachmentVendor !== vendor) {
+          return false;
         }
-
-        // Check conformsTo if specified
-        if (conformsTo !== undefined) {
-          const conformsToEnv = attachment.optionalObjectForPredicate(CONFORMS_TO);
-          if (conformsToEnv === undefined) {
-            return false;
-          }
-          const conformsToText = conformsToEnv.asText();
-          if (conformsToText !== conformsTo) {
-            return false;
-          }
-        }
-
-        return true;
-      } catch {
-        return false;
       }
-    });
-  };
 
-  /**
-   * Validates that this envelope is a valid attachment.
-   *
-   * An attachment is valid if:
-   * 1. The envelope is an assertion with 'attachment' as predicate
-   * 2. The object contains a wrapped payload with vendor assertion
-   * 3. Reconstructing the attachment yields an equivalent envelope
-   *
-   * @throws EnvelopeError if the envelope is not a valid attachment
-   */
-  Envelope.prototype.validateAttachment = function (this: Envelope): void {
-    const c = this.case();
-    if (c.type !== "assertion") {
-      throw EnvelopeError.invalidAttachment("Envelope is not an assertion");
+      // Check conformsTo if specified
+      if (conformsTo !== undefined) {
+        const conformsToEnv = attachment.optionalObjectForPredicate(CONFORMS_TO);
+        if (conformsToEnv === undefined) {
+          return false;
+        }
+        const conformsToText = conformsToEnv.asText();
+        if (conformsToText !== conformsTo) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch {
+      return false;
     }
+  });
+}
 
-    // Verify predicate is 'attachment' (using digest comparison for KnownValue predicates)
-    const predicate = c.assertion.predicate();
-    const expectedPredicate = Envelope.new(ATTACHMENT);
-    if (!predicate.digest().equals(expectedPredicate.digest())) {
-      throw EnvelopeError.invalidAttachment("Assertion predicate is not 'attachment'");
-    }
+/**
+ * Validates that this envelope is a valid attachment.
+ *
+ * An attachment is valid if:
+ * 1. The envelope is an assertion with 'attachment' as predicate
+ * 2. The object contains a wrapped payload with vendor assertion
+ * 3. Reconstructing the attachment yields an equivalent envelope
+ *
+ * @throws EnvelopeError if the envelope is not a valid attachment
+ */
+export function validateAttachment(envelope: Envelope): void {
+  const c = envelope.case();
+  if (c.type !== "assertion") {
+    throw EnvelopeError.invalidAttachment("Envelope is not an assertion");
+  }
 
-    // Extract components
-    const payload = this.attachmentPayload();
-    const vendor = this.attachmentVendor();
-    const conformsTo = this.attachmentConformsTo();
+  // Verify predicate is 'attachment' (using digest comparison for KnownValue predicates)
+  const predicate = c.assertion.predicate();
+  const expectedPredicate = Envelope.new(ATTACHMENT);
+  if (!predicate.digest().equals(expectedPredicate.digest())) {
+    throw EnvelopeError.invalidAttachment("Assertion predicate is not 'attachment'");
+  }
 
-    // Reconstruct the attachment
-    const reconstructed = Envelope.newAttachment(payload, vendor, conformsTo);
+  // Extract components
+  const payload = attachmentPayload(envelope);
+  const vendor = attachmentVendor(envelope);
+  const conformsTo = attachmentConformsTo(envelope);
 
-    // Check equivalence (same digest = semantically equivalent)
-    if (!this.digest().equals(reconstructed.digest())) {
-      throw EnvelopeError.invalidAttachment("Attachment structure is invalid");
-    }
-  };
+  // Reconstruct the attachment
+  const reconstructed = Envelope.newAttachment(payload, vendor, conformsTo);
 
-  /**
-   * Finds a single attachment matching the given vendor and conformsTo.
-   *
-   * Unlike `attachmentsWithVendorAndConformsTo` which returns an array,
-   * this method requires exactly one attachment to match.
-   *
-   * @param vendor - Optional vendor identifier to match
-   * @param conformsTo - Optional conformsTo URI to match
-   * @returns The matching attachment envelope
-   * @throws EnvelopeError if not exactly one attachment matches
-   */
-  Envelope.prototype.attachmentWithVendorAndConformsTo = function (
-    this: Envelope,
-    vendor?: string,
-    conformsTo?: string,
-  ): Envelope {
-    const matches = this.attachmentsWithVendorAndConformsTo(vendor, conformsTo);
+  // Check equivalence (same digest = semantically equivalent)
+  if (!envelope.digest().equals(reconstructed.digest())) {
+    throw EnvelopeError.invalidAttachment("Attachment structure is invalid");
+  }
+}
 
-    if (matches.length === 0) {
-      throw EnvelopeError.general("No matching attachment found");
-    }
-    if (matches.length > 1) {
-      throw EnvelopeError.general(`Expected exactly one attachment, found ${matches.length}`);
-    }
+/**
+ * Finds a single attachment matching the given vendor and conformsTo.
+ *
+ * Unlike `attachmentsWithVendorAndConformsTo` which returns an array,
+ * this method requires exactly one attachment to match.
+ *
+ * @param vendor - Optional vendor identifier to match
+ * @param conformsTo - Optional conformsTo URI to match
+ * @returns The matching attachment envelope
+ * @throws EnvelopeError if not exactly one attachment matches
+ */
+export function attachmentWithVendorAndConformsTo(
+  envelope: Envelope,
+  vendor?: string,
+  conformsTo?: string,
+): Envelope {
+  const matches = attachmentsWithVendorAndConformsTo(envelope, vendor, conformsTo);
 
-    return matches[0];
-  };
+  if (matches.length === 0) {
+    throw EnvelopeError.general("No matching attachment found");
+  }
+  if (matches.length > 1) {
+    throw EnvelopeError.general(`Expected exactly one attachment, found ${matches.length}`);
+  }
+
+  return matches[0];
 }
