@@ -2,7 +2,7 @@
   "name": "@blockchaincommons/envelope",
   "version": "1.0.0-beta.1",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": true,
   "description": "Gordian Envelope for TypeScript",
   "license": "BSD-2-Clause-Patent",
   "homepage": "https://github.com/BlockchainCommons/bc-envelope-ts",
