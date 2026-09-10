@@ -29,14 +29,14 @@ import { taggedValue, CborDate, expectTaggedContent } from "@blockchaincommons/d
 import { CONTENT, NOTE, DATE } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
-import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
+import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import { formatFlat } from "../format/notation.js";
 
 /**
  * Interface that defines the behavior of an event.
  */
-export interface EventBehavior<T extends EnvelopeEncodableValue> {
+export interface EventBehavior<T extends EnvelopeInput> {
   /**
    * Adds a note to the event.
    */
@@ -94,9 +94,7 @@ export interface EventBehavior<T extends EnvelopeEncodableValue> {
  *
  * @typeParam T - The type of content this event carries
  */
-export class Event<T extends EnvelopeEncodableValue>
-  implements EventBehavior<T>, EnvelopeEncodable
-{
+export class Event<T extends EnvelopeInput> implements EventBehavior<T>, ToEnvelope {
   private readonly _content: T;
   private readonly _id: ARID;
   private _note: string;
@@ -112,7 +110,7 @@ export class Event<T extends EnvelopeEncodableValue>
   /**
    * Creates a new event with the specified content and ID.
    */
-  static new<T extends EnvelopeEncodableValue>(content: T, id: ARID): Event<T> {
+  static new<T extends EnvelopeInput>(content: T, id: ARID): Event<T> {
     return new Event(content, id);
   }
 
@@ -120,7 +118,7 @@ export class Event<T extends EnvelopeEncodableValue>
    * Returns a human-readable summary of the event.
    */
   summary(): string {
-    const contentEnvelope = Envelope.new(this._content);
+    const contentEnvelope = Envelope.from(this._content);
     return `id: ${this._id.shortDescription()}, content: ${formatFlat(contentEnvelope)}`;
   }
 
@@ -165,9 +163,9 @@ export class Event<T extends EnvelopeEncodableValue>
     // via `From<ARID> for CBOR` (the tagged form). See request.ts
     // for the same fix and rationale.
     const taggedArid = taggedValue(TAG_EVENT, this._id.toCbor());
-    const contentEnvelope = Envelope.new(this._content);
+    const contentEnvelope = Envelope.from(this._content);
 
-    let envelope = Envelope.newLeaf(taggedArid).addAssertion(CONTENT, contentEnvelope);
+    let envelope = Envelope.leaf(taggedArid).addAssertion(CONTENT, contentEnvelope);
 
     if (this._note !== "") {
       envelope = envelope.addAssertion(NOTE, this._note);
@@ -184,18 +182,11 @@ export class Event<T extends EnvelopeEncodableValue>
   }
 
   /**
-   * Converts this event into an envelope (EnvelopeEncodable implementation).
-   */
-  intoEnvelope(): Envelope {
-    return this.toEnvelope();
-  }
-
-  /**
    * Creates an event from an envelope.
    *
    * @typeParam T - The type to extract the content as
    */
-  static fromEnvelope<T extends EnvelopeEncodableValue>(
+  static fromEnvelope<T extends EnvelopeInput>(
     envelope: Envelope,
     contentExtractor: (env: Envelope) => T,
   ): Event<T> {

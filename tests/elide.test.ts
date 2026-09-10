@@ -4,27 +4,27 @@ import "../src/all.js";
 describe("Elision Extension", () => {
   describe("Basic elision", () => {
     it("should elide envelope and preserve digest", () => {
-      const envelope = Envelope.new("Secret message");
+      const envelope = Envelope.from("Secret message");
       const elided = envelope.elide();
 
       expect(envelope.digest().equals(elided.digest())).toBe(true);
-      expect(elided.case().type).toBe("elided");
+      expect(elided.case.type).toBe("elided");
     });
   });
 
   describe("Selective elision", () => {
     it("should elide specific assertions", () => {
-      const person = Envelope.new("Alice")
+      const person = Envelope.from("Alice")
         .addAssertion("name", "Alice Smith")
         .addAssertion("age", 30)
         .addAssertion("ssn", "123-45-6789");
 
       const assertions = person.assertions();
       const ssnAssertion = assertions.find((a) => {
-        const c = a.case();
+        const c = a.case;
         if (c.type === "assertion") {
           const pred = c.assertion.predicate();
-          if (pred.case().type === "leaf") {
+          if (pred.case.type === "leaf") {
             try {
               return pred.asText() === "ssn";
             } catch {
@@ -37,7 +37,7 @@ describe("Elision Extension", () => {
 
       if (ssnAssertion) {
         const targetSet = new Set([ssnAssertion.digest()]);
-        const redacted = person.elideRemovingSet(targetSet);
+        const redacted = person.elide({ removing: targetSet });
 
         expect(person.digest().equals(redacted.digest())).toBe(true);
       }
@@ -46,17 +46,17 @@ describe("Elision Extension", () => {
 
   describe("Reveal specific elements", () => {
     it("should reveal only specified elements", () => {
-      const person = Envelope.new("Alice")
+      const person = Envelope.from("Alice")
         .addAssertion("name", "Alice Smith")
         .addAssertion("age", 30)
         .addAssertion("ssn", "123-45-6789");
 
       const assertions = person.assertions();
       const nameAssertion = assertions.find((a) => {
-        const c = a.case();
+        const c = a.case;
         if (c.type === "assertion") {
           const pred = c.assertion.predicate();
-          if (pred.case().type === "leaf") {
+          if (pred.case.type === "leaf") {
             try {
               return pred.asText() === "name";
             } catch {
@@ -70,7 +70,7 @@ describe("Elision Extension", () => {
       if (nameAssertion) {
         const revealSet = new Set([person.subject().digest(), nameAssertion.digest()]);
 
-        const selective = person.elideRevealingSet(revealSet);
+        const selective = person.elide({ revealing: revealSet });
 
         expect(person.digest().equals(selective.digest())).toBe(true);
       }
@@ -79,13 +79,13 @@ describe("Elision Extension", () => {
 
   describe("Elide multiple assertions", () => {
     it("should elide multiple targets using array", () => {
-      const person = Envelope.new("Alice")
+      const person = Envelope.from("Alice")
         .addAssertion("name", "Alice Smith")
         .addAssertion("age", 30)
         .addAssertion("ssn", "123-45-6789");
 
       const targets = person.assertions().slice(1, 3);
-      const multiElided = person.elideRemovingArray(targets);
+      const multiElided = person.elide({ removing: targets });
 
       expect(person.digest().equals(multiElided.digest())).toBe(true);
     });
@@ -93,7 +93,7 @@ describe("Elision Extension", () => {
 
   describe("Un-elide / reveal", () => {
     it("should un-elide with original envelope", () => {
-      const envelope = Envelope.new("Secret message");
+      const envelope = Envelope.from("Secret message");
       const elided = envelope.elide();
 
       const revealed = elided.unelide(envelope);
@@ -105,8 +105,8 @@ describe("Elision Extension", () => {
 
   describe("Identity check", () => {
     it("should identify identical envelopes", () => {
-      const env1 = Envelope.new("Hello");
-      const env2 = Envelope.new("Hello");
+      const env1 = Envelope.from("Hello");
+      const env2 = Envelope.from("Hello");
       const wrapped = env1.wrap();
 
       expect(env1.isIdenticalTo(env2)).toBe(true);
@@ -116,18 +116,18 @@ describe("Elision Extension", () => {
 
   describe("Nested elision", () => {
     it("should elide nested envelope assertions", () => {
-      const company = Envelope.new("Company")
+      const company = Envelope.from("Company")
         .addAssertion("name", "ACME Corp")
         .addAssertion(
           "CEO",
-          Envelope.new("Bob").addAssertion("age", 45).addAssertion("email", "bob@acme.com"),
+          Envelope.from("Bob").addAssertion("age", 45).addAssertion("email", "bob@acme.com"),
         );
 
       const ceoAssertion = company.assertions().find((a) => {
-        const c = a.case();
+        const c = a.case;
         if (c.type === "assertion") {
           const pred = c.assertion.predicate();
-          if (pred.case().type === "leaf") {
+          if (pred.case.type === "leaf") {
             try {
               return pred.asText() === "CEO";
             } catch {
@@ -139,7 +139,7 @@ describe("Elision Extension", () => {
       });
 
       if (ceoAssertion) {
-        const nestedElided = company.elideRemovingTarget(ceoAssertion);
+        const nestedElided = company.elide({ removing: [ceoAssertion] });
 
         expect(company.digest().equals(nestedElided.digest())).toBe(true);
       }

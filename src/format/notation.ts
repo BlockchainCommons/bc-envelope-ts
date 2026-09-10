@@ -12,7 +12,7 @@
 /// # Examples
 ///
 /// ```typescript
-/// const envelope = Envelope.new("Alice")
+/// const envelope = Envelope.from("Alice")
 ///     .addAssertion("knows", "Bob")
 ///     .addAssertion("knows", "Carol");
 ///
@@ -252,7 +252,7 @@ export const formatCbor = (cbor: Cbor, opts: EnvelopeFormatOpts): EnvelopeFormat
     // Envelope tag is 200
     if (tag === 200n || tag === 200) {
       try {
-        const envelope = Envelope.fromTaggedCbor(cbor);
+        const envelope = Envelope.fromCbor(cbor);
         return formatEnvelope(envelope, opts);
       } catch {
         return formatItem("<error>");
@@ -282,7 +282,7 @@ export const formatEnvelope = (
   envelope: Envelope,
   opts: EnvelopeFormatOpts,
 ): EnvelopeFormatItem => {
-  const c = envelope.case();
+  const c = envelope.case;
 
   switch (c.type) {
     case "leaf":
@@ -332,7 +332,7 @@ export const formatEnvelope = (
       const assertionItems: EnvelopeFormatItem[][] = [];
 
       for (const assertion of c.assertions) {
-        const assertionCase = assertion.case();
+        const assertionCase = assertion.case;
 
         switch (assertionCase.type) {
           case "elided":
@@ -530,4 +530,4 @@ export function formatFlat(envelope: Envelope): string {
 // The request/response/event tag summarizers in the format context need to
 // format an inner envelope; installing the hook here (the module that owns
 // the formatter) keeps format-context free of a value import of this module.
-setEnvelopeFormatHook((cbor, _flat) => format(Envelope.newLeaf(cbor)));
+setEnvelopeFormatHook((cbor, _flat) => format(Envelope.leaf(cbor)));

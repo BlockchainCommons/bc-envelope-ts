@@ -55,11 +55,6 @@
     "limit": "32 kB"
   },
   {
-    "name": "salt subpath, minified + gzipped",
-    "path": "dist/salt.mjs",
-    "limit": "46 kB"
-  },
-  {
     "name": "secret subpath, minified + gzipped",
     "path": "dist/secret.mjs",
     "limit": "40 kB"

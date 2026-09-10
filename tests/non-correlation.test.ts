@@ -25,14 +25,14 @@ function isEquivalentTo(e1: Envelope, e2: Envelope): boolean {
 describe("Non-correlation Tests", () => {
   describe("test_envelope_non_correlation", () => {
     it("should correlate envelope with its elision", () => {
-      const e1 = Envelope.new("Hello.");
+      const e1 = Envelope.from("Hello.");
 
       // e1 correlates with its elision
       expect(isEquivalentTo(e1, e1.elide())).toBe(true);
     });
 
     it("should not correlate envelope with salted version", () => {
-      const e1 = Envelope.new("Hello.");
+      const e1 = Envelope.from("Hello.");
 
       // e2 is the same message, but with random salt
       const e2 = e1.addSalt();
@@ -50,7 +50,7 @@ describe("Non-correlation Tests", () => {
     });
 
     it("should show salt in tree format", () => {
-      const e1 = Envelope.new("Hello.");
+      const e1 = Envelope.from("Hello.");
       const e2 = e1.addSalt();
 
       // The tree format should show the structure with salt. The salt
@@ -68,8 +68,8 @@ describe("Non-correlation Tests", () => {
 
   describe("test_predicate_correlation", () => {
     it("should correlate predicates across different envelopes", () => {
-      const e1 = Envelope.new("Foo").addAssertion("note", "Bar");
-      const e2 = Envelope.new("Baz").addAssertion("note", "Quux");
+      const e1 = Envelope.from("Foo").addAssertion("note", "Bar");
+      const e2 = Envelope.from("Baz").addAssertion("note", "Quux");
 
       // Check e1 format
       const e1Format = e1.format();
@@ -90,11 +90,11 @@ describe("Non-correlation Tests", () => {
     });
 
     it("should elide revealing only the envelope structure", () => {
-      const e1 = Envelope.new("Foo").addAssertion("note", "Bar");
+      const e1 = Envelope.from("Foo").addAssertion("note", "Bar");
 
       // Redact the entire contents of e1 without
       // redacting the envelope itself.
-      const e1Elided = e1.elideRevealingTarget(e1);
+      const e1Elided = e1.elide({ revealing: [e1] });
 
       // Check the elided format shows structure but elided content
       const elidedFormat = e1Elided.format();
@@ -108,18 +108,18 @@ describe("Non-correlation Tests", () => {
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
       // Create a salted "Alpha" envelope
-      const alphaWithSalt = Envelope.new("Alpha").addSalt();
+      const alphaWithSalt = Envelope.from("Alpha").addSalt();
 
       // Wrap it
       const wrapped = alphaWithSalt.wrap();
 
       // Create salted predicate and object using string "note" instead of KnownValue NOTE
       // (KnownValue encoding is not yet fully implemented in the TypeScript version)
-      const saltedPredicate = Envelope.new("note").addSalt();
-      const saltedObject = Envelope.new(source).addSalt();
+      const saltedPredicate = Envelope.from("note").addSalt();
+      const saltedObject = Envelope.from(source).addSalt();
 
       // Add the assertion with salted predicate and object
-      const e1 = wrapped.addAssertionEnvelope(Envelope.newAssertion(saltedPredicate, saltedObject));
+      const e1 = wrapped.addAssertionEnvelope(Envelope.assertion(saltedPredicate, saltedObject));
 
       // Verify the structure
       const formatted = e1.format();
@@ -134,12 +134,12 @@ describe("Non-correlation Tests", () => {
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
       // Build a simpler version for testing
-      const alphaWithSalt = Envelope.new("Alpha").addSalt();
+      const alphaWithSalt = Envelope.from("Alpha").addSalt();
       const wrapped = alphaWithSalt.wrap();
       const e1 = wrapped.addAssertion("note", source);
 
       // Elide revealing only the target (the top-level envelope)
-      const e1Elided = e1.elideRevealingTarget(e1);
+      const e1Elided = e1.elide({ revealing: [e1] });
 
       // Check the elided format
       const elidedFormat = e1Elided.format();
@@ -151,8 +151,8 @@ describe("Non-correlation Tests", () => {
     it("should make identical envelopes have different digests", () => {
       const content = "Sensitive data";
 
-      const e1 = Envelope.new(content).addSalt();
-      const e2 = Envelope.new(content).addSalt();
+      const e1 = Envelope.from(content).addSalt();
+      const e2 = Envelope.from(content).addSalt();
 
       // Even with same content, salted envelopes have different digests
       expect(isEquivalentTo(e1, e2)).toBe(false);
@@ -161,7 +161,7 @@ describe("Non-correlation Tests", () => {
     it("should preserve semantic content despite different digests", () => {
       const content = "Hello, World!";
 
-      const original = Envelope.new(content);
+      const original = Envelope.from(content);
       const salted = original.addSalt();
 
       // The subject is still the same
@@ -172,8 +172,8 @@ describe("Non-correlation Tests", () => {
     });
 
     it("should allow multiple layers of salt", () => {
-      const e1 = Envelope.new("Data").addSalt().addSalt();
-      const e2 = Envelope.new("Data").addSalt().addSalt();
+      const e1 = Envelope.from("Data").addSalt().addSalt();
+      const e2 = Envelope.from("Data").addSalt().addSalt();
 
       // Each layer of salt creates a unique envelope
       expect(isEquivalentTo(e1, e2)).toBe(false);
@@ -194,7 +194,7 @@ describe("Non-correlation Tests", () => {
 
   describe("elision with salt", () => {
     it("should not correlate elided salted envelope with original", () => {
-      const original = Envelope.new("Secret message");
+      const original = Envelope.from("Secret message");
       const salted = original.addSalt();
 
       const originalElided = original.elide();
@@ -214,7 +214,7 @@ describe("Non-correlation Tests", () => {
     });
 
     it("should allow selective elision with salt", () => {
-      const envelope = Envelope.new("Alice")
+      const envelope = Envelope.from("Alice")
         .addAssertion("name", "Alice Smith")
         .addAssertion("ssn", "123-45-6789")
         .addSalt();
@@ -230,7 +230,7 @@ describe("Non-correlation Tests", () => {
       });
 
       if (ssnAssertion) {
-        const redacted = envelope.elideRemovingTarget(ssnAssertion);
+        const redacted = envelope.elide({ removing: [ssnAssertion] });
 
         // The redacted envelope should still be equivalent (same digest)
         expect(isEquivalentTo(envelope, redacted)).toBe(true);

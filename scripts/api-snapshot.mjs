@@ -23,7 +23,7 @@ import { Extractor, ExtractorConfig } from "@microsoft/api-extractor";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
 
-const ENTRIES = ["index", "all", "format", "expression", "attachment", "edge", "proof", "recipient", "salt", "secret", "signature", "sskr", "types", "seal"];
+const ENTRIES = ["index", "all", "format", "expression", "attachment", "edge", "proof", "recipient", "secret", "signature", "sskr", "types", "seal"];
 
 const base = JSON.parse(readFileSync(join(root, "api-extractor.json"), "utf8"));
 

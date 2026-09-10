@@ -24,7 +24,7 @@ import "../src/all.js";
  * Helper function to create a hello envelope (equivalent to Rust's hello_envelope())
  */
 function helloEnvelope(): Envelope {
-  return Envelope.new("Hello.");
+  return Envelope.from("Hello.");
 }
 
 /**

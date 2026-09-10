@@ -16,46 +16,15 @@ export { Assertion } from "./envelope";
 export type { DigestProvider } from "./digest";
 
 // Error handling
-export { EnvelopeError, ErrorCode } from "./error";
+export { EnvelopeError, EnvelopeErrorCode } from "./error";
 
 // Encodable/Decodable traits
-export {
-  type EnvelopeEncodable,
-  type EnvelopeEncodableValue,
-  isEnvelopeEncodable,
-} from "./envelope-encodable";
+export { type ToEnvelope, type EnvelopeInput, isToEnvelope } from "./envelope-encodable";
 
-// CBOR encoding/decoding
-export {
-  EnvelopeCBORTagged,
-  EnvelopeCBORTaggedEncodable,
-  EnvelopeCBORTaggedDecodable,
-  envelopeToCbor,
-  envelopeFromCbor,
-  envelopeToBytes,
-  envelopeFromBytes,
-} from "./cbor";
-
-// Envelope decoding utilities
-export {
-  extractString,
-  extractNumber,
-  extractBoolean,
-  extractBytes,
-  extractNull,
-  EnvelopeDecoder,
-  // Generic typed extraction
-  type CborDecoder,
-  extractSubject,
-  tryObjectForPredicate,
-  tryOptionalObjectForPredicate,
-  extractObjectForPredicateWithDefault,
-  extractObjectsForPredicate,
-  tryObjectsForPredicate,
-} from "./envelope";
+export { type CborDecoder } from "./envelope";
 
 // Elision and selective disclosure
-export { ObscureType, type ObscureAction, elideAction } from "./envelope";
+export { ObscureType, type ObscureAction, type ElideOptions } from "./envelope";
 
 // Walking/traversal
 export { EdgeType, edgeLabel, type Visitor } from "./envelope";

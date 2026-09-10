@@ -20,7 +20,7 @@ describe("Signature Extension", () => {
   describe("Basic signature", () => {
     it("should sign envelope and add assertion", () => {
       const privateKey = SigningPrivateKey.random();
-      const message = Envelope.new("Hello, world!");
+      const message = Envelope.from("Hello, world!");
 
       const signed = message.addSignature(privateKey);
 
@@ -33,7 +33,7 @@ describe("Signature Extension", () => {
     it("should verify valid signature", () => {
       const privateKey = SigningPrivateKey.random();
       const publicKey = privateKey.publicKey();
-      const message = Envelope.new("Hello, world!");
+      const message = Envelope.from("Hello, world!");
 
       const signed = message.addSignature(privateKey);
 
@@ -47,7 +47,7 @@ describe("Signature Extension", () => {
       const privateKey = SigningPrivateKey.random();
       const wrongKey = SigningPrivateKey.random();
       const wrongPublicKey = wrongKey.publicKey();
-      const message = Envelope.new("Hello, world!");
+      const message = Envelope.from("Hello, world!");
 
       const signed = message.addSignature(privateKey);
 
@@ -61,7 +61,7 @@ describe("Signature Extension", () => {
       const bob = SigningPrivateKey.random();
       const charlie = SigningPrivateKey.random();
 
-      const contract = Envelope.new("Multi-party agreement");
+      const contract = Envelope.from("Multi-party agreement");
       const multiSigned = contract.addSignatures([alice, bob, charlie]);
 
       expect(multiSigned.signatures().length).toBe(3);
@@ -80,7 +80,7 @@ describe("Signature Extension", () => {
         .withAssertion("timestamp", "2024-01-15T10:30:00Z")
         .withAssertion("purpose", "Contract approval");
 
-      const document = Envelope.new("Important document");
+      const document = Envelope.from("Important document");
       const signedWithMetadata = document.addSignatureWithMetadata(alice, metadata);
 
       expect(signedWithMetadata.assertions().length).toBeGreaterThan(0);
@@ -105,7 +105,7 @@ describe("Signature Extension", () => {
         .withAssertion(NOTE, "Alice signed this.")
         .withAssertion("date", "2024-04-02");
 
-      const envelope = Envelope.new("Important document")
+      const envelope = Envelope.from("Important document")
         .wrap()
         .addSignatureOpt(alice, undefined, metadata);
 
@@ -125,7 +125,7 @@ describe("Signature Extension", () => {
       const bob = SigningPrivateKey.random();
       const metadata = SignatureMetadata.new().withAssertion(NOTE, "Signed by Alice");
 
-      const document = Envelope.new("Secret");
+      const document = Envelope.from("Secret");
       const signedWithMetadata = document.addSignatureWithMetadata(alice, metadata);
 
       expect(signedWithMetadata.hasSignatureFrom(bob.publicKey())).toBe(false);
@@ -143,7 +143,7 @@ describe("Signature Extension", () => {
       expect(key1Data.length).toBeGreaterThan(0);
 
       // Key should still work after getting data
-      const testMsg = Envelope.new("Test message");
+      const testMsg = Envelope.from("Test message");
       const sig1 = testMsg.addSignature(key1);
 
       expect(sig1.hasSignatureFrom(key1.publicKey())).toBe(true);
@@ -153,7 +153,7 @@ describe("Signature Extension", () => {
   describe("Signature preservation", () => {
     it("should preserve signature through operations", () => {
       const alice = SigningPrivateKey.random();
-      const original = Envelope.new("Alice").addAssertion("age", 30).addSignature(alice);
+      const original = Envelope.from("Alice").addAssertion("age", 30).addSignature(alice);
 
       expect(original.hasSignatureFrom(alice.publicKey())).toBe(true);
 

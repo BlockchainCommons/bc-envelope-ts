@@ -37,7 +37,7 @@ describe("Multi-Permit", () => {
     // including that the subject is a "poem", the title, the author, and
     // the date.
     //
-    const originalEnvelope = Envelope.new(poemText)
+    const originalEnvelope = Envelope.from(poemText)
       .addType("poem")
       .addAssertion("title", "A Song of Ice Cream")
       .addAssertion("author", "Plonkus the Iridescent")
@@ -206,7 +206,7 @@ describe("Multi-Permit", () => {
 
     beforeEach(() => {
       contentKey = SymmetricKey.random();
-      envelope = Envelope.new(testContent);
+      envelope = Envelope.from(testContent);
       // Use encryptSubject for subject-only encryption (compatible with SSKR)
       encryptedEnvelope = envelope.encryptSubject(contentKey);
     });
@@ -283,7 +283,7 @@ describe("Multi-Permit", () => {
 
   describe("Multiple permits on same envelope", () => {
     it("should support multiple password-based secrets", () => {
-      const envelope = Envelope.new("Multi-secret content");
+      const envelope = Envelope.from("Multi-secret content");
       const contentKey = SymmetricKey.random();
       // Use encryptSubject for subject-only encryption
       const encrypted = envelope.encryptSubject(contentKey);
@@ -304,7 +304,7 @@ describe("Multi-Permit", () => {
     });
 
     it("should support multiple recipients", () => {
-      const envelope = Envelope.new("Multi-recipient content");
+      const envelope = Envelope.from("Multi-recipient content");
       const contentKey = SymmetricKey.random();
       // Use encryptSubject for subject-only encryption
       const encrypted = envelope.encryptSubject(contentKey);
@@ -334,7 +334,7 @@ describe("Multi-Permit", () => {
 
     it("should support mixed permit types", { timeout: 60000 }, () => {
       // For SSKR compatibility, use a simple envelope with encryptSubject
-      const envelope = Envelope.new("Mixed permit content");
+      const envelope = Envelope.from("Mixed permit content");
       const contentKey = SymmetricKey.random();
       // Use encryptSubject for subject-only encryption (compatible with SSKR)
       const encrypted = envelope.encryptSubject(contentKey);
@@ -378,7 +378,7 @@ describe("Multi-Permit", () => {
 
   describe("Error cases", () => {
     it("should fail with wrong password", () => {
-      const envelope = Envelope.new("Secret");
+      const envelope = Envelope.from("Secret");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -391,7 +391,7 @@ describe("Multi-Permit", () => {
     });
 
     it("should fail with wrong recipient key", () => {
-      const envelope = Envelope.new("Secret");
+      const envelope = Envelope.from("Secret");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -404,7 +404,7 @@ describe("Multi-Permit", () => {
     });
 
     it("should fail with insufficient SSKR shares", () => {
-      const envelope = Envelope.new("Secret");
+      const envelope = Envelope.from("Secret");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -426,7 +426,7 @@ describe("Multi-Permit", () => {
       const signingKey = SigningPrivateKey.random();
       const publicKey = signingKey.publicKey();
 
-      const document = Envelope.new("Legal contract")
+      const document = Envelope.from("Legal contract")
         .addAssertion("parties", "Alice and Bob")
         .addAssertion("date", "2025-01-01")
         .addSignature(signingKey);
@@ -447,7 +447,7 @@ describe("Multi-Permit", () => {
     });
 
     it("should preserve all assertions through encrypt/decrypt cycle", () => {
-      const envelope = Envelope.new("Data")
+      const envelope = Envelope.from("Data")
         .addType("Document")
         .addAssertion("author", "Alice")
         .addAssertion("created", "2025-01-01")
@@ -461,8 +461,8 @@ describe("Multi-Permit", () => {
       // Subject-level encryption preserves the envelope structure
       expect(decrypted.digest().equals(envelope.digest())).toBe(true);
       expect(decrypted.hasType("Document")).toBe(true);
-      expect(decrypted.objectForPredicate("author").extractString()).toBe("Alice");
-      expect(decrypted.objectForPredicate("version").extractNumber()).toBe(1);
+      expect(decrypted.objectForPredicate("author").expectString()).toBe("Alice");
+      expect(decrypted.objectForPredicate("version").expectNumber()).toBe(1);
     });
   });
 });

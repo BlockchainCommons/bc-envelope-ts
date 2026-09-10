@@ -20,11 +20,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope, EnvelopeError, ErrorCode } from "../src/index.js";
+import { Envelope, EnvelopeError } from "../src/index.js";
 import { Edges } from "../src/extension/edge.js";
 import { SigningPrivateKey } from "@blockchaincommons/components";
 import { IS_A, SOURCE, TARGET, DEREFERENCE_VIA } from "@blockchaincommons/known-values";
 import "../src/all.js";
+import { UR, decodeURWith } from "@blockchaincommons/uniform-resources";
 
 // -------------------------------------------------------------------
 // Test Helpers (equivalent to Rust common/test_data.rs)
@@ -35,7 +36,7 @@ import "../src/all.js";
  * Equivalent to Rust's `make_edge()` helper.
  */
 function makeEdge(subject: string, isA: string, source: Envelope, target: Envelope): Envelope {
-  return Envelope.new(subject)
+  return Envelope.from(subject)
     .addAssertion(IS_A, isA)
     .addAssertion(SOURCE, source)
     .addAssertion(TARGET, target);
@@ -46,7 +47,7 @@ function makeEdge(subject: string, isA: string, source: Envelope, target: Envelo
  * Equivalent to Rust's `xid_like()` helper.
  */
 function xidLike(name: string): Envelope {
-  return Envelope.new(name);
+  return Envelope.from(name);
 }
 
 /**
@@ -99,55 +100,55 @@ describe("Edge Extension", () => {
 
     it("test_validate_edge_missing_is_a", () => {
       const alice = xidLike("Alice");
-      const edge = Envelope.new("cred-1").addAssertion(SOURCE, alice).addAssertion(TARGET, alice);
+      const edge = Envelope.from("cred-1").addAssertion(SOURCE, alice).addAssertion(TARGET, alice);
       expect(() => edge.validateEdge()).toThrow(EnvelopeError);
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_MISSING_IS_A);
+        expect((e as EnvelopeError).code).toBe("EdgeMissingIsA");
       }
     });
 
     it("test_validate_edge_missing_source", () => {
       const alice = xidLike("Alice");
-      const edge = Envelope.new("cred-1")
+      const edge = Envelope.from("cred-1")
         .addAssertion(IS_A, "foaf:Person")
         .addAssertion(TARGET, alice);
       expect(() => edge.validateEdge()).toThrow(EnvelopeError);
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_MISSING_SOURCE);
+        expect((e as EnvelopeError).code).toBe("EdgeMissingSource");
       }
     });
 
     it("test_validate_edge_missing_target", () => {
       const alice = xidLike("Alice");
-      const edge = Envelope.new("cred-1")
+      const edge = Envelope.from("cred-1")
         .addAssertion(IS_A, "foaf:Person")
         .addAssertion(SOURCE, alice);
       expect(() => edge.validateEdge()).toThrow(EnvelopeError);
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_MISSING_TARGET);
+        expect((e as EnvelopeError).code).toBe("EdgeMissingTarget");
       }
     });
 
     it("test_validate_edge_no_assertions", () => {
-      const edge = Envelope.new("cred-1");
+      const edge = Envelope.from("cred-1");
       expect(() => edge.validateEdge()).toThrow(EnvelopeError);
       try {
         edge.validateEdge();
       } catch (e) {
         // First check is IS_A, so this should be EdgeMissingIsA
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_MISSING_IS_A);
+        expect((e as EnvelopeError).code).toBe("EdgeMissingIsA");
       }
     });
 
     it("test_validate_edge_duplicate_is_a", () => {
       const alice = xidLike("Alice");
-      const edge = Envelope.new("cred-1")
+      const edge = Envelope.from("cred-1")
         .addAssertion(IS_A, "foaf:Person")
         .addAssertion(IS_A, "schema:Thing")
         .addAssertion(SOURCE, alice)
@@ -156,14 +157,14 @@ describe("Edge Extension", () => {
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_DUPLICATE_IS_A);
+        expect((e as EnvelopeError).code).toBe("EdgeDuplicateIsA");
       }
     });
 
     it("test_validate_edge_duplicate_source", () => {
       const alice = xidLike("Alice");
       const bob = xidLike("Bob");
-      const edge = Envelope.new("cred-1")
+      const edge = Envelope.from("cred-1")
         .addAssertion(IS_A, "foaf:Person")
         .addAssertion(SOURCE, alice)
         .addAssertion(SOURCE, bob)
@@ -172,14 +173,14 @@ describe("Edge Extension", () => {
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_DUPLICATE_SOURCE);
+        expect((e as EnvelopeError).code).toBe("EdgeDuplicateSource");
       }
     });
 
     it("test_validate_edge_duplicate_target", () => {
       const alice = xidLike("Alice");
       const bob = xidLike("Bob");
-      const edge = Envelope.new("cred-1")
+      const edge = Envelope.from("cred-1")
         .addAssertion(IS_A, "foaf:Person")
         .addAssertion(SOURCE, alice)
         .addAssertion(TARGET, alice)
@@ -188,7 +189,7 @@ describe("Edge Extension", () => {
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_DUPLICATE_TARGET);
+        expect((e as EnvelopeError).code).toBe("EdgeDuplicateTarget");
       }
     });
 
@@ -275,7 +276,7 @@ describe("Edge Extension", () => {
       const alice = xidLike("Alice");
       const edge = makeEdge("cred-1", "foaf:Person", alice, alice);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge);
 
       const formatted = doc.format();
       expect(formatted).toContain("'edge':");
@@ -291,7 +292,7 @@ describe("Edge Extension", () => {
       const edge1 = makeEdge("self-desc", "foaf:Person", alice, alice);
       const edge2 = makeEdge("knows-bob", "schema:colleague", alice, bob);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
 
       const edges = doc.edges();
       expect(edges.length).toBe(2);
@@ -309,7 +310,7 @@ describe("Edge Extension", () => {
 
   describe("Edges retrieval via envelope", () => {
     it("test_edges_empty", () => {
-      const doc = Envelope.new("Alice");
+      const doc = Envelope.from("Alice");
       const edges = doc.edges();
       expect(edges.length).toBe(0);
     });
@@ -319,7 +320,7 @@ describe("Edge Extension", () => {
       const edge1 = makeEdge("cred-1", "foaf:Person", alice, alice);
       const edge2 = makeEdge("cred-2", "schema:Thing", alice, alice);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
 
       const edges = doc.edges();
       expect(edges.length).toBe(2);
@@ -422,7 +423,7 @@ describe("Edge Extension", () => {
       edges.add(edge2);
 
       // Serialize to envelope
-      const doc = Envelope.new("Alice");
+      const doc = Envelope.from("Alice");
       const docWithEdges = edges.addToEnvelope(doc);
 
       // Deserialize back
@@ -434,7 +435,7 @@ describe("Edge Extension", () => {
 
     it("test_edges_container_roundtrip_empty", () => {
       const edges = new Edges();
-      const doc = Envelope.new("Alice");
+      const doc = Envelope.from("Alice");
       const docWithEdges = edges.addToEnvelope(doc);
 
       const recovered = Edges.fromEnvelope(docWithEdges);
@@ -449,7 +450,7 @@ describe("Edge Extension", () => {
       const edges = new Edges();
       edges.add(edge);
 
-      const doc = edges.addToEnvelope(Envelope.new("Alice"));
+      const doc = edges.addToEnvelope(Envelope.from("Alice"));
 
       const formatted = doc.format();
       expect(formatted).toContain("'edge':");
@@ -497,7 +498,7 @@ describe("Edge Extension", () => {
       const edge1 = makeEdge("self-desc", "foaf:Person", alice, alice);
       const edge2 = makeEdge("knows-bob", "schema:colleague", alice, bob);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
 
       // No filters => all edges
       const matching = doc.edgesMatching();
@@ -511,20 +512,20 @@ describe("Edge Extension", () => {
       const edge2 = makeEdge("knows-bob", "schema:colleague", alice, bob);
       const edge3 = makeEdge("self-thing", "foaf:Person", alice, alice);
 
-      const doc = Envelope.new("Alice")
+      const doc = Envelope.from("Alice")
         .addEdgeEnvelope(edge1)
         .addEdgeEnvelope(edge2)
         .addEdgeEnvelope(edge3);
 
-      const isAPerson = Envelope.new("foaf:Person");
+      const isAPerson = Envelope.from("foaf:Person");
       const matching1 = doc.edgesMatching(isAPerson);
       expect(matching1.length).toBe(2);
 
-      const isAColleague = Envelope.new("schema:colleague");
+      const isAColleague = Envelope.from("schema:colleague");
       const matching2 = doc.edgesMatching(isAColleague);
       expect(matching2.length).toBe(1);
 
-      const isANone = Envelope.new("nonexistent");
+      const isANone = Envelope.from("nonexistent");
       const matching3 = doc.edgesMatching(isANone);
       expect(matching3.length).toBe(0);
     });
@@ -535,7 +536,7 @@ describe("Edge Extension", () => {
       const edge1 = makeEdge("alice-claim", "foaf:Person", alice, alice);
       const edge2 = makeEdge("bob-claim", "foaf:Person", bob, alice);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
 
       const matching1 = doc.edgesMatching(undefined, alice);
       expect(matching1.length).toBe(1);
@@ -554,7 +555,7 @@ describe("Edge Extension", () => {
       const edge1 = makeEdge("self-desc", "foaf:Person", alice, alice);
       const edge2 = makeEdge("knows-bob", "schema:colleague", alice, bob);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
 
       const matching1 = doc.edgesMatching(undefined, undefined, alice);
       expect(matching1.length).toBe(1);
@@ -568,13 +569,13 @@ describe("Edge Extension", () => {
       const edge1 = makeEdge("self-desc", "foaf:Person", alice, alice);
       const edge2 = makeEdge("cred-2", "schema:Thing", alice, alice);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge1).addEdgeEnvelope(edge2);
 
-      const subjectFilter = Envelope.new("self-desc");
+      const subjectFilter = Envelope.from("self-desc");
       const matching1 = doc.edgesMatching(undefined, undefined, undefined, subjectFilter);
       expect(matching1.length).toBe(1);
 
-      const subjectFilter2 = Envelope.new("nonexistent");
+      const subjectFilter2 = Envelope.from("nonexistent");
       const matching2 = doc.edgesMatching(undefined, undefined, undefined, subjectFilter2);
       expect(matching2.length).toBe(0);
     });
@@ -586,13 +587,13 @@ describe("Edge Extension", () => {
       const edge2 = makeEdge("self-thing", "foaf:Person", alice, alice);
       const edge3 = makeEdge("knows-bob", "foaf:Person", alice, bob);
 
-      const doc = Envelope.new("Alice")
+      const doc = Envelope.from("Alice")
         .addEdgeEnvelope(edge1)
         .addEdgeEnvelope(edge2)
         .addEdgeEnvelope(edge3);
 
       // All three are foaf:Person
-      const isA = Envelope.new("foaf:Person");
+      const isA = Envelope.from("foaf:Person");
       const matching1 = doc.edgesMatching(isA);
       expect(matching1.length).toBe(3);
 
@@ -605,17 +606,17 @@ describe("Edge Extension", () => {
       expect(matching3.length).toBe(1);
 
       // foaf:Person + target Alice + subject "self-desc" => 1
-      const subj1 = Envelope.new("self-desc");
+      const subj1 = Envelope.from("self-desc");
       const matching4 = doc.edgesMatching(isA, undefined, alice, subj1);
       expect(matching4.length).toBe(1);
 
       // foaf:Person + source Alice + target Bob + subject "knows-bob" => 1
-      const subj2 = Envelope.new("knows-bob");
+      const subj2 = Envelope.from("knows-bob");
       const matching5 = doc.edgesMatching(isA, alice, bob, subj2);
       expect(matching5.length).toBe(1);
 
       // All filters that match nothing
-      const subj3 = Envelope.new("nonexistent");
+      const subj3 = Envelope.from("nonexistent");
       const matching6 = doc.edgesMatching(isA, alice, alice, subj3);
       expect(matching6.length).toBe(0);
     });
@@ -648,7 +649,7 @@ describe("Edge Extension", () => {
       const privateKey = testPrivateKey();
       const signedEdge = edge.wrap().addSignature(privateKey);
 
-      const doc = Envelope.new("Alice").addAssertion("knows", "Bob").addEdgeEnvelope(signedEdge);
+      const doc = Envelope.from("Alice").addAssertion("knows", "Bob").addEdgeEnvelope(signedEdge);
 
       const formatted = doc.format();
       expect(formatted).toContain("'edge': {");
@@ -666,7 +667,7 @@ describe("Edge Extension", () => {
       const alice = xidLike("Alice");
       const edge = makeEdge("cred-1", "foaf:Person", alice, alice);
 
-      const doc = Envelope.new("Alice")
+      const doc = Envelope.from("Alice")
         .addAttachment("Metadata", "com.example", "https://example.com/v1")
         .addEdgeEnvelope(edge);
 
@@ -684,11 +685,11 @@ describe("Edge Extension", () => {
       const alice = xidLike("Alice");
       const edge = makeEdge("cred-1", "foaf:Person", alice, alice);
 
-      const doc = Envelope.new("Alice").addEdgeEnvelope(edge);
+      const doc = Envelope.from("Alice").addEdgeEnvelope(edge);
 
       // Round-trip through UR
-      const urString = doc.urString();
-      const recovered = Envelope.fromUrString(urString);
+      const urString = doc.toUR().toString();
+      const recovered = decodeURWith(UR.parse(urString), Envelope.codec);
       expect(recovered.isEquivalentTo(doc)).toBe(true);
 
       const recoveredEdges = recovered.edges();
@@ -703,13 +704,13 @@ describe("Edge Extension", () => {
       const edge2 = makeEdge("knows-bob", "schema:colleague", alice, bob);
       const edge3 = makeEdge("project", "schema:CreativeWork", alice, bob);
 
-      const doc = Envelope.new("Alice")
+      const doc = Envelope.from("Alice")
         .addEdgeEnvelope(edge1)
         .addEdgeEnvelope(edge2)
         .addEdgeEnvelope(edge3);
 
-      const urString = doc.urString();
-      const recovered = Envelope.fromUrString(urString);
+      const urString = doc.toUR().toString();
+      const recovered = decodeURWith(UR.parse(urString), Envelope.codec);
       expect(recovered.isEquivalentTo(doc)).toBe(true);
 
       const recoveredEdges = recovered.edges();
@@ -723,7 +724,7 @@ describe("Edge Extension", () => {
       // An edge with extra detail assertions beyond isA/source/target
       // should fail validation per BCR-2026-003: only the three required
       // assertions are permitted on the edge subject.
-      const edge = Envelope.new("knows-bob")
+      const edge = Envelope.from("knows-bob")
         .addAssertion(IS_A, "schema:colleague")
         .addAssertion(SOURCE, alice)
         .addAssertion(TARGET, bob)
@@ -734,7 +735,7 @@ describe("Edge Extension", () => {
       try {
         edge.validateEdge();
       } catch (e) {
-        expect((e as EnvelopeError).code).toBe(ErrorCode.EDGE_UNEXPECTED_ASSERTION);
+        expect((e as EnvelopeError).code).toBe("EdgeUnexpectedAssertion");
       }
     });
 
@@ -742,7 +743,7 @@ describe("Edge Extension", () => {
       // Per BCR-2026-003, claim detail goes as assertions on the *target*
       // object, not on the edge subject itself.
       const alice = xidLike("Alice");
-      const target = Envelope.new("Bob")
+      const target = Envelope.from("Bob")
         .addAssertion("department", "Engineering")
         .addAssertion("since", "2024-01-15");
       const edge = makeEdge("knows-bob", "schema:colleague", alice, target);
@@ -757,7 +758,7 @@ describe("Edge Extension", () => {
 
     it("test_edge_with_claim_detail_on_source", () => {
       // The source XID may also carry assertions such as 'dereferenceVia'.
-      const source = Envelope.new("Alice").addAssertion(
+      const source = Envelope.from("Alice").addAssertion(
         DEREFERENCE_VIA,
         "https://example.com/xid/",
       );

@@ -6,7 +6,6 @@
 
 import type { KnownValue } from "@blockchaincommons/known-values";
 import type { ToCbor } from "@blockchaincommons/dcbor";
-import type { CborTaggedEncodable } from "./cbor";
 
 import type { Envelope } from "./envelope";
 
@@ -25,18 +24,18 @@ import type { Envelope } from "./envelope";
 ///
 /// @example
 /// ```typescript
-/// // String implements EnvelopeEncodable
-/// const e1 = Envelope.new("Hello");
+/// // String implements ToEnvelope
+/// const e1 = Envelope.from("Hello");
 ///
-/// // Numbers implement EnvelopeEncodable
-/// const e2 = Envelope.new(42);
+/// // Numbers implement ToEnvelope
+/// const e2 = Envelope.from(42);
 ///
 /// // Using in envelope construction
-/// const envelope = Envelope.new("subject")
-///     .addAssertion("name", "Alice")  // Uses EnvelopeEncodable for both predicate and object
-///     .addAssertion("age", 30);       // Uses EnvelopeEncodable for the numeric object
+/// const envelope = Envelope.from("subject")
+///     .addAssertion("name", "Alice")  // Uses ToEnvelope for both predicate and object
+///     .addAssertion("age", 30);       // Uses ToEnvelope for the numeric object
 /// ```
-export interface EnvelopeEncodable {
+export interface ToEnvelope {
   /// Converts this value into a Gordian Envelope.
   ///
   /// This is the core method of the interface, converting the implementing type
@@ -44,33 +43,33 @@ export interface EnvelopeEncodable {
   /// value to a leaf envelope containing the value.
   ///
   /// @returns A new envelope containing the value.
-  intoEnvelope(): Envelope;
+  toEnvelope(): Envelope;
 }
 
-/// Type guard to check if a value implements EnvelopeEncodable.
+/// Type guard to check if a value implements ToEnvelope.
 ///
 /// @param value - The value to check
-/// @returns `true` if the value implements EnvelopeEncodable, `false` otherwise
-export function isEnvelopeEncodable(value: unknown): value is EnvelopeEncodable {
+/// @returns `true` if the value implements ToEnvelope, `false` otherwise
+export function isToEnvelope(value: unknown): value is ToEnvelope {
   return (
     typeof value === "object" &&
     value !== null &&
-    "intoEnvelope" in value &&
-    typeof (value as EnvelopeEncodable).intoEnvelope === "function"
+    "toEnvelope" in value &&
+    typeof (value as ToEnvelope).toEnvelope === "function"
   );
 }
 
 /// Helper type for values that can be encoded as envelopes.
 ///
 /// This includes:
-/// - Types that directly implement EnvelopeEncodable
+/// - Types that directly implement ToEnvelope
 /// - Primitive types (string, number, boolean)
 /// - Uint8Array (for binary data)
 /// - null and undefined
 ///
 /// The Envelope class will handle conversion of these types automatically.
-export type EnvelopeEncodableValue =
-  | EnvelopeEncodable
+export type EnvelopeInput =
+  | ToEnvelope
   | string
   | number
   | boolean
@@ -80,5 +79,4 @@ export type EnvelopeEncodableValue =
   | undefined
   | Envelope
   | KnownValue
-  | CborTaggedEncodable
   | ToCbor;

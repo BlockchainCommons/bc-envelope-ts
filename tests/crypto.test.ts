@@ -20,7 +20,7 @@ import "../src/all.js";
 const PLAINTEXT_HELLO = "Hello.";
 
 function helloEnvelope(): Envelope {
-  return Envelope.new(PLAINTEXT_HELLO);
+  return Envelope.from(PLAINTEXT_HELLO);
 }
 
 // Test key seeds (matching Rust reference implementation)
@@ -84,7 +84,7 @@ describe("Crypto Tests", () => {
       // Bob receives the envelope and reads the message.
       // In TypeScript, we use CBOR encoding/decoding instead of UR
       // The envelope is serialized and transmitted, then parsed on the receiving end
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
       const receivedPlaintext = receivedEnvelope.asText();
 
       expect(receivedPlaintext).toBe(PLAINTEXT_HELLO);
@@ -105,7 +105,7 @@ describe("Crypto Tests", () => {
       // Alice -> Cloud -> Bob
 
       // Bob receives the envelope.
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
       // Bob decrypts and reads the message.
       const decryptedEnvelope = receivedEnvelope.decryptSubject(key);
@@ -124,32 +124,32 @@ describe("Crypto Tests", () => {
 
   describe("encrypt/decrypt round trips", () => {
     it("should round-trip leaf envelope", () => {
-      const e = Envelope.new(PLAINTEXT_HELLO);
+      const e = Envelope.from(PLAINTEXT_HELLO);
       roundTripTest(e);
     });
 
     it("should round-trip node envelope", () => {
-      const e = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const e = Envelope.from("Alice").addAssertion("knows", "Bob");
       roundTripTest(e);
     });
 
     it("should round-trip wrapped envelope", () => {
-      const e = Envelope.new("Alice").wrap();
+      const e = Envelope.from("Alice").wrap();
       roundTripTest(e);
     });
 
     it("should round-trip known value envelope", () => {
-      const e = Envelope.new(IS_A);
+      const e = Envelope.from(IS_A);
       roundTripTest(e);
     });
 
     it("should round-trip assertion envelope", () => {
-      const e = Envelope.newAssertion("knows", "Bob");
+      const e = Envelope.assertion("knows", "Bob");
       roundTripTest(e);
     });
 
     it("should round-trip compressed envelope", () => {
-      const e = Envelope.new(PLAINTEXT_HELLO).compress();
+      const e = Envelope.from(PLAINTEXT_HELLO).compress();
       roundTripTest(e);
     });
   });
@@ -171,9 +171,7 @@ describe("Crypto Tests", () => {
 
       // Bob receives the envelope, decrypts it using the shared key, and then
       // validates Alice's signature.
-      const decrypted = Envelope.fromTaggedCbor(envelope.taggedCbor())
-        .decryptSubject(key)
-        .tryUnwrap();
+      const decrypted = Envelope.fromCbor(envelope.toCbor()).decryptSubject(key).unwrap();
 
       // Verify signature
       const verified = decrypted.verifySignatureFrom(alicePub);
@@ -208,7 +206,7 @@ describe("Crypto Tests", () => {
 
       // Bob receives the envelope, validates Alice's signature, then decrypts the
       // message.
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
       // Verify signature (can be done before decryption)
       const verified = receivedEnvelope.verifySignatureFrom(alicePub);
@@ -242,7 +240,7 @@ describe("Crypto Tests", () => {
       // Alice -> Cloud -> Carol
 
       // The envelope is received
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
       // Bob decrypts and reads the message
       const bobDecrypted = receivedEnvelope.decryptSubjectToRecipient(bob);
@@ -284,7 +282,7 @@ describe("Crypto Tests", () => {
       // Alice -> Cloud -> Carol
 
       // The envelope is received
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
       // Bob validates Alice's signature, then decrypts and reads the message
       const bobVerified = receivedEnvelope.verifySignatureFrom(alice.publicKey());
@@ -334,12 +332,12 @@ describe("Crypto Tests", () => {
       // Alice -> Cloud -> Carol
 
       // The envelope is received
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
       // Bob decrypts the envelope, then extracts the inner envelope and validates
       // Alice's signature, then reads the message
       const bobDecrypted = receivedEnvelope.decryptSubjectToRecipient(bob);
-      const bobUnwrapped = bobDecrypted.tryUnwrap();
+      const bobUnwrapped = bobDecrypted.unwrap();
       const bobVerified = bobUnwrapped.verifySignatureFrom(alice.publicKey());
       const bobReceivedPlaintext = bobVerified.subject().asText();
       expect(bobReceivedPlaintext).toBe(PLAINTEXT_HELLO);
@@ -347,7 +345,7 @@ describe("Crypto Tests", () => {
       // Carol decrypts the envelope, then extracts the inner envelope and
       // validates Alice's signature, then reads the message
       const carolDecrypted = receivedEnvelope.decryptSubjectToRecipient(carol);
-      const carolUnwrapped = carolDecrypted.tryUnwrap();
+      const carolUnwrapped = carolDecrypted.unwrap();
       const carolVerified = carolUnwrapped.verifySignatureFrom(alice.publicKey());
       const carolReceivedPlaintext = carolVerified.subject().asText();
       expect(carolReceivedPlaintext).toBe(PLAINTEXT_HELLO);
@@ -371,7 +369,7 @@ describe("Crypto Tests", () => {
       // Alice -> Cloud -> Bob, Eve
 
       // The envelope is received
-      const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
       // Bob decrypts and reads the message
       const bobDecrypted = receivedEnvelope.unlock(bobPassword);
@@ -405,7 +403,7 @@ describe("Crypto Tests", () => {
         // Alice -> Cloud -> Bob, Carol, Gracy, Eve
 
         // The envelope is received
-        const receivedEnvelope = Envelope.fromTaggedCbor(envelope.taggedCbor());
+        const receivedEnvelope = Envelope.fromCbor(envelope.toCbor());
 
         // Bob decrypts and reads the message
         const bobDecrypted = receivedEnvelope.unlockSubject(bobPassword);
@@ -430,7 +428,7 @@ describe("Crypto Tests", () => {
 
   describe("envelope equivalence and identity", () => {
     it("should maintain equivalence through encryption/decryption", () => {
-      const envelope = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const envelope = Envelope.from("Alice").addAssertion("knows", "Bob");
       const key = SymmetricKey.random();
 
       const encrypted = envelope.encryptSubject(key);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Envelope, envelopeToBytes, envelopeFromBytes } from "../src/index.js";
+import { Envelope } from "../src/index.js";
 import { Digest } from "@blockchaincommons/components";
 import "../src/all.js";
 
@@ -13,10 +13,10 @@ import "../src/all.js";
  */
 function checkEncoding(envelope: Envelope): Envelope {
   // Get the tagged CBOR and encode to bytes
-  const bytes = envelopeToBytes(envelope);
+  const bytes = envelope.toCbor().toData();
 
   // Decode back from bytes
-  const restored = envelopeFromBytes(bytes);
+  const restored = Envelope.fromBytes(bytes);
 
   // Verify digests match
   if (!envelope.digest().equals(restored.digest())) {
@@ -37,7 +37,7 @@ describe("Core Encoding Tests", () => {
       const digest = Digest.fromImage(new TextEncoder().encode("Hello."));
 
       // Create an envelope with the digest data
-      const envelope = Envelope.new(digest.bytes);
+      const envelope = Envelope.from(digest.bytes);
 
       // Check round-trip encoding
       const result = checkEncoding(envelope);
@@ -47,7 +47,7 @@ describe("Core Encoding Tests", () => {
 
   describe("test_1", () => {
     it("should encode and decode simple string envelope", () => {
-      const e = Envelope.new("Hello.");
+      const e = Envelope.from("Hello.");
 
       // Check the envelope notation format
       const formatted = e.format();
@@ -64,7 +64,7 @@ describe("Core Encoding Tests", () => {
       // Use newLeaf directly since Envelope.new's type doesn't include arrays,
       // though the underlying CBOR encoder supports them
       const array = [1, 2, 3];
-      const e = Envelope.newLeaf(array);
+      const e = Envelope.leaf(array);
 
       // Verify the format shows the array
       const formatted = e.format();
@@ -81,13 +81,13 @@ describe("Core Encoding Tests", () => {
   describe("test_3", () => {
     it("should encode and decode assertion envelopes", () => {
       // Create three assertion envelopes and verify they encode correctly
-      const e1 = Envelope.newAssertion("A", "B");
+      const e1 = Envelope.assertion("A", "B");
       checkEncoding(e1);
 
-      const e2 = Envelope.newAssertion("C", "D");
+      const e2 = Envelope.assertion("C", "D");
       checkEncoding(e2);
 
-      const e3 = Envelope.newAssertion("E", "F");
+      const e3 = Envelope.assertion("E", "F");
       checkEncoding(e3);
 
       // Verify format contains expected values
@@ -102,9 +102,9 @@ describe("Core Encoding Tests", () => {
     it("should encode and decode envelope with assertion added to leaf subject", () => {
       // Create a simple envelope with a leaf subject and add assertions
       // This tests the core encoding without requiring the recursive isSubjectAssertion behavior
-      const subject = Envelope.new("Subject");
-      const e1 = Envelope.newAssertion("A", "B");
-      const e2 = Envelope.newAssertion("C", "D");
+      const subject = Envelope.from("Subject");
+      const e1 = Envelope.assertion("A", "B");
+      const e2 = Envelope.assertion("C", "D");
 
       // Add assertions to a leaf subject (this is the common case)
       const e3 = subject.addAssertionEnvelope(e1);
@@ -125,9 +125,9 @@ describe("Core Encoding Tests", () => {
     it("should encode and decode nested envelopes as assertion objects", () => {
       // Test nested envelopes where assertions contain other envelopes as objects
       // This is the supported pattern for nesting in the current TypeScript implementation
-      const innerEnvelope = Envelope.new("Inner").addAssertion("innerKey", "innerValue");
+      const innerEnvelope = Envelope.from("Inner").addAssertion("innerKey", "innerValue");
 
-      const outerEnvelope = Envelope.new("Outer")
+      const outerEnvelope = Envelope.from("Outer")
         .addAssertion("nested", innerEnvelope)
         .addAssertion("outerKey", "outerValue");
 
@@ -143,7 +143,7 @@ describe("Core Encoding Tests", () => {
 
   describe("Additional encoding tests", () => {
     it("should encode and decode envelope with single assertion", () => {
-      const e = Envelope.new("Subject").addAssertion("predicate", "object");
+      const e = Envelope.from("Subject").addAssertion("predicate", "object");
       const result = checkEncoding(e);
       expect(result.format()).toContain("Subject");
       expect(result.format()).toContain("predicate");
@@ -151,7 +151,7 @@ describe("Core Encoding Tests", () => {
     });
 
     it("should encode and decode envelope with multiple assertions", () => {
-      const e = Envelope.new("Alice")
+      const e = Envelope.from("Alice")
         .addAssertion("name", "Alice Smith")
         .addAssertion("age", 30)
         .addAssertion("email", "alice@example.com");
@@ -164,7 +164,7 @@ describe("Core Encoding Tests", () => {
     });
 
     it("should encode and decode wrapped envelope", () => {
-      const inner = Envelope.new("Inner content");
+      const inner = Envelope.from("Inner content");
       const wrapped = inner.wrap();
 
       const result = checkEncoding(wrapped);
@@ -172,7 +172,7 @@ describe("Core Encoding Tests", () => {
     });
 
     it("should encode and decode elided envelope", () => {
-      const original = Envelope.new("Secret data");
+      const original = Envelope.from("Secret data");
       const elided = original.elide();
 
       const result = checkEncoding(elided);
@@ -182,53 +182,53 @@ describe("Core Encoding Tests", () => {
     });
 
     it("should encode and decode envelope with numeric values", () => {
-      const e = Envelope.new(42);
+      const e = Envelope.from(42);
       const result = checkEncoding(e);
-      expect(result.extractNumber()).toBe(42);
+      expect(result.expectNumber()).toBe(42);
     });
 
     it("should encode and decode envelope with boolean values", () => {
-      const eTrue = Envelope.new(true);
+      const eTrue = Envelope.from(true);
       const resultTrue = checkEncoding(eTrue);
-      expect(resultTrue.extractBoolean()).toBe(true);
+      expect(resultTrue.expectBoolean()).toBe(true);
 
-      const eFalse = Envelope.new(false);
+      const eFalse = Envelope.from(false);
       const resultFalse = checkEncoding(eFalse);
-      expect(resultFalse.extractBoolean()).toBe(false);
+      expect(resultFalse.expectBoolean()).toBe(false);
     });
 
     it("should encode and decode envelope with null value", () => {
-      const e = Envelope.null();
+      const e = Envelope.NULL;
       const result = checkEncoding(e);
       expect(result.isNull()).toBe(true);
     });
 
     it("should encode and decode envelope with byte data", () => {
       const data = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05]);
-      const e = Envelope.new(data);
+      const e = Envelope.from(data);
       const result = checkEncoding(e);
-      expect(result.extractBytes()).toEqual(data);
+      expect(result.expectBytes()).toEqual(data);
     });
 
     it("should encode and decode deeply nested envelopes", () => {
-      const level3 = Envelope.new("Level 3").addAssertion("depth", 3);
-      const level2 = Envelope.new("Level 2").addAssertion("child", level3);
-      const level1 = Envelope.new("Level 1").addAssertion("child", level2);
+      const level3 = Envelope.from("Level 3").addAssertion("depth", 3);
+      const level2 = Envelope.from("Level 2").addAssertion("child", level3);
+      const level1 = Envelope.from("Level 1").addAssertion("child", level2);
 
       const result = checkEncoding(level1);
       expect(result.format()).toContain("Level 1");
     });
 
     it("should preserve digest through encoding round-trip", () => {
-      const original = Envelope.new("Test content")
+      const original = Envelope.from("Test content")
         .addAssertion("key1", "value1")
         .addAssertion("key2", "value2");
 
       const originalDigest = original.digest();
 
       // Encode and decode
-      const bytes = envelopeToBytes(original);
-      const restored = envelopeFromBytes(bytes);
+      const bytes = original.toCbor().toData();
+      const restored = Envelope.fromBytes(bytes);
 
       // Verify digest is preserved
       expect(restored.digest().equals(originalDigest)).toBe(true);

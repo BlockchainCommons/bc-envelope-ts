@@ -18,24 +18,26 @@ import { summaryWithContext } from "./envelope-summary.js";
  *
  * Ported from bc-envelope-rust/src/format/tree/format/digest.rs
  */
-export enum DigestDisplayFormat {
+export const DigestDisplayFormat = {
   /**
    * Short format: hex-encoded first 4 bytes of the digest (8 chars),
    * matching Rust `Digest::short_description`.
    * This is the default format.
    */
-  Short = "short",
+  Short: "short",
 
   /**
    * Full format: complete 64 hex character digest.
    */
-  Full = "full",
+  Full: "full",
 
   /**
    * UR format: digest encoded as a UR string.
    */
-  UR = "ur",
-}
+  UR: "ur",
+} as const;
+/** One of the `DigestDisplayFormat` values. */
+export type DigestDisplayFormat = (typeof DigestDisplayFormat)[keyof typeof DigestDisplayFormat];
 
 /// Tree formatting for Gordian Envelopes.
 ///

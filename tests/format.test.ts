@@ -14,7 +14,7 @@ import "../src/all.js";
 describe("Mermaid Formatting", () => {
   describe("mermaidFormat()", () => {
     it("should generate mermaid diagram for simple leaf", () => {
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const mermaid = envelope.mermaidFormat();
 
       expect(mermaid).toContain("graph");
@@ -22,7 +22,7 @@ describe("Mermaid Formatting", () => {
     });
 
     it("should generate mermaid diagram for envelope with assertions", () => {
-      const envelope = Envelope.new("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
+      const envelope = Envelope.from("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
 
       const mermaid = envelope.mermaidFormat();
 
@@ -31,8 +31,8 @@ describe("Mermaid Formatting", () => {
     });
 
     it("should handle nested envelopes", () => {
-      const inner = Envelope.new("Inner").addAssertion("key", "value");
-      const outer = Envelope.new(inner.wrap()).addAssertion("note", "wrapped");
+      const inner = Envelope.from("Inner").addAssertion("key", "value");
+      const outer = Envelope.from(inner.wrap()).addAssertion("note", "wrapped");
 
       const mermaid = outer.mermaidFormat();
 
@@ -42,7 +42,7 @@ describe("Mermaid Formatting", () => {
 
   describe("mermaidFormatOpt()", () => {
     it("should respect orientation option", () => {
-      const envelope = Envelope.new("Test");
+      const envelope = Envelope.from("Test");
 
       const lr = envelope.mermaidFormatOpt({
         orientation: MermaidOrientation.LeftToRight,
@@ -56,7 +56,7 @@ describe("Mermaid Formatting", () => {
     });
 
     it("should respect theme option", () => {
-      const envelope = Envelope.new("Test");
+      const envelope = Envelope.from("Test");
 
       const dark = envelope.mermaidFormatOpt({
         theme: MermaidTheme.Dark,
@@ -70,7 +70,7 @@ describe("Mermaid Formatting", () => {
     });
 
     it("should respect monochrome option", () => {
-      const envelope = Envelope.new("Test").addAssertion("key", "value");
+      const envelope = Envelope.from("Test").addAssertion("key", "value");
 
       const mono = envelope.mermaidFormatOpt({ monochrome: true });
       const color = envelope.mermaidFormatOpt({ monochrome: false });
@@ -110,7 +110,7 @@ describe("Mermaid Formatting", () => {
       // leaf's digest is the digest of the plaintext envelope it
       // covers, so the rendered Mermaid is byte-stable across runs.
       const { SymmetricKey } = await import("@blockchaincommons/components");
-      const env = Envelope.new("Alice")
+      const env = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .encryptSubject(SymmetricKey.random());
 
@@ -143,7 +143,7 @@ describe("Mermaid Formatting", () => {
       // digest). This pin therefore catches encoder-path regressions
       // for the plain-leaf code path that the encrypted pin doesn't
       // exercise (different leaf shape / style class).
-      const env = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const env = Envelope.from("Alice").addAssertion("knows", "Bob");
 
       const expected = [
         "%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%",
@@ -171,7 +171,7 @@ describe("Mermaid Formatting", () => {
       // header verbatim — same byte-shape contract Rust's
       // `MermaidFormatOpts::default().theme(MermaidTheme::Dark)`
       // produces in `format_tests.rs:1125-1132`.
-      const env = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const env = Envelope.from("Alice").addAssertion("knows", "Bob");
 
       const dark = env.mermaidFormatOpt({
         theme: MermaidTheme.Dark,
@@ -201,7 +201,7 @@ describe("Mermaid Formatting", () => {
       // entirely* (not just their digests), the subject becomes the
       // root element, and ids re-index from 0. Every visible label
       // also drops the `<br><digest>` suffix.
-      const env = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const env = Envelope.from("Alice").addAssertion("knows", "Bob");
       const expected = [
         "%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%",
         "graph LR",
@@ -225,21 +225,21 @@ describe("Mermaid Formatting", () => {
 describe("Notation Formatting", () => {
   describe("format()", () => {
     it("should format simple leaf envelope", () => {
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const formatted = envelope.format();
 
       expect(formatted).toContain("Hello");
     });
 
     it("should format number envelope", () => {
-      const envelope = Envelope.new(42);
+      const envelope = Envelope.from(42);
       const formatted = envelope.format();
 
       expect(formatted).toContain("42");
     });
 
     it("should format envelope with assertions", () => {
-      const envelope = Envelope.new("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
+      const envelope = Envelope.from("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
 
       const formatted = envelope.format();
 
@@ -251,7 +251,7 @@ describe("Notation Formatting", () => {
     });
 
     it("should format wrapped envelope", () => {
-      const inner = Envelope.new("Secret");
+      const inner = Envelope.from("Secret");
       const wrapped = inner.wrap();
       const formatted = wrapped.format();
 
@@ -259,7 +259,7 @@ describe("Notation Formatting", () => {
     });
 
     it("should format elided envelope", () => {
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const elided = envelope.elide();
       const formatted = elided.format();
 
@@ -269,7 +269,7 @@ describe("Notation Formatting", () => {
 
   describe("formatFlat()", () => {
     it("should format on single line", () => {
-      const envelope = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const envelope = Envelope.from("Alice").addAssertion("knows", "Bob");
 
       const formatted = envelope.formatFlat();
 
@@ -280,7 +280,7 @@ describe("Notation Formatting", () => {
 
   describe("formatOpt()", () => {
     it("should accept custom options", () => {
-      const envelope = Envelope.new("Test");
+      const envelope = Envelope.from("Test");
 
       const defaultFormatted = envelope.formatOpt(defaultFormatOpts());
       const flatFormatted = envelope.formatOpt(flatFormatOpts());
@@ -350,7 +350,7 @@ describe("Format Context", () => {
 describe("Envelope Summary", () => {
   describe("summary()", () => {
     it("should summarize leaf envelope", () => {
-      const envelope = Envelope.new("Hello, World!");
+      const envelope = Envelope.from("Hello, World!");
       const summary = envelope.summary(20);
 
       expect(summary.length).toBeLessThanOrEqual(25); // some buffer for quotes
@@ -359,21 +359,21 @@ describe("Envelope Summary", () => {
 
     it("should truncate long strings", () => {
       const longString = "A".repeat(100);
-      const envelope = Envelope.new(longString);
+      const envelope = Envelope.from(longString);
       const summary = envelope.summary(20);
 
       expect(summary.length).toBeLessThan(longString.length);
     });
 
     it("should summarize number envelope", () => {
-      const envelope = Envelope.new(12345);
+      const envelope = Envelope.from(12345);
       const summary = envelope.summary(10);
 
       expect(summary).toContain("12345");
     });
 
     it("should summarize bytes envelope", () => {
-      const envelope = Envelope.new(new Uint8Array([1, 2, 3, 4, 5]));
+      const envelope = Envelope.from(new Uint8Array([1, 2, 3, 4, 5]));
       const summary = envelope.summary(30);
 
       // Should show hex representation
@@ -393,7 +393,7 @@ describe("E1a — format-context summarizer parity with Rust", () => {
   it("renders TAG_JSON as JSON(<as_str>) (E1a-1)", async () => {
     const { CborJson: JSONTagged } = await import("@blockchaincommons/components");
     const json = JSONTagged.fromString('{"a":1}');
-    const envelope = Envelope.new(json);
+    const envelope = Envelope.from(json);
     expect(envelope.format()).toBe('JSON({"a":1})');
   });
 
@@ -404,7 +404,7 @@ describe("E1a — format-context summarizer parity with Rust", () => {
     const data = new Uint8Array(32);
     for (let i = 0; i < 32; i++) data[i] = i;
     const ref = Reference.from(data);
-    const envelope = Envelope.new(ref);
+    const envelope = Envelope.from(ref);
     // Reference.toString() = `Reference(<refHexShort>)`. We assert the
     // shape rather than the exact short ref so the test stays valid
     // even if the input bytes are tweaked.
@@ -422,7 +422,7 @@ describe("E1a — format-context summarizer parity with Rust", () => {
     // length (2420 bytes).
     const inner = MLDSASignature.fromBytes(MLDSALevel.MLDSA44, new Uint8Array(2420));
     const stub = Signature.mldsaFromSignature(inner);
-    const envelope = Envelope.new(stub);
+    const envelope = Envelope.from(stub);
     const formatted = envelope.format();
     expect(formatted).toBe("Signature(MLDSA44)");
     expect(formatted).not.toContain("MLDSA-44");
@@ -450,7 +450,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
 -----END OPENSSH PRIVATE KEY-----
 `;
     const tagged = taggedValue(SSH_TEXT_PRIVATE_KEY.value, cbor(text));
-    const envelope = Envelope.newLeaf(tagged);
+    const envelope = Envelope.leaf(tagged);
     expect(envelope.format()).toMatch(/^SSHPrivateKey\([0-9a-f]{8}\)$/);
   });
 
@@ -460,7 +460,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
     const text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFR7gUMbIYiAd/vnJV0TiFiX2C6PTYV2whp2AsLTjM5t Key comment.";
     const tagged = taggedValue(SSH_TEXT_PUBLIC_KEY.value, cbor(text));
-    const envelope = Envelope.newLeaf(tagged);
+    const envelope = Envelope.leaf(tagged);
     expect(envelope.format()).toMatch(/^SSHPublicKey\([0-9a-f]{8}\)$/);
   });
 
@@ -475,7 +475,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
     for (let i = 0; i < 64; i++) sigBytes[i] = i + 1;
     const sig = SSHSignature.fromParts(pub, "test", "sha256", sigBytes);
     const tagged = taggedValue(SSH_TEXT_SIGNATURE.value, cbor(sig.toPem()));
-    const envelope = Envelope.newLeaf(tagged);
+    const envelope = Envelope.leaf(tagged);
     expect(envelope.format()).toBe("SSHSignature");
   });
 
@@ -487,7 +487,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
       SSH_TEXT_CERTIFICATE.value,
       cbor("ssh-ed25519-cert-v01@openssh.com AAAA= user@host"),
     );
-    const envelope = Envelope.newLeaf(tagged);
+    const envelope = Envelope.leaf(tagged);
     expect(envelope.format()).toBe("SSHCertificate");
   });
 });

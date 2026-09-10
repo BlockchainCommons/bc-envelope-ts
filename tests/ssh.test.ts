@@ -29,7 +29,7 @@ const PLAINTEXT_HELLO = "Hello.";
  * Helper function to create the hello envelope
  */
 function helloEnvelope(): Envelope {
-  return Envelope.new(PLAINTEXT_HELLO);
+  return Envelope.from(PLAINTEXT_HELLO);
 }
 
 describe("SSH Signature Tests", () => {
@@ -192,9 +192,9 @@ describe("SSH Signature Tests", () => {
       const originalEnvelope = helloEnvelope().addSignature(aliceSigningKey);
 
       // Get CBOR representation and restore
-      // (equivalent to Rust's envelope.ur() -> Envelope::from_ur(&ur) round-trip)
+      // (equivalent to Rust's envelope.toUR() -> Envelope::from_ur(&ur) round-trip)
       // In TypeScript, we use CBOR encoding instead of UR
-      const receivedEnvelope = Envelope.fromTaggedCbor(originalEnvelope.taggedCbor());
+      const receivedEnvelope = Envelope.fromCbor(originalEnvelope.toCbor());
 
       // Verify the signature is still valid after round-trip
       expect(receivedEnvelope.hasSignatureFrom(alicePublicKey)).toBe(true);

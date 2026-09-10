@@ -24,21 +24,25 @@ import { summaryWithContext } from "./envelope-summary.js";
 // ============================================================================
 
 /// The orientation of the Mermaid flowchart.
-export enum MermaidOrientation {
-  LeftToRight = "LR",
-  TopToBottom = "TB",
-  RightToLeft = "RL",
-  BottomToTop = "BT",
-}
+export const MermaidOrientation = {
+  LeftToRight: "LR",
+  TopToBottom: "TB",
+  RightToLeft: "RL",
+  BottomToTop: "BT",
+} as const;
+/** One of the `MermaidOrientation` values. */
+export type MermaidOrientation = (typeof MermaidOrientation)[keyof typeof MermaidOrientation];
 
 /// The theme for the Mermaid flowchart.
-export enum MermaidTheme {
-  Default = "default",
-  Neutral = "neutral",
-  Dark = "dark",
-  Forest = "forest",
-  Base = "base",
-}
+export const MermaidTheme = {
+  Default: "default",
+  Neutral: "neutral",
+  Dark: "dark",
+  Forest: "forest",
+  Base: "base",
+} as const;
+/** One of the `MermaidTheme` values. */
+export type MermaidTheme = (typeof MermaidTheme)[keyof typeof MermaidTheme];
 
 /// Options for Mermaid diagram formatting.
 export interface MermaidFormatOpts {
@@ -261,7 +265,7 @@ const formatEdge = (element: MermaidElement, formattedIds: Set<number>): string 
 
 /// Get the Mermaid frame characters for an envelope type
 const mermaidFrame = (envelope: Envelope): [string, string] => {
-  const c = envelope.case();
+  const c = envelope.case;
 
   switch (c.type) {
     case "node":
@@ -287,7 +291,7 @@ const mermaidFrame = (envelope: Envelope): [string, string] => {
 
 /// Get the node color for an envelope type
 const nodeColor = (envelope: Envelope): string => {
-  const c = envelope.case();
+  const c = envelope.case;
 
   switch (c.type) {
     case "node":

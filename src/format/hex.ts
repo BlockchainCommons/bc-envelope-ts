@@ -30,7 +30,7 @@ import { type FormatContext, getGlobalFormatContext } from "./format-context";
 /// they ask for a debuggable hex view of an envelope.
 export function hex(envelope: Envelope): string {
   const ctx = getGlobalFormatContext();
-  return hexAnnotated(envelope.taggedCbor(), { tagsStore: ctx.tags() });
+  return hexAnnotated(envelope.toCbor(), { tagsStore: ctx.tags() });
 }
 
 /// Implementation of hexAnnotated()
@@ -40,13 +40,13 @@ export function hex(envelope: Envelope): string {
 /// `hex(...)` in that case). When `annotate` is `true` the optional
 /// `context` provides the tag store used to resolve tag names.
 export function hexOpt(envelope: Envelope, annotate: boolean, context?: FormatContext): string {
-  if (!annotate) return envelope.taggedCbor().toHex();
+  if (!annotate) return envelope.toCbor().toHex();
   const ctx = context ?? getGlobalFormatContext();
-  return hexAnnotated(envelope.taggedCbor(), { tagsStore: ctx.tags() });
+  return hexAnnotated(envelope.toCbor(), { tagsStore: ctx.tags() });
 }
 
 /// Implementation of cborBytes()
 export function cborBytes(envelope: Envelope): Uint8Array {
-  const cbor = envelope.taggedCbor();
+  const cbor = envelope.toCbor();
   return encodeCbor(cbor);
 }

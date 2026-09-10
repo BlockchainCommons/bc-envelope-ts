@@ -7,15 +7,15 @@
 import { describe, it } from "vitest";
 import fc from "fast-check";
 import { SymmetricKey } from "@blockchaincommons/components";
-import { Envelope, envelopeFromBytes, envelopeToBytes } from "../src/index.js";
+import { Envelope } from "../src/index.js";
 import "../src/all.js";
 
 const leaf = fc.oneof(
-  fc.string({ maxLength: 12 }).map((s) => Envelope.new(s)),
-  fc.integer().map((n) => Envelope.new(n)),
-  fc.uint8Array({ maxLength: 8 }).map((b) => Envelope.new(b)),
-  fc.boolean().map((b) => Envelope.new(b)),
-  fc.nat(700).map((v) => Envelope.newWithKnownValue(v)),
+  fc.string({ maxLength: 12 }).map((s) => Envelope.from(s)),
+  fc.integer().map((n) => Envelope.from(n)),
+  fc.uint8Array({ maxLength: 8 }).map((b) => Envelope.from(b)),
+  fc.boolean().map((b) => Envelope.from(b)),
+  fc.nat(700).map((v) => Envelope.knownValue(v)),
 );
 const withAssertions = (inner: fc.Arbitrary<Envelope>): fc.Arbitrary<Envelope> =>
   fc
@@ -43,10 +43,10 @@ describe("envelope properties", () => {
   it("CBOR round trip preserves bytes and digest", () => {
     fc.assert(
       fc.property(tree, (e) => {
-        const bytes = envelopeToBytes(e);
-        const back = envelopeFromBytes(bytes);
+        const bytes = e.toCbor().toData();
+        const back = Envelope.fromBytes(bytes);
         return (
-          back.isIdenticalTo(e) && Buffer.from(envelopeToBytes(back)).equals(Buffer.from(bytes))
+          back.isIdenticalTo(e) && Buffer.from(back.toCbor().toData()).equals(Buffer.from(bytes))
         );
       }),
       { numRuns: 80 },
@@ -66,7 +66,7 @@ describe("envelope properties", () => {
     fc.assert(
       fc.property(tree, (e) => {
         const targets = new Set([...e.deepDigests()].filter((_, i) => i % 2 === 1));
-        const elided = e.elideRemovingSet(targets);
+        const elided = e.elide({ removing: targets });
         return elided.isEquivalentTo(e) && elided.unelide(e).isIdenticalTo(e);
       }),
       { numRuns: 40 },
@@ -90,7 +90,7 @@ describe("envelope properties", () => {
   it("adding then removing an assertion restores the digest", () => {
     fc.assert(
       fc.property(tree, leaf, leaf, (e, p, o) => {
-        const assertion = Envelope.newAssertion(p, o);
+        const assertion = Envelope.assertion(p, o);
         if (e.isAssertion()) return true;
         const added = e.addAssertionEnvelope(assertion);
         return added.removeAssertion(assertion).digest().equals(e.digest());

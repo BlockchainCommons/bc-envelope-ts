@@ -28,7 +28,7 @@ const PLAINTEXT_HELLO = "Hello.";
  * Creates a "Hello." envelope, matching the Rust hello_envelope() helper.
  */
 function helloEnvelope(): Envelope {
-  return Envelope.new(PLAINTEXT_HELLO);
+  return Envelope.from(PLAINTEXT_HELLO);
 }
 
 /**
@@ -41,10 +41,10 @@ function helloEnvelope(): Envelope {
  */
 function checkEncoding(envelope: Envelope): Envelope {
   // Get the tagged CBOR representation
-  const cbor = envelope.taggedCbor();
+  const cbor = envelope.toCbor();
 
   // Restore from CBOR
-  const restored = Envelope.fromTaggedCbor(cbor);
+  const restored = Envelope.fromCbor(cbor);
 
   // Verify digests match
   const originalDigest = envelope.digest().toHex();
@@ -179,8 +179,8 @@ describe("Keypair Signing Tests", () => {
       const signed = helloEnvelope().sign(privateKey);
 
       // Round-trip through CBOR
-      const cbor = signed.taggedCbor();
-      const restored = Envelope.fromTaggedCbor(cbor);
+      const cbor = signed.toCbor();
+      const restored = Envelope.fromCbor(cbor);
 
       // Digests should match
       expect(restored.digest().toHex()).toBe(signed.digest().toHex());
@@ -194,14 +194,14 @@ describe("Keypair Signing Tests", () => {
       const privateKey = SigningPrivateKey.random();
       const publicKey = privateKey.publicKey();
 
-      const envelope = Envelope.new("Test message");
+      const envelope = Envelope.from("Test message");
       const signed = envelope.sign(privateKey);
 
       // First verify
       expect(() => signed.verify(publicKey)).not.toThrow();
 
       // Round-trip
-      const restored = Envelope.fromTaggedCbor(signed.taggedCbor());
+      const restored = Envelope.fromCbor(signed.toCbor());
 
       // Second verify
       expect(() => restored.verify(publicKey)).not.toThrow();
@@ -219,7 +219,7 @@ describe("Keypair Signing Tests", () => {
       expect(key1Data.length).toBeGreaterThan(0);
 
       // Key should still work after getting data
-      const message = Envelope.new("Test");
+      const message = Envelope.from("Test");
       const sig1 = message.sign(key1);
 
       // Should verify with the key's public key
@@ -232,7 +232,7 @@ describe("Keypair Signing Tests", () => {
       const privateKey = SigningPrivateKey.random();
       const publicKey = privateKey.publicKey();
 
-      const envelope = Envelope.new("Hello, World!");
+      const envelope = Envelope.from("Hello, World!");
       const signed = envelope.sign(privateKey);
       const verified = signed.verify(publicKey);
 
@@ -243,29 +243,29 @@ describe("Keypair Signing Tests", () => {
       const privateKey = SigningPrivateKey.random();
       const publicKey = privateKey.publicKey();
 
-      const envelope = Envelope.new(42);
+      const envelope = Envelope.from(42);
       const signed = envelope.sign(privateKey);
       const verified = signed.verify(publicKey);
 
-      expect(verified.subject().extractNumber()).toBe(42);
+      expect(verified.subject().expectNumber()).toBe(42);
     });
 
     it("should sign boolean envelope", () => {
       const privateKey = SigningPrivateKey.random();
       const publicKey = privateKey.publicKey();
 
-      const envelope = Envelope.new(true);
+      const envelope = Envelope.from(true);
       const signed = envelope.sign(privateKey);
       const verified = signed.verify(publicKey);
 
-      expect(verified.subject().extractBoolean()).toBe(true);
+      expect(verified.subject().expectBoolean()).toBe(true);
     });
 
     it("should sign envelope with assertions", () => {
       const privateKey = SigningPrivateKey.random();
       const publicKey = privateKey.publicKey();
 
-      const envelope = Envelope.new("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
+      const envelope = Envelope.from("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
 
       const signed = envelope.sign(privateKey);
       const verified = signed.verify(publicKey);
@@ -283,7 +283,7 @@ describe("Keypair Signing Tests", () => {
       const verified = signed.verify(publicKey);
 
       // The verified envelope is the wrapped hello envelope
-      const unwrapped = verified.tryUnwrap();
+      const unwrapped = verified.unwrap();
       expect(unwrapped.subject().asText()).toBe(PLAINTEXT_HELLO);
     });
 
@@ -296,8 +296,8 @@ describe("Keypair Signing Tests", () => {
       const verified = signed.verify(publicKey);
 
       // Unwrap twice to get original
-      const once = verified.tryUnwrap();
-      const twice = once.tryUnwrap();
+      const once = verified.unwrap();
+      const twice = once.unwrap();
       expect(twice.subject().asText()).toBe(PLAINTEXT_HELLO);
     });
   });

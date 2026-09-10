@@ -224,14 +224,14 @@ export function edges(envelope: Envelope): Envelope[] {
  *   (`edgeUnexpectedAssertion`).
  */
 export function validateEdge(envelope: Envelope): void {
-  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
+  const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
 
   let seenIsA = false;
   let seenSource = false;
   let seenTarget = false;
 
   for (const assertion of inner.assertions()) {
-    const predicateEnv = assertion.tryPredicate();
+    const predicateEnv = assertion.expectPredicate();
     const kv = predicateEnv.asKnownValue();
     if (kv === undefined) {
       // Rust: `try_known_value().map_err(|_| EdgeUnexpectedAssertion)`.
@@ -280,7 +280,7 @@ export function validateEdge(envelope: Envelope): void {
  * Equivalent to Rust's `Envelope::edge_is_a()`.
  */
 export function edgeIsA(envelope: Envelope): Envelope {
-  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
+  const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
   return inner.objectForPredicate(IS_A);
 }
 
@@ -290,7 +290,7 @@ export function edgeIsA(envelope: Envelope): Envelope {
  * Equivalent to Rust's `Envelope::edge_source()`.
  */
 export function edgeSource(envelope: Envelope): Envelope {
-  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
+  const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
   return inner.objectForPredicate(SOURCE);
 }
 
@@ -300,7 +300,7 @@ export function edgeSource(envelope: Envelope): Envelope {
  * Equivalent to Rust's `Envelope::edge_target()`.
  */
 export function edgeTarget(envelope: Envelope): Envelope {
-  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
+  const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
   return inner.objectForPredicate(TARGET);
 }
 
@@ -310,7 +310,7 @@ export function edgeTarget(envelope: Envelope): Envelope {
  * Equivalent to Rust's `Envelope::edge_subject()`.
  */
 export function edgeSubject(envelope: Envelope): Envelope {
-  const inner = envelope.subject().isWrapped() ? envelope.subject().tryUnwrap() : envelope;
+  const inner = envelope.subject().isWrapped() ? envelope.subject().unwrap() : envelope;
   return inner.subject();
 }
 

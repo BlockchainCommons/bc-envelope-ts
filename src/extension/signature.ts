@@ -18,7 +18,7 @@
  */
 
 import { Envelope } from "../base/envelope";
-import type { EnvelopeEncodableValue } from "../base/envelope-encodable";
+import type { EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import {
   SIGNED as SIGNED_KV,
@@ -68,7 +68,7 @@ export const NOTE: KnownValue = NOTE_KV;
  * Ported from bc-envelope-rust/src/extension/signature/signature_metadata.rs
  */
 export class SignatureMetadata {
-  private readonly _assertions: [EnvelopeEncodableValue, unknown][] = [];
+  private readonly _assertions: [EnvelopeInput, unknown][] = [];
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
@@ -87,7 +87,7 @@ export class SignatureMetadata {
    * @param object - The object for the assertion
    * @returns A new SignatureMetadata with the assertion added
    */
-  withAssertion(predicate: EnvelopeEncodableValue, object: unknown): SignatureMetadata {
+  withAssertion(predicate: EnvelopeInput, object: unknown): SignatureMetadata {
     const metadata = new SignatureMetadata();
     metadata._assertions.push(...this._assertions);
     metadata._assertions.push([predicate, object]);
@@ -97,7 +97,7 @@ export class SignatureMetadata {
   /**
    * Returns all assertions in this metadata.
    */
-  assertions(): readonly [EnvelopeEncodableValue, unknown][] {
+  assertions(): readonly [EnvelopeInput, unknown][] {
     return this._assertions;
   }
 
@@ -129,22 +129,19 @@ export function addSignatureOpt(
   metadata?: SignatureMetadata,
 ): Envelope {
   const digest = envelope.subject().digest();
-  let signatureEnvelope = Envelope.new(signer.signWithOptions(digest.bytes, options));
+  let signatureEnvelope = Envelope.from(signer.signWithOptions(digest.bytes, options));
 
   if (metadata?.hasAssertions() === true) {
     // Add metadata assertions to the signature envelope
     for (const [predicate, object] of metadata.assertions()) {
-      signatureEnvelope = signatureEnvelope.addAssertion(
-        predicate,
-        object as EnvelopeEncodableValue,
-      );
+      signatureEnvelope = signatureEnvelope.addAssertion(predicate, object as EnvelopeInput);
     }
 
     // Wrap the signature envelope (cryptographic binding)
     signatureEnvelope = signatureEnvelope.wrap();
 
     // Sign the wrapped structure with the same key
-    const outerSignature = Envelope.new(
+    const outerSignature = Envelope.from(
       signer.signWithOptions(signatureEnvelope.digest().bytes, options),
     );
 
@@ -213,7 +210,7 @@ export function makeSignedAssertion(
   signature: Signature,
   note?: string,
 ): Envelope {
-  let assertion = Envelope.newAssertion(SIGNED, signature);
+  let assertion = Envelope.assertion(SIGNED, signature);
   if (note !== undefined) {
     assertion = assertion.addAssertion(NOTE, note);
   }
@@ -279,7 +276,7 @@ export function hasSignatureFromReturningMetadata(
       try {
         const outerSignatureObject = signatureObject.objectForPredicate(SIGNED);
         outerSigFound = true;
-        const outerSignature = outerSignatureObject.extractSubject((cbor) =>
+        const outerSignature = outerSignatureObject.expectSubject((cbor) =>
           Signature.fromCbor(cbor),
         );
         if (!verifier.verify(outerSignature, signatureObjectSubject.digest().bytes)) {
@@ -295,9 +292,9 @@ export function hasSignatureFromReturningMetadata(
       }
 
       // Step 2: Unwrap and verify inner signature
-      const signatureMetadataEnvelope = signatureObjectSubject.tryUnwrap();
+      const signatureMetadataEnvelope = signatureObjectSubject.unwrap();
       try {
-        const innerSignature = signatureMetadataEnvelope.extractSubject((cbor) =>
+        const innerSignature = signatureMetadataEnvelope.expectSubject((cbor) =>
           Signature.fromCbor(cbor),
         );
         if (!verifier.verify(innerSignature, envelope.subject().digest().bytes)) {
@@ -311,7 +308,7 @@ export function hasSignatureFromReturningMetadata(
     } else {
       // Simple case: no metadata
       try {
-        const signature = signatureObject.extractSubject((cbor) => Signature.fromCbor(cbor));
+        const signature = signatureObject.expectSubject((cbor) => Signature.fromCbor(cbor));
         if (verifier.verify(signature, envelope.subject().digest().bytes)) {
           return signatureObject;
         }
@@ -453,7 +450,7 @@ export function signWithMetadata(
 ///
 /// Matches Rust: verify()
 export function verify(envelope: Envelope, verifier: Verifier): Envelope {
-  return verifySignatureFrom(envelope, verifier).tryUnwrap();
+  return verifySignatureFrom(envelope, verifier).unwrap();
 }
 
 /// Verifies the envelope's signature and returns both the unwrapped
@@ -465,5 +462,5 @@ export function verifyReturningMetadata(
   verifier: Verifier,
 ): { envelope: Envelope; metadata: Envelope } {
   const metadata = verifySignatureFromReturningMetadata(envelope, verifier);
-  return { envelope: envelope.tryUnwrap(), metadata };
+  return { envelope: envelope.unwrap(), metadata };
 }

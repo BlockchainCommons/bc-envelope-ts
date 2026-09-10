@@ -10,7 +10,6 @@ import { Envelope } from "./base/envelope.js";
 import * as xattachment from "./extension/attachment.js";
 import * as xedge from "./extension/edge.js";
 import * as xrecipient from "./extension/recipient.js";
-import * as xsalt from "./extension/salt.js";
 import * as xsecret from "./extension/secret.js";
 import * as xsignature from "./extension/signature.js";
 import * as xsskr from "./extension/sskr.js";
@@ -28,9 +27,6 @@ type Tail<T extends unknown[]> = T extends [unknown, ...infer R] ? R : never;
 
 declare module "./base/envelope.js" {
   interface Envelope {
-    addSaltWithLen(
-      ...args: Tail<Parameters<typeof xsalt.addSaltWithLen>>
-    ): ReturnType<typeof xsalt.addSaltWithLen>;
     confirmContainsTarget(
       ...args: Tail<Parameters<typeof xproof.confirmContainsTarget>>
     ): ReturnType<typeof xproof.confirmContainsTarget>;
@@ -108,37 +104,6 @@ declare module "./base/envelope.js" {
     recipients(
       ...args: Tail<Parameters<typeof xrecipient.recipients>>
     ): ReturnType<typeof xrecipient.recipients>;
-    addAssertionEnvelopeSalted(
-      ...args: Tail<Parameters<typeof xsalt.addAssertionEnvelopeSalted>>
-    ): ReturnType<typeof xsalt.addAssertionEnvelopeSalted>;
-    addAssertionSalted(
-      ...args: Tail<Parameters<typeof xsalt.addAssertionSalted>>
-    ): ReturnType<typeof xsalt.addAssertionSalted>;
-    addOptionalAssertionEnvelopeSalted(
-      ...args: Tail<Parameters<typeof xsalt.addOptionalAssertionEnvelopeSalted>>
-    ): ReturnType<typeof xsalt.addOptionalAssertionEnvelopeSalted>;
-    addSalt(...args: Tail<Parameters<typeof xsalt.addSalt>>): ReturnType<typeof xsalt.addSalt>;
-    addSaltBytes(
-      ...args: Tail<Parameters<typeof xsalt.addSaltBytes>>
-    ): ReturnType<typeof xsalt.addSaltBytes>;
-    addSaltInRange(
-      ...args: Tail<Parameters<typeof xsalt.addSaltInRange>>
-    ): ReturnType<typeof xsalt.addSaltInRange>;
-    addSaltInRangeUsing(
-      ...args: Tail<Parameters<typeof xsalt.addSaltInRangeUsing>>
-    ): ReturnType<typeof xsalt.addSaltInRangeUsing>;
-    addSaltInstance(
-      ...args: Tail<Parameters<typeof xsalt.addSaltInstance>>
-    ): ReturnType<typeof xsalt.addSaltInstance>;
-    addSaltUsing(
-      ...args: Tail<Parameters<typeof xsalt.addSaltUsing>>
-    ): ReturnType<typeof xsalt.addSaltUsing>;
-    addSaltWithLenUsing(
-      ...args: Tail<Parameters<typeof xsalt.addSaltWithLenUsing>>
-    ): ReturnType<typeof xsalt.addSaltWithLenUsing>;
-    addSaltWithLength(
-      ...args: Tail<Parameters<typeof xsalt.addSaltWithLength>>
-    ): ReturnType<typeof xsalt.addSaltWithLength>;
     addSecret(
       ...args: Tail<Parameters<typeof xsecret.addSecret>>
     ): ReturnType<typeof xsecret.addSecret>;
@@ -327,17 +292,6 @@ install("encryptSubjectToRecipient", xrecipient.encryptSubjectToRecipient);
 install("encryptSubjectToRecipients", xrecipient.encryptSubjectToRecipients);
 install("encryptToRecipients", xrecipient.encryptToRecipients);
 install("recipients", xrecipient.recipients);
-install("addAssertionEnvelopeSalted", xsalt.addAssertionEnvelopeSalted);
-install("addAssertionSalted", xsalt.addAssertionSalted);
-install("addOptionalAssertionEnvelopeSalted", xsalt.addOptionalAssertionEnvelopeSalted);
-install("addSalt", xsalt.addSalt);
-install("addSaltBytes", xsalt.addSaltBytes);
-install("addSaltInRange", xsalt.addSaltInRange);
-install("addSaltInRangeUsing", xsalt.addSaltInRangeUsing);
-install("addSaltInstance", xsalt.addSaltInstance);
-install("addSaltUsing", xsalt.addSaltUsing);
-install("addSaltWithLenUsing", xsalt.addSaltWithLenUsing);
-install("addSaltWithLength", xsalt.addSaltWithLength);
 install("addSecret", xsecret.addSecret);
 install("isLockedWithPassword", xsecret.isLockedWithPassword);
 install("isLockedWithSshAgent", xsecret.isLockedWithSshAgent);
@@ -401,13 +355,11 @@ install("proofContainsSet", xproof.proofContainsSet);
 install("proofContainsTarget", xproof.proofContainsTarget);
 install("confirmContainsSet", xproof.confirmContainsSet);
 install("confirmContainsTarget", xproof.confirmContainsTarget);
-install("addSaltWithLen", xsalt.addSaltWithLen);
 export * from "./index.js";
 export * from "./expression.js";
 export * from "./extension/attachment.js";
 export * from "./extension/edge.js";
 export * from "./extension/recipient.js";
-export * from "./extension/salt.js";
 export * from "./extension/secret.js";
 export * from "./extension/signature.js";
 export * from "./extension/sskr.js";

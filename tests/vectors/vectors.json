@@ -4594,7 +4594,7 @@
      "summary"
     ]
    },
-   "expect": "throw:CborError"
+   "expect": "throw:CBOR"
   },
   {
    "name": "decode:d8c8f6",

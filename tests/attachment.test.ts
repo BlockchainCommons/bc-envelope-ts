@@ -19,7 +19,7 @@ describe("Attachment Extension", () => {
 
   describe("Add attachment to envelope", () => {
     it("should add attachment to existing envelope", () => {
-      const document = Envelope.new("User data")
+      const document = Envelope.from("User data")
         .addAssertion("name", "Alice")
         .addAttachment(
           "Vendor-specific metadata",
@@ -37,7 +37,7 @@ describe("Attachment Extension", () => {
 
   describe("Multiple attachments", () => {
     it("should support multiple attachments", () => {
-      const envelope = Envelope.new("Data")
+      const envelope = Envelope.from("Data")
         .addAttachment("Attachment 1", "com.example", "https://example.com/v1")
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
@@ -48,7 +48,7 @@ describe("Attachment Extension", () => {
 
   describe("Filter attachments", () => {
     it("should filter by vendor", () => {
-      const envelope = Envelope.new("Data")
+      const envelope = Envelope.from("Data")
         .addAttachment("Attachment 1", "com.example", "https://example.com/v1")
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
@@ -61,7 +61,7 @@ describe("Attachment Extension", () => {
     });
 
     it("should filter by conformsTo", () => {
-      const envelope = Envelope.new("Data")
+      const envelope = Envelope.from("Data")
         .addAttachment("Attachment 1", "com.example", "https://example.com/v1")
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
@@ -74,7 +74,7 @@ describe("Attachment Extension", () => {
     });
 
     it("should filter by both vendor and conformsTo", () => {
-      const envelope = Envelope.new("Data")
+      const envelope = Envelope.from("Data")
         .addAttachment("Attachment 1", "com.example", "https://example.com/v1")
         .addAttachment("Attachment 2", "com.example", "https://example.com/v2")
         .addAttachment("Attachment 3", "com.other", "https://other.com/v1");
@@ -96,14 +96,14 @@ describe("Attachment Extension", () => {
 
       expect(container.isEmpty()).toBe(false);
 
-      const base = Envelope.new("Base document");
+      const base = Envelope.from("Base document");
       const withAttachments = container.addToEnvelope(base);
 
       expect(withAttachments.attachments().length).toBe(3);
     });
 
     it("should extract attachments from envelope", () => {
-      const envelope = Envelope.new("Data")
+      const envelope = Envelope.from("Data")
         .addAttachment("Attachment 1", "com.example", "https://example.com/v1")
         .addAttachment("Attachment 2", "com.other", "https://other.com/v1");
 
@@ -124,11 +124,11 @@ describe("Attachment Extension", () => {
 
   describe("Complex attachment payload", () => {
     it("should support envelope as payload", () => {
-      const complexPayload = Envelope.new("Metadata")
+      const complexPayload = Envelope.from("Metadata")
         .addAssertion("version", "2.0")
         .addAssertion("timestamp", "2024-01-15T10:30:00Z");
 
-      const complexAttachment = Envelope.new("Document").addAttachment(
+      const complexAttachment = Envelope.from("Document").addAttachment(
         complexPayload,
         "com.complex",
         "https://complex.com/v2",

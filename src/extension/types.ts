@@ -12,23 +12,23 @@
  * @example
  * ```typescript
  * // Tag with a string type
- * const person = Envelope.new("Alice")
+ * const person = Envelope.from("Alice")
  *   .addType("Person")
  *   .addAssertion("age", 30);
  *
  * // Tag with a KnownValue (e.g. the SEED_TYPE registry entry)
- * const seed = addType(Envelope.new(seedData), SEED_TYPE);
+ * const seed = addType(Envelope.from(seedData), SEED_TYPE);
  * if (hasTypeValue(seed, SEED_TYPE)) { ... }
  * ```
  */
 
 import { Envelope } from "../base/envelope";
-import { type EnvelopeEncodableValue } from "../base/envelope-encodable";
+import { type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import { IS_A, type KnownValue } from "@blockchaincommons/known-values";
 
 /// Implementation of addType()
-export function addType(envelope: Envelope, object: EnvelopeEncodableValue): Envelope {
+export function addType(envelope: Envelope, object: EnvelopeInput): Envelope {
   return envelope.addAssertion(IS_A, object);
 }
 
@@ -54,13 +54,13 @@ export function getType(envelope: Envelope): Envelope {
 }
 
 /// Implementation of hasType()
-export function hasType(envelope: Envelope, t: EnvelopeEncodableValue): boolean {
-  const e = Envelope.new(t);
+export function hasType(envelope: Envelope, t: EnvelopeInput): boolean {
+  const e = Envelope.from(t);
   return types(envelope).some((x) => x.digest().equals(e.digest()));
 }
 
 /// Implementation of checkType()
-export function checkType(envelope: Envelope, t: EnvelopeEncodableValue): void {
+export function checkType(envelope: Envelope, t: EnvelopeInput): void {
   if (!hasType(envelope, t)) {
     throw EnvelopeError.invalidType();
   }
@@ -73,7 +73,7 @@ export function checkType(envelope: Envelope, t: EnvelopeEncodableValue): void {
 /// Specialised counterpart to {@link Envelope.hasType} for checking
 /// against registered KnownValue types (e.g. `SEED_TYPE`).
 export function hasTypeValue(envelope: Envelope, t: KnownValue): boolean {
-  const typeEnvelope = Envelope.newWithKnownValue(t);
+  const typeEnvelope = Envelope.knownValue(t);
   return types(envelope).some((x) => x.digest().equals(typeEnvelope.digest()));
 }
 

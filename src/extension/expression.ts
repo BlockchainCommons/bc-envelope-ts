@@ -16,7 +16,7 @@ import {
 } from "@blockchaincommons/dcbor";
 
 import { Envelope } from "../base/envelope";
-import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
+import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 
 /// Extension for envelope expressions.
@@ -111,7 +111,7 @@ type FunctionVariant = "known" | "named";
 /// 2. By a string name (for application-specific functions) - Named variant
 ///
 /// When encoded in CBOR, functions are tagged with #6.40006.
-export class Function implements EnvelopeEncodable {
+export class Function implements ToEnvelope {
   private readonly _variant: FunctionVariant;
   private readonly _value: number; // Only used for 'known' variant
   private readonly _name: string | undefined;
@@ -204,7 +204,7 @@ export class Function implements EnvelopeEncodable {
 
   /// Creates an expression envelope with this function as the subject.
   ///
-  /// Mirrors Rust `EnvelopeEncodable for Function`
+  /// Mirrors Rust `ToEnvelope for Function`
   /// (`bc-envelope-rust/src/extension/expressions/function.rs:392-394`)
   /// which calls `Envelope::new_leaf(self)` — that goes through
   /// `From<Function> for CBOR = self.tagged_cbor()` which produces
@@ -212,22 +212,22 @@ export class Function implements EnvelopeEncodable {
   /// or `text(name)` for Named.
   ///
   /// The earlier TS port pre-formatted the display string into a
-  /// text leaf (`Envelope.new("«\"name\"»")`), which breaks the
+  /// text leaf (`Envelope.from("«\"name\"»")`), which breaks the
   /// TAG_FUNCTION summarizer (it never fires because the leaf is
   /// not tagged), so format() rendered the leaf as a quoted string
   /// instead of `«"name"»`.
   envelope(): Envelope {
     const untagged: Cbor = this._variant === "known" ? toCbor(this._value) : toCbor(this._name);
-    return Envelope.newLeaf(taggedValue(40006, untagged));
+    return Envelope.leaf(taggedValue(40006, untagged));
   }
 
-  /// Converts this function into an envelope (EnvelopeEncodable implementation).
-  intoEnvelope(): Envelope {
+  /// Converts this function into an envelope (ToEnvelope implementation).
+  toEnvelope(): Envelope {
     return this.envelope();
   }
 
   /// Creates an expression with a parameter.
-  withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression {
+  withParameter(param: ParameterID, value: EnvelopeInput): Expression {
     const expr = new Expression(this);
     return expr.withParameter(param, value);
   }
@@ -342,7 +342,7 @@ type ParameterVariant = "known" | "named";
 /// 2. By a string name (for application-specific parameters) - Named variant
 ///
 /// When encoded in CBOR, parameters are tagged with #6.40007.
-export class Parameter implements EnvelopeEncodable {
+export class Parameter implements ToEnvelope {
   private readonly _variant: ParameterVariant;
   private readonly _value: number; // Only used for 'known' variant, or 0 for 'named'
   private readonly _name: string | undefined;
@@ -446,20 +446,20 @@ export class Parameter implements EnvelopeEncodable {
 
   /// Creates a parameter envelope.
   ///
-  /// Mirrors Rust `EnvelopeEncodable for Parameter` (same pattern as
+  /// Mirrors Rust `ToEnvelope for Parameter` (same pattern as
   /// Function above): the parameter is stored as `tag(40007, untagged)`
   /// where untagged is `uint(N)` (Known) or `text(name)` (Named).
   envelope(): Envelope {
     const untagged: Cbor = this._variant === "known" ? toCbor(this._value) : toCbor(this._name);
-    const paramLeaf = Envelope.newLeaf(taggedValue(40007, untagged));
+    const paramLeaf = Envelope.leaf(taggedValue(40007, untagged));
     if (this._paramValue !== undefined) {
-      return Envelope.newAssertion(paramLeaf, this._paramValue);
+      return Envelope.assertion(paramLeaf, this._paramValue);
     }
     return paramLeaf;
   }
 
-  /// Converts this parameter into an envelope (EnvelopeEncodable implementation).
-  intoEnvelope(): Envelope {
+  /// Converts this parameter into an envelope (ToEnvelope implementation).
+  toEnvelope(): Envelope {
     return this.envelope();
   }
 
@@ -496,16 +496,16 @@ export class Parameter implements EnvelopeEncodable {
   }
 
   // Convenience static methods for standard parameters
-  static blank(value: EnvelopeEncodableValue): Parameter {
-    return Parameter.withValue(PARAMETER_IDS.BLANK, Envelope.new(value));
+  static blank(value: EnvelopeInput): Parameter {
+    return Parameter.withValue(PARAMETER_IDS.BLANK, Envelope.from(value));
   }
 
-  static lhs(value: EnvelopeEncodableValue): Parameter {
-    return Parameter.withValue(PARAMETER_IDS.LHS, Envelope.new(value));
+  static lhs(value: EnvelopeInput): Parameter {
+    return Parameter.withValue(PARAMETER_IDS.LHS, Envelope.from(value));
   }
 
-  static rhs(value: EnvelopeEncodableValue): Parameter {
-    return Parameter.withValue(PARAMETER_IDS.RHS, Envelope.new(value));
+  static rhs(value: EnvelopeInput): Parameter {
+    return Parameter.withValue(PARAMETER_IDS.RHS, Envelope.from(value));
   }
 }
 
@@ -667,7 +667,7 @@ export const GLOBAL_PARAMETERS: LazyStore<ParametersStore> = new LazyStore(
 /// resulting envelope had only the last `participant`, breaking
 /// `objectsForParameter("participant")` decoders downstream
 /// (`frost-hubert/group-invite.ts:383`).
-export class Expression implements EnvelopeEncodable {
+export class Expression implements ToEnvelope {
   private readonly _function: Function;
   private readonly _parameters: Parameter[] = [];
   private _envelope: Envelope | null = null;
@@ -687,14 +687,14 @@ export class Expression implements EnvelopeEncodable {
   }
 
   /// Adds a parameter to the expression.
-  withParameter(param: ParameterID, value: EnvelopeEncodableValue): Expression {
-    this._parameters.push(Parameter.withValue(param, Envelope.new(value)));
+  withParameter(param: ParameterID, value: EnvelopeInput): Expression {
+    this._parameters.push(Parameter.withValue(param, Envelope.from(value)));
     this._envelope = null; // Invalidate cached envelope
     return this;
   }
 
   /// Adds multiple parameters at once.
-  withParameters(params: Record<string, EnvelopeEncodableValue>): Expression {
+  withParameters(params: Record<string, EnvelopeInput>): Expression {
     for (const [key, value] of Object.entries(params)) {
       this.withParameter(key, value);
     }
@@ -749,7 +749,7 @@ export class Expression implements EnvelopeEncodable {
 
     // Add all parameters as assertions. Each parameter's envelope is
     // itself an assertion (`Parameter.envelope()` returns
-    // `Envelope.newAssertion(parameterLeaf, value)`); we extract the
+    // `Envelope.assertion(parameterLeaf, value)`); we extract the
     // predicate (a tagged-CBOR Parameter leaf, post-M0/G1 fix) and
     // attach it to the function envelope as a fresh assertion.
     // Earlier this passed `predicate.asText()` (which only works
@@ -758,7 +758,7 @@ export class Expression implements EnvelopeEncodable {
     // assertion would silently be skipped.
     for (const param of this._parameters.values()) {
       const paramEnv = param.envelope();
-      const paramCase = paramEnv.case();
+      const paramCase = paramEnv.case;
       if (paramCase.type === "assertion") {
         const predicate = paramCase.assertion.predicate();
         const object = paramCase.assertion.object();
@@ -770,8 +770,8 @@ export class Expression implements EnvelopeEncodable {
     return env;
   }
 
-  /// Converts this expression into an envelope (EnvelopeEncodable implementation).
-  intoEnvelope(): Envelope {
+  /// Converts this expression into an envelope (ToEnvelope implementation).
+  toEnvelope(): Envelope {
     return this.envelope();
   }
 
@@ -825,7 +825,7 @@ export class Expression implements EnvelopeEncodable {
  * `tag(40006, text(name))` for Named).
  */
 function readFunctionFromLeaf(envelope: Envelope): Function {
-  const leaf = envelope.case();
+  const leaf = envelope.case;
   if (leaf.type !== "leaf") {
     throw EnvelopeError.general("Function envelope subject must be a leaf");
   }
@@ -849,7 +849,7 @@ function readFunctionFromLeaf(envelope: Envelope): Function {
  * Rust `Parameter::from_tagged_cbor`.
  */
 function tryReadParameterIdFromLeaf(envelope: Envelope): ParameterID | undefined {
-  const c = envelope.case();
+  const c = envelope.case;
   if (c.type !== "leaf") return undefined;
   const tagged = asTaggedValue(c.cbor);
   if (tagged === undefined || Number(tagged[0].value) !== CBOR_TAG_PARAMETER) {
@@ -862,102 +862,102 @@ function tryReadParameterIdFromLeaf(envelope: Envelope): ParameterID | undefined
 }
 
 /// Creates an addition expression: lhs + rhs
-export function add(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function add(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(ADD)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a subtraction expression: lhs - rhs
-export function sub(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function sub(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(SUB)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a multiplication expression: lhs * rhs
-export function mul(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function mul(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(MUL)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a division expression: lhs / rhs
-export function div(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function div(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(DIV)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a negation expression: -value
-export function neg(value: EnvelopeEncodableValue): Expression {
+export function neg(value: EnvelopeInput): Expression {
   return new Expression(NEG).withParameter(PARAMETER_IDS.BLANK, value);
 }
 
 /// Creates a less-than expression: lhs < rhs
-export function lt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function lt(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(LT)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a less-than-or-equal expression: lhs <= rhs
-export function le(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function le(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(LE)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a greater-than expression: lhs > rhs
-export function gt(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function gt(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(GT)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a greater-than-or-equal expression: lhs >= rhs
-export function ge(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function ge(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(GE)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates an equality expression: lhs == rhs
-export function eq(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function eq(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(EQ)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a not-equal expression: lhs != rhs
-export function ne(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function ne(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(NE)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a logical AND expression: lhs && rhs
-export function and(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function and(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(AND)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a logical OR expression: lhs || rhs
-export function or(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function or(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(OR)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a logical XOR expression: lhs ^ rhs
-export function xor(lhs: EnvelopeEncodableValue, rhs: EnvelopeEncodableValue): Expression {
+export function xor(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression {
   return new Expression(XOR)
     .withParameter(PARAMETER_IDS.LHS, lhs)
     .withParameter(PARAMETER_IDS.RHS, rhs);
 }
 
 /// Creates a logical NOT expression: !value
-export function not(value: EnvelopeEncodableValue): Expression {
+export function not(value: EnvelopeInput): Expression {
   return new Expression(NOT).withParameter(PARAMETER_IDS.BLANK, value);
 }

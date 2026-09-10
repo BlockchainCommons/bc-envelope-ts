@@ -5,23 +5,23 @@ import "../src/all.js";
 describe("Core Nesting Tests", () => {
   describe("Predicate Enclosures", () => {
     it("should handle various predicate and object enclosures", () => {
-      const alice = Envelope.new("Alice");
-      const knows = Envelope.new("knows");
-      const bob = Envelope.new("Bob");
+      const alice = Envelope.from("Alice");
+      const knows = Envelope.from("knows");
+      const bob = Envelope.from("Bob");
 
-      const a = Envelope.new("A");
-      const b = Envelope.new("B");
+      const a = Envelope.from("A");
+      const b = Envelope.from("B");
 
       // Simple assertion: "knows": "Bob"
-      const knowsBob = Envelope.newAssertion(knows, bob);
+      const knowsBob = Envelope.assertion(knows, bob);
       expect(knowsBob.format()).toBe('"knows": "Bob"');
 
       // Simple assertion: "A": "B"
-      const ab = Envelope.newAssertion(a, b);
+      const ab = Envelope.assertion(a, b);
       expect(ab.format()).toBe('"A": "B"');
 
       // Assertion with predicate having assertion: "knows" ["A": "B"] : "Bob"
-      const knowsAbBob = Envelope.newAssertion(knows.addAssertionEnvelope(ab), bob);
+      const knowsAbBob = Envelope.assertion(knows.addAssertionEnvelope(ab), bob);
       const expectedKnowsAbBob = `"knows" [
     "A": "B"
 ]
@@ -29,7 +29,7 @@ describe("Core Nesting Tests", () => {
       expect(knowsAbBob.format()).toBe(expectedKnowsAbBob);
 
       // Assertion with object having assertion: "knows": "Bob" ["A": "B"]
-      const knowsBobAb = Envelope.newAssertion(knows, bob.addAssertionEnvelope(ab));
+      const knowsBobAb = Envelope.assertion(knows, bob.addAssertionEnvelope(ab));
       const expectedKnowsBobAb = `"knows": "Bob" [
     "A": "B"
 ]`;
@@ -70,7 +70,7 @@ describe("Core Nesting Tests", () => {
 
       // Alice with assertion where predicate has assertions
       const aliceKnowsAbBob = alice.addAssertionEnvelope(
-        Envelope.newAssertion(knows.addAssertionEnvelope(ab), bob),
+        Envelope.assertion(knows.addAssertionEnvelope(ab), bob),
       );
       const expectedAliceKnowsAbBob = `"Alice" [
     "knows" [
@@ -82,7 +82,7 @@ describe("Core Nesting Tests", () => {
 
       // Alice with assertion where object has assertions
       const aliceKnowsBobAb = alice.addAssertionEnvelope(
-        Envelope.newAssertion(knows, bob.addAssertionEnvelope(ab)),
+        Envelope.assertion(knows, bob.addAssertionEnvelope(ab)),
       );
       const expectedAliceKnowsBobAb = `"Alice" [
     "knows": "Bob" [
@@ -93,7 +93,7 @@ describe("Core Nesting Tests", () => {
 
       // Alice with assertion where both predicate and object have assertions
       const aliceKnowsAbBobAb = alice.addAssertionEnvelope(
-        Envelope.newAssertion(knows.addAssertionEnvelope(ab), bob.addAssertionEnvelope(ab)),
+        Envelope.assertion(knows.addAssertionEnvelope(ab), bob.addAssertionEnvelope(ab)),
       );
       const expectedAliceKnowsAbBobAb = `"Alice" [
     "knows" [
@@ -114,7 +114,7 @@ describe("Core Nesting Tests", () => {
       const aliceAbKnowsAbBobAb = alice
         .addAssertionEnvelope(ab)
         .addAssertionEnvelope(
-          Envelope.newAssertion(knows.addAssertionEnvelope(ab), bob.addAssertionEnvelope(ab)),
+          Envelope.assertion(knows.addAssertionEnvelope(ab), bob.addAssertionEnvelope(ab)),
         );
       const expectedAliceAbKnowsAbBobAb = `"Alice" [
     "A": "B"
@@ -136,14 +136,14 @@ describe("Core Nesting Tests", () => {
 
   describe("Nesting Plaintext", () => {
     it("should format plaintext envelope", () => {
-      const envelope = Envelope.new("Hello.");
+      const envelope = Envelope.from("Hello.");
 
       const expectedFormat = '"Hello."';
       expect(envelope.format()).toBe(expectedFormat);
     });
 
     it("should elide plaintext envelope and preserve equivalence", () => {
-      const envelope = Envelope.new("Hello.");
+      const envelope = Envelope.from("Hello.");
       const elidedEnvelope = envelope.elide();
 
       // Elided envelope should have same digest (equivalent)
@@ -156,7 +156,7 @@ describe("Core Nesting Tests", () => {
 
   describe("Nesting Once", () => {
     it("should format wrapped envelope", () => {
-      const envelope = Envelope.new("Hello.").wrap();
+      const envelope = Envelope.from("Hello.").wrap();
 
       const expectedFormat = `{
     "Hello."
@@ -165,8 +165,8 @@ describe("Core Nesting Tests", () => {
     });
 
     it("should elide inner envelope and preserve equivalence", () => {
-      const envelope = Envelope.new("Hello.").wrap();
-      const elidedEnvelope = Envelope.new("Hello.").elide().wrap();
+      const envelope = Envelope.from("Hello.").wrap();
+      const elidedEnvelope = Envelope.from("Hello.").elide().wrap();
 
       // Should be equivalent (same digest)
       expect(elidedEnvelope.digest().equals(envelope.digest())).toBe(true);
@@ -180,7 +180,7 @@ describe("Core Nesting Tests", () => {
 
   describe("Nesting Twice", () => {
     it("should format double-wrapped envelope", () => {
-      const envelope = Envelope.new("Hello.").wrap().wrap();
+      const envelope = Envelope.from("Hello.").wrap().wrap();
 
       const expectedFormat = `{
     {
@@ -191,11 +191,11 @@ describe("Core Nesting Tests", () => {
     });
 
     it("should elide innermost envelope and preserve equivalence", () => {
-      const envelope = Envelope.new("Hello.").wrap().wrap();
+      const envelope = Envelope.from("Hello.").wrap().wrap();
 
       // Get the innermost envelope to elide
-      const target = envelope.tryUnwrap().tryUnwrap();
-      const elidedEnvelope = envelope.elideRemovingTarget(target);
+      const target = envelope.unwrap().unwrap();
+      const elidedEnvelope = envelope.elide({ removing: [target] });
 
       const expectedElidedFormat = `{
     {
@@ -211,12 +211,12 @@ describe("Core Nesting Tests", () => {
 
   describe("Assertions on All Parts of Envelope", () => {
     it("should support assertions on predicate and object", () => {
-      const predicate = Envelope.new("predicate").addAssertion(
+      const predicate = Envelope.from("predicate").addAssertion(
         "predicate-predicate",
         "predicate-object",
       );
-      const object = Envelope.new("object").addAssertion("object-predicate", "object-object");
-      const envelope = Envelope.new("subject").addAssertion(predicate, object);
+      const object = Envelope.from("object").addAssertion("object-predicate", "object-object");
+      const envelope = Envelope.from("subject").addAssertion(predicate, object);
 
       const expectedFormat = `"subject" [
     "predicate" [
@@ -232,7 +232,7 @@ describe("Core Nesting Tests", () => {
 
   describe("Assertion on Bare Assertion", () => {
     it("should wrap bare assertion when adding assertion to it", () => {
-      const envelope = Envelope.newAssertion("predicate", "object").addAssertion(
+      const envelope = Envelope.assertion("predicate", "object").addAssertion(
         "assertion-predicate",
         "assertion-object",
       );

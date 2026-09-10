@@ -18,7 +18,7 @@ import "../src/all.js";
 describe("Obscuring", () => {
   describe("Basic obscuring operations", () => {
     it("should correctly identify obscured state", () => {
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       expect(envelope.isObscured()).toBe(false);
 
       // Encrypted envelopes are obscured
@@ -44,7 +44,7 @@ describe("Obscuring", () => {
       // double-encrypted, possibly with a different key, which is probably not
       // what's intended. If you want to double-encrypt then wrap the
       // encrypted envelope first, which will change its digest.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const key = SymmetricKey.random();
 
       const encrypted = envelope.encryptSubject(key);
@@ -55,7 +55,7 @@ describe("Obscuring", () => {
       // Cannot encrypt an elided envelope.
       //
       // Elided envelopes have no data to encrypt.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const key = SymmetricKey.random();
       const elided = envelope.elide();
 
@@ -64,7 +64,7 @@ describe("Obscuring", () => {
 
     it("should allow encrypting a compressed envelope", () => {
       // OK to encrypt a compressed envelope.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const key = SymmetricKey.random();
 
       const compressed = envelope.compress();
@@ -76,7 +76,7 @@ describe("Obscuring", () => {
   describe("Elision constraints", () => {
     it("should allow eliding an encrypted envelope", () => {
       // OK to elide an encrypted envelope.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const key = SymmetricKey.random();
 
       const encrypted = envelope.encryptSubject(key);
@@ -86,7 +86,7 @@ describe("Obscuring", () => {
 
     it("should be idempotent when eliding an already elided envelope", () => {
       // Eliding an elided envelope is idempotent.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const elided = envelope.elide();
 
       const elidedElided = elided.elide();
@@ -96,7 +96,7 @@ describe("Obscuring", () => {
 
     it("should allow eliding a compressed envelope", () => {
       // OK to elide a compressed envelope.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
 
       const compressed = envelope.compress();
       const elidedCompressed = compressed.elide();
@@ -110,7 +110,7 @@ describe("Obscuring", () => {
       //
       // Encrypted envelopes cannot become smaller because encrypted data looks
       // random, and random data is not compressible.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const key = SymmetricKey.random();
 
       const encrypted = envelope.encryptSubject(key);
@@ -121,7 +121,7 @@ describe("Obscuring", () => {
       // Cannot compress an elided envelope.
       //
       // Elided envelopes have no data to compress.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
       const elided = envelope.elide();
 
       expect(() => elided.compress()).toThrow();
@@ -129,7 +129,7 @@ describe("Obscuring", () => {
 
     it("should be idempotent when compressing an already compressed envelope", () => {
       // Compressing a compressed envelope is idempotent.
-      const envelope = Envelope.new("Hello");
+      const envelope = Envelope.from("Hello");
 
       const compressed = envelope.compress();
       const compressedCompressed = compressed.compress();
@@ -142,7 +142,7 @@ describe("Obscuring", () => {
 
 describe("Nodes Matching", () => {
   it("should find elided nodes", () => {
-    const envelope = Envelope.new("Alice")
+    const envelope = Envelope.from("Alice")
       .addAssertion("knows", "Bob")
       .addAssertion("age", 30)
       .addAssertion("city", "Boston");
@@ -153,7 +153,7 @@ describe("Nodes Matching", () => {
 
     // Elide one assertion
     const elideTarget = new Set([knowsDigest]);
-    const obscured = envelope.elideRemovingSet(elideTarget);
+    const obscured = envelope.elide({ removing: elideTarget });
 
     // Verify the structure with elided node
     const formatted = obscured.format();
@@ -184,7 +184,7 @@ describe("Nodes Matching", () => {
   });
 
   it("should find elided and compressed nodes", () => {
-    const envelope = Envelope.new("Alice")
+    const envelope = Envelope.from("Alice")
       .addAssertion("knows", "Bob")
       .addAssertion("age", 30)
       .addAssertion("city", "Boston");
@@ -198,11 +198,11 @@ describe("Nodes Matching", () => {
 
     // Elide one assertion
     const elideTarget = new Set([knowsDigest]);
-    let obscured = envelope.elideRemovingSet(elideTarget);
+    let obscured = envelope.elide({ removing: elideTarget });
 
     // Compress another assertion using elideRemovingSetWithAction
     const compressTarget = new Set([ageDigest]);
-    obscured = obscured.elideRemovingSetWithAction(compressTarget, { type: "compress" });
+    obscured = obscured.elide({ removing: compressTarget, action: "compress" });
 
     // Verify the structure with elided and compressed nodes
     const formatted = obscured.format();
@@ -223,16 +223,16 @@ describe("Nodes Matching", () => {
 
 describe("Walk Unelide", () => {
   it("should restore elided envelopes using walkUnelide", () => {
-    const alice = Envelope.new("Alice");
-    const bob = Envelope.new("Bob");
-    const carol = Envelope.new("Carol");
+    const alice = Envelope.from("Alice");
+    const bob = Envelope.from("Bob");
+    const carol = Envelope.from("Carol");
 
-    const envelope = Envelope.new("Alice")
+    const envelope = Envelope.from("Alice")
       .addAssertion("knows", "Bob")
       .addAssertion("friend", "Carol");
 
     // Elide multiple parts
-    const elided = envelope.elideRemovingTarget(alice).elideRemovingTarget(bob);
+    const elided = envelope.elide({ removing: [alice] }).elide({ removing: [bob] });
 
     // Verify parts are elided
     const formatted = elided.format();
@@ -268,7 +268,7 @@ describe("Walk Decrypt", () => {
     const key2 = SymmetricKey.random();
     // key3 would be used when the test is fully implemented
 
-    const envelope = Envelope.new("Alice")
+    const envelope = Envelope.from("Alice")
       .addAssertion("knows", "Bob")
       .addAssertion("age", 30)
       .addAssertion("city", "Boston");
@@ -281,8 +281,8 @@ describe("Walk Decrypt", () => {
     const encrypt2Target = new Set([ageAssertion.digest()]);
 
     const encrypted = envelope
-      .elideRemovingSetWithAction(encrypt1Target, { type: "encrypt", key: key1 })
-      .elideRemovingSetWithAction(encrypt2Target, { type: "encrypt", key: key2 });
+      .elide({ removing: encrypt1Target, action: { encrypt: key1 } })
+      .elide({ removing: encrypt2Target, action: { encrypt: key2 } });
 
     // Verify parts are encrypted
     const formatted = encrypted.format();
@@ -302,7 +302,7 @@ describe("Walk Decrypt", () => {
 
 describe("Walk Decompress", () => {
   it("should decompress multiple compressed parts", () => {
-    const envelope = Envelope.new("Alice")
+    const envelope = Envelope.from("Alice")
       .addAssertion("knows", "Bob")
       .addAssertion("bio", "A".repeat(1000))
       .addAssertion("description", "B".repeat(1000));
@@ -316,7 +316,7 @@ describe("Walk Decompress", () => {
 
     const compressTarget = new Set([bioDigest, descDigest]);
 
-    const compressed = envelope.elideRemovingSetWithAction(compressTarget, { type: "compress" });
+    const compressed = envelope.elide({ removing: compressTarget, action: "compress" });
 
     // Verify parts are compressed
     const formatted = compressed.format();
@@ -345,7 +345,7 @@ describe("Mixed Obscuration Operations", () => {
   it("should handle mixed elision, encryption, and compression", () => {
     const key = SymmetricKey.random();
 
-    const envelope = Envelope.new("Alice")
+    const envelope = Envelope.from("Alice")
       .addAssertion("knows", "Bob")
       .addAssertion("age", 30)
       .addAssertion("bio", "A".repeat(1000));
@@ -364,9 +364,9 @@ describe("Mixed Obscuration Operations", () => {
     const compressTarget = new Set([bioDigest]);
 
     const obscured = envelope
-      .elideRemovingSet(elideTarget)
-      .elideRemovingSetWithAction(encryptTarget, { type: "encrypt", key: key })
-      .elideRemovingSetWithAction(compressTarget, { type: "compress" });
+      .elide({ removing: elideTarget })
+      .elide({ removing: encryptTarget, action: { encrypt: key } })
+      .elide({ removing: compressTarget, action: "compress" });
 
     // Verify different obscuration types
     const elidedNodes = obscured.nodesMatching(undefined, [ObscureType.Elided]);
@@ -384,7 +384,7 @@ describe("Mixed Obscuration Operations", () => {
 
 describe("Digest preservation", () => {
   it("should preserve digest through all obscuring operations", () => {
-    const envelope = Envelope.new("Test message");
+    const envelope = Envelope.from("Test message");
     const originalDigest = envelope.digest();
     const key = SymmetricKey.random();
 
@@ -404,7 +404,7 @@ describe("Digest preservation", () => {
 
 describe("Equivalence after restoration", () => {
   it("should recognize equivalent envelopes with different obscuring", () => {
-    const envelope = Envelope.new("Hello").addAssertion("key", "value");
+    const envelope = Envelope.from("Hello").addAssertion("key", "value");
 
     const key = SymmetricKey.random();
 

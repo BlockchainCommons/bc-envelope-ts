@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Envelope, EnvelopeDecoder } from "../src";
+import { Envelope } from "../src";
 import { NOTE, UNIT } from "@blockchaincommons/known-values";
 import "../src/all.js";
 
@@ -10,19 +10,19 @@ import "../src/all.js";
 const PLAINTEXT_HELLO = "Hello.";
 
 function helloEnvelope(): Envelope {
-  return Envelope.new(PLAINTEXT_HELLO);
+  return Envelope.from(PLAINTEXT_HELLO);
 }
 
 function knownValueEnvelope(): Envelope {
-  return Envelope.new(NOTE);
+  return Envelope.from(NOTE);
 }
 
 function assertionEnvelope(): Envelope {
-  return Envelope.newAssertion("knows", "Bob");
+  return Envelope.assertion("knows", "Bob");
 }
 
 function singleAssertionEnvelope(): Envelope {
-  return Envelope.new("Alice").addAssertion("knows", "Bob");
+  return Envelope.from("Alice").addAssertion("knows", "Bob");
 }
 
 function doubleAssertionEnvelope(): Envelope {
@@ -39,8 +39,8 @@ function doubleWrappedEnvelope(): Envelope {
 
 // Helper to check round-trip encoding of Envelope
 function checkEncoding(envelope: Envelope): Envelope {
-  const cbor = envelope.taggedCbor();
-  const restored = Envelope.fromTaggedCbor(cbor);
+  const cbor = envelope.toCbor();
+  const restored = Envelope.fromCbor(cbor);
   expect(envelope.digest().equals(restored.digest())).toBe(true);
   return envelope;
 }
@@ -57,8 +57,8 @@ describe("Core Envelope Tests", () => {
     it("should read legacy leaf with tag 24", () => {
       // Legacy envelope: d8c8d818182a = tag(200, tag(24, 42))
       const legacyData = new Uint8Array([0xd8, 0xc8, 0xd8, 0x18, 0x18, 0x2a]);
-      const legacyEnvelope = EnvelopeDecoder.tryFromCborData(legacyData);
-      const e = Envelope.new(42);
+      const legacyEnvelope = Envelope.fromBytes(legacyData);
+      const e = Envelope.from(42);
 
       expect(legacyEnvelope.isIdenticalTo(e)).toBe(true);
       expect(legacyEnvelope.digest().equals(e.digest())).toBe(true);
@@ -67,10 +67,10 @@ describe("Core Envelope Tests", () => {
 
   describe("Integer subject", () => {
     it("should create envelope with positive integer subject", () => {
-      const e = checkEncoding(Envelope.new(42));
+      const e = checkEncoding(Envelope.from(42));
 
       expect(e.format()).toBe("42");
-      expect(e.extractNumber()).toBe(42);
+      expect(e.expectNumber()).toBe(42);
       expect(e.digest().toHex()).toBe(
         "7f83f7bda2d63959d34767689f06d47576683d378d9eb8d09386c9a020395c53",
       );
@@ -79,9 +79,9 @@ describe("Core Envelope Tests", () => {
     // Note: Negative integer formatting has a BigInt mixing issue in the library
     // The digest verification still works
     it("should create envelope with negative integer subject", () => {
-      const e = checkEncoding(Envelope.new(-42));
+      const e = checkEncoding(Envelope.from(-42));
 
-      expect(e.extractNumber()).toBe(-42);
+      expect(e.expectNumber()).toBe(-42);
       // Note: The Rust implementation shows a different digest, but the TypeScript
       // implementation may differ slightly in CBOR encoding of negative numbers
     });
@@ -92,7 +92,7 @@ describe("Core Envelope Tests", () => {
       const e = checkEncoding(helloEnvelope());
 
       expect(e.format()).toBe('"Hello."');
-      expect(e.extractString()).toBe(PLAINTEXT_HELLO);
+      expect(e.expectString()).toBe(PLAINTEXT_HELLO);
       expect(e.digest().toHex()).toBe(
         "8cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59",
       );
@@ -148,7 +148,7 @@ describe("Core Envelope Tests", () => {
       expect(e.format()).toBe('"knows": "Bob"');
 
       // Verify digest matches a new assertion with same values
-      const newAssertion = Envelope.newAssertion("knows", "Bob");
+      const newAssertion = Envelope.assertion("knows", "Bob");
       expect(e.digest().equals(newAssertion.digest())).toBe(true);
     });
   });
@@ -165,8 +165,8 @@ describe("Core Envelope Tests", () => {
     "knows": "Bob"
 ]`;
       expect(e.format()).toBe(expectedFormat);
-      // Use subject().extractString() for node envelopes
-      expect(e.subject().extractString()).toBe("Alice");
+      // Use subject().expectString() for node envelopes
+      expect(e.subject().expectString()).toBe("Alice");
     });
   });
 
@@ -186,7 +186,7 @@ describe("Core Envelope Tests", () => {
       expect(format).toContain('"knows": "Bob"');
       expect(format).toContain('"knows": "Carol"');
 
-      expect(e.subject().extractString()).toBe("Alice");
+      expect(e.subject().expectString()).toBe("Alice");
     });
   });
 
@@ -235,10 +235,10 @@ describe("Core Envelope Tests", () => {
     // the Rust behavior.
     it("should create assertion envelope with its own assertions", () => {
       // Build assertion with its own assertions
-      const a = Envelope.newAssertion(1, 2).addAssertion(3, 4).addAssertion(5, 6);
+      const a = Envelope.assertion(1, 2).addAssertion(3, 4).addAssertion(5, 6);
 
       // Add to subject - This requires is_subject_assertion to be recursive
-      const e = Envelope.new(7).addAssertionEnvelope(a);
+      const e = Envelope.from(7).addAssertionEnvelope(a);
 
       const format = e.format();
       expect(format).toContain("7");
@@ -250,8 +250,8 @@ describe("Core Envelope Tests", () => {
     it("should format assertion with nested structure using manual construction", () => {
       // Alternative approach: manually create the structure
       // This demonstrates the concept even though the direct API doesn't support it
-      const innerAssertion = Envelope.newAssertion(1, 2);
-      const outerEnvelope = Envelope.new(7).addAssertion("meta", innerAssertion);
+      const innerAssertion = Envelope.assertion(1, 2);
+      const outerEnvelope = Envelope.from(7).addAssertion("meta", innerAssertion);
 
       const format = outerEnvelope.format();
       expect(format).toContain("7");
@@ -261,7 +261,7 @@ describe("Core Envelope Tests", () => {
   describe("Digest leaf", () => {
     it("should create envelope with digest as subject", () => {
       const digest = helloEnvelope().digest();
-      const e = checkEncoding(Envelope.new(digest));
+      const e = checkEncoding(Envelope.from(digest));
 
       // Note: The format may differ from Rust implementation depending on
       // how digest values are encoded and displayed
@@ -271,7 +271,7 @@ describe("Core Envelope Tests", () => {
 
   describe("Boolean envelopes", () => {
     it("should create true envelope", () => {
-      const e = checkEncoding(Envelope.new(true));
+      const e = checkEncoding(Envelope.from(true));
 
       expect(e.isBool()).toBe(true);
       expect(e.isTrue()).toBe(true);
@@ -279,12 +279,12 @@ describe("Core Envelope Tests", () => {
       expect(e.format()).toBe("true");
 
       // Verify static true() method produces identical envelope
-      const staticTrue = (Envelope as unknown as { true: () => Envelope }).true();
+      const staticTrue = Envelope.TRUE;
       expect(e.digest().equals(staticTrue.digest())).toBe(true);
     });
 
     it("should create false envelope", () => {
-      const e = checkEncoding(Envelope.new(false));
+      const e = checkEncoding(Envelope.from(false));
 
       expect(e.isBool()).toBe(true);
       expect(e.isTrue()).toBe(false);
@@ -292,7 +292,7 @@ describe("Core Envelope Tests", () => {
       expect(e.format()).toBe("false");
 
       // Verify static false() method produces identical envelope
-      const staticFalse = (Envelope as unknown as { false: () => Envelope }).false();
+      const staticFalse = Envelope.FALSE;
       expect(e.digest().equals(staticFalse.digest())).toBe(true);
     });
   });
@@ -300,14 +300,14 @@ describe("Core Envelope Tests", () => {
   describe("Unit envelope", () => {
     // Note: Known value encoding is not yet implemented, so checkEncoding will fail
     it("should create unit envelope", () => {
-      const e = Envelope.unit();
+      const e = Envelope.UNIT;
 
       expect(e.isSubjectUnit()).toBe(true);
       expect(e.format()).toBe("''");
     });
 
     it("should allow adding assertions to unit envelope", () => {
-      const e = Envelope.unit().addAssertion("foo", "bar");
+      const e = Envelope.UNIT.addAssertion("foo", "bar");
 
       expect(e.isSubjectUnit()).toBe(true);
 
@@ -321,14 +321,14 @@ describe("Core Envelope Tests", () => {
     });
 
     it("should round-trip unit envelope", () => {
-      const e = checkEncoding(Envelope.unit());
+      const e = checkEncoding(Envelope.UNIT);
       expect(e.format()).toBe("''");
     });
   });
 
   describe("Position", () => {
     it("should set and get position on envelope", () => {
-      let e = Envelope.new("Hello");
+      let e = Envelope.from("Hello");
 
       // Initially no position
       expect(() => e.position()).toThrow();
@@ -358,8 +358,8 @@ describe("Core Envelope Tests", () => {
 
   describe("Envelope equality", () => {
     it("should check identity correctly", () => {
-      const env1 = Envelope.new("Hello");
-      const env2 = Envelope.new("Hello");
+      const env1 = Envelope.from("Hello");
+      const env2 = Envelope.from("Hello");
       const wrapped = env1.wrap();
 
       expect(env1.isIdenticalTo(env2)).toBe(true);
@@ -367,8 +367,8 @@ describe("Core Envelope Tests", () => {
     });
 
     it("should have equal digests for equivalent envelopes", () => {
-      const env1 = Envelope.new("Hello");
-      const env2 = Envelope.new("Hello");
+      const env1 = Envelope.from("Hello");
+      const env2 = Envelope.from("Hello");
 
       expect(env1.digest().equals(env2.digest())).toBe(true);
     });
@@ -376,7 +376,7 @@ describe("Core Envelope Tests", () => {
 
   describe("Envelope case types", () => {
     it("should identify leaf envelope", () => {
-      const e = Envelope.new("Hello");
+      const e = Envelope.from("Hello");
       expect(e.isLeaf()).toBe(true);
       expect(e.isNode()).toBe(false);
       expect(e.isWrapped()).toBe(false);
@@ -410,7 +410,7 @@ describe("Core Envelope Tests", () => {
 
   describe("Null envelope", () => {
     it("should create null envelope", () => {
-      const e = Envelope.null();
+      const e = Envelope.NULL;
       expect(e.isNull()).toBe(true);
       expect(e.format()).toBe("null");
     });
@@ -418,13 +418,13 @@ describe("Core Envelope Tests", () => {
 
   describe("Number envelopes", () => {
     it("should identify number envelopes", () => {
-      const e = Envelope.new(42);
+      const e = Envelope.from(42);
       expect(e.isNumber()).toBe(true);
       expect(e.isSubjectNumber()).toBe(true);
     });
 
     it("should not identify non-number as number", () => {
-      const e = Envelope.new("42");
+      const e = Envelope.from("42");
       expect(e.isNumber()).toBe(false);
     });
   });
@@ -432,14 +432,14 @@ describe("Core Envelope Tests", () => {
   describe("Byte string envelopes", () => {
     it("should create and extract byte string", () => {
       const bytes = new Uint8Array([1, 2, 3, 4, 5]);
-      const e = Envelope.new(bytes);
+      const e = Envelope.from(bytes);
 
-      const extracted = e.tryByteString();
+      const extracted = e.expectBytes();
       expect(extracted).toEqual(bytes);
     });
 
     it("should return undefined for non-byte string via asBytes", () => {
-      const e = Envelope.new("not bytes");
+      const e = Envelope.from("not bytes");
       expect(e.asBytes()).toBeUndefined();
     });
   });
@@ -458,7 +458,7 @@ describe("Core Envelope Tests", () => {
 
       expect(assertion).toBeDefined();
       const obj = assertion.asObject();
-      expect(obj?.extractString()).toBe("Bob");
+      expect(obj?.expectString()).toBe("Bob");
     });
 
     it("should throw for non-existent predicate", () => {
@@ -475,7 +475,7 @@ describe("Core Envelope Tests", () => {
       const e = singleAssertionEnvelope();
       const obj = e.objectForPredicate("knows");
 
-      expect(obj.extractString()).toBe("Bob");
+      expect(obj.expectString()).toBe("Bob");
     });
 
     it("should remove assertion", () => {
@@ -492,7 +492,7 @@ describe("Core Envelope Tests", () => {
 
   describe("Envelope elements count", () => {
     it("should count elements in leaf", () => {
-      const e = Envelope.new("Hello");
+      const e = Envelope.from("Hello");
       expect(e.elementsCount()).toBe(1);
     });
 
@@ -515,11 +515,11 @@ describe("Core Envelope Tests", () => {
       const e = singleAssertionEnvelope();
       const subject = e.subject();
 
-      expect(subject.extractString()).toBe("Alice");
+      expect(subject.expectString()).toBe("Alice");
     });
 
     it("should get self as subject for leaf", () => {
-      const e = Envelope.new("Hello");
+      const e = Envelope.from("Hello");
       expect(e.subject()).toBe(e);
     });
   });
@@ -529,11 +529,11 @@ describe("Core Envelope Tests", () => {
       expect(singleAssertionEnvelope().isInternal()).toBe(true);
       expect(wrappedEnvelope().isInternal()).toBe(true);
       expect(assertionEnvelope().isInternal()).toBe(true);
-      expect(Envelope.new("leaf").isInternal()).toBe(false);
+      expect(Envelope.from("leaf").isInternal()).toBe(false);
     });
 
     it("should identify elided as obscured", () => {
-      const e = Envelope.new("Hello").elide();
+      const e = Envelope.from("Hello").elide();
       expect(e.isObscured()).toBe(true);
       expect(e.isElided()).toBe(true);
     });
@@ -541,7 +541,7 @@ describe("Core Envelope Tests", () => {
 
   describe("Wrap and unwrap", () => {
     it("should wrap and unwrap envelope", () => {
-      const original = Envelope.new("Hello");
+      const original = Envelope.from("Hello");
       const wrapped = original.wrap();
 
       expect(wrapped.isWrapped()).toBe(true);
@@ -551,36 +551,38 @@ describe("Core Envelope Tests", () => {
     });
 
     it("should throw when unwrapping non-wrapped envelope", () => {
-      const e = Envelope.new("Hello");
+      const e = Envelope.from("Hello");
       expect(() => e.unwrap()).toThrow();
     });
   });
 
   describe("CBOR round-trip", () => {
     it("should round-trip leaf envelope through CBOR", () => {
-      const original = Envelope.new("Hello, World!");
-      const cbor = original.taggedCbor();
-      const restored = Envelope.fromTaggedCbor(cbor);
+      const original = Envelope.from("Hello, World!");
+      const cbor = original.toCbor();
+      const restored = Envelope.fromCbor(cbor);
 
       expect(original.digest().equals(restored.digest())).toBe(true);
-      expect(restored.extractString()).toBe("Hello, World!");
+      expect(restored.expectString()).toBe("Hello, World!");
     });
 
     it("should round-trip envelope with assertions through CBOR", () => {
-      const original = Envelope.new("Person").addAssertion("name", "Alice").addAssertion("age", 30);
+      const original = Envelope.from("Person")
+        .addAssertion("name", "Alice")
+        .addAssertion("age", 30);
 
-      const cbor = original.taggedCbor();
-      const restored = Envelope.fromTaggedCbor(cbor);
+      const cbor = original.toCbor();
+      const restored = Envelope.fromCbor(cbor);
 
       expect(original.digest().equals(restored.digest())).toBe(true);
-      expect(restored.subject().extractString()).toBe("Person");
+      expect(restored.subject().expectString()).toBe("Person");
       expect(restored.assertions().length).toBe(2);
     });
 
     it("should round-trip wrapped envelope through CBOR", () => {
       const original = wrappedEnvelope();
-      const cbor = original.taggedCbor();
-      const restored = Envelope.fromTaggedCbor(cbor);
+      const cbor = original.toCbor();
+      const restored = Envelope.fromCbor(cbor);
 
       expect(original.digest().equals(restored.digest())).toBe(true);
       expect(restored.isWrapped()).toBe(true);
@@ -589,7 +591,7 @@ describe("Core Envelope Tests", () => {
 
   describe("Elision basics", () => {
     it("should preserve digest after elision", () => {
-      const original = Envelope.new("Secret");
+      const original = Envelope.from("Secret");
       const elided = original.elide();
 
       expect(original.digest().equals(elided.digest())).toBe(true);
@@ -597,7 +599,7 @@ describe("Core Envelope Tests", () => {
     });
 
     it("should format elided envelope", () => {
-      const e = Envelope.new("Hello").elide();
+      const e = Envelope.from("Hello").elide();
       expect(e.format()).toBe("ELIDED");
     });
   });

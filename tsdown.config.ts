@@ -10,7 +10,6 @@ export default defineConfig({
     edge: "src/extension/edge.ts",
     proof: "src/extension/proof.ts",
     recipient: "src/extension/recipient.ts",
-    salt: "src/extension/salt.ts",
     secret: "src/extension/secret.ts",
     signature: "src/extension/signature.ts",
     sskr: "src/extension/sskr.ts",

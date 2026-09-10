@@ -33,7 +33,7 @@ const PLAINTEXT_HELLO = "Hello.";
  * Creates a hello envelope (from test_data.rs)
  */
 function helloEnvelope(): Envelope {
-  return Envelope.new(PLAINTEXT_HELLO);
+  return Envelope.from(PLAINTEXT_HELLO);
 }
 
 /**
@@ -173,7 +173,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
       const publicKey2 = key1.publicKey();
 
       // Sign the same message with the key
-      const testEnvelope = Envelope.new("Test message");
+      const testEnvelope = Envelope.from("Test message");
       const signed1 = testEnvelope.addSignature(key1);
 
       // Both calls to publicKey() should return equivalent keys
@@ -189,7 +189,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
       const carolPublicKey = carolSigningKey.publicKey();
 
       // Sign with Alice's key
-      const envelope = Envelope.new("Test").addSignature(aliceSigningKey);
+      const envelope = Envelope.from("Test").addSignature(aliceSigningKey);
 
       // Alice's public key should verify, Carol's should not
       expect(envelope.hasSignatureFrom(alicePublicKey)).toBe(true);
@@ -290,7 +290,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
       const publicKey = privateKey.publicKey();
 
       // Sign a message
-      const message = Envelope.new("Random key test");
+      const message = Envelope.from("Random key test");
       const signed = message.addSignature(privateKey);
 
       // Verify
@@ -305,7 +305,7 @@ describe("Signature Tests (ECDSA - adapted from Ed25519)", () => {
       const alice = SigningPrivateKey.random();
       const bob = SigningPrivateKey.random();
 
-      const message = Envelope.new("Test");
+      const message = Envelope.from("Test");
       const signedByAlice = message.addSignature(alice);
 
       // Bob's key should not verify Alice's signature

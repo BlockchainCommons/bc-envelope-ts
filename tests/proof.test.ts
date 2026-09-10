@@ -4,7 +4,7 @@ import "../src/all.js";
 describe("Proofs (Inclusion Proofs)", () => {
   describe("Basic inclusion proof", () => {
     it("should create envelope with assertions", () => {
-      const aliceFriends = Envelope.new("Alice")
+      const aliceFriends = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .addAssertion("knows", "Carol")
         .addAssertion("knows", "Dan");
@@ -16,24 +16,24 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Trusted root digest", () => {
     it("should create elided root", () => {
-      const aliceFriends = Envelope.new("Alice")
+      const aliceFriends = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .addAssertion("knows", "Carol");
 
-      const root = aliceFriends.elideRevealingSet(new Set());
+      const root = aliceFriends.elide({ revealing: new Set() });
 
-      expect(root.subject().case().type).toBe("elided");
+      expect(root.subject().case.type).toBe("elided");
     });
   });
 
   describe("Proof for single assertion", () => {
     it("should create and verify proof", () => {
-      const aliceFriends = Envelope.new("Alice")
+      const aliceFriends = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .addAssertion("knows", "Carol");
 
-      const root = aliceFriends.elideRevealingSet(new Set());
-      const knowsBobAssertion = Envelope.newAssertion("knows", "Bob");
+      const root = aliceFriends.elide({ revealing: new Set() });
+      const knowsBobAssertion = Envelope.assertion("knows", "Bob");
       const proof = aliceFriends.proofContainsTarget(knowsBobAssertion);
 
       expect(proof).toBeDefined();
@@ -46,11 +46,11 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Proof for non-existent assertion", () => {
     it("should return undefined for non-existent target", () => {
-      const aliceFriends = Envelope.new("Alice")
+      const aliceFriends = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .addAssertion("knows", "Carol");
 
-      const knowsEveAssertion = Envelope.newAssertion("knows", "Eve");
+      const knowsEveAssertion = Envelope.assertion("knows", "Eve");
       const proof = aliceFriends.proofContainsTarget(knowsEveAssertion);
 
       expect(proof).toBeUndefined();
@@ -59,13 +59,13 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Verification with wrong assertion", () => {
     it("should fail verification with wrong assertion", () => {
-      const aliceFriends = Envelope.new("Alice")
+      const aliceFriends = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .addAssertion("knows", "Carol");
 
-      const root = aliceFriends.elideRevealingSet(new Set());
-      const knowsBobAssertion = Envelope.newAssertion("knows", "Bob");
-      const knowsEveAssertion = Envelope.newAssertion("knows", "Eve");
+      const root = aliceFriends.elide({ revealing: new Set() });
+      const knowsBobAssertion = Envelope.assertion("knows", "Bob");
+      const knowsEveAssertion = Envelope.assertion("knows", "Eve");
       const proof = aliceFriends.proofContainsTarget(knowsBobAssertion);
 
       if (proof) {
@@ -76,14 +76,14 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Multi-assertion proof", () => {
     it("should create and verify multi-assertion proof", () => {
-      const aliceFriends = Envelope.new("Alice")
+      const aliceFriends = Envelope.from("Alice")
         .addAssertion("knows", "Bob")
         .addAssertion("knows", "Carol")
         .addAssertion("knows", "Dan");
 
-      const root = aliceFriends.elideRevealingSet(new Set());
-      const knowsBob = Envelope.newAssertion("knows", "Bob");
-      const knowsCarol = Envelope.newAssertion("knows", "Carol");
+      const root = aliceFriends.elide({ revealing: new Set() });
+      const knowsBob = Envelope.assertion("knows", "Bob");
+      const knowsCarol = Envelope.assertion("knows", "Carol");
 
       const targetSet = new Set([knowsBob.digest(), knowsCarol.digest()]);
       const multiProof = aliceFriends.proofContainsSet(targetSet);
@@ -97,14 +97,14 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Credential with selective disclosure", () => {
     it("should create proof for credential attribute", () => {
-      const credential = Envelope.new("Credential")
+      const credential = Envelope.from("Credential")
         .addAssertion("firstName", "John")
         .addAssertion("lastName", "Smith")
         .addAssertion("birthDate", "1990-01-01")
         .addAssertion("address", "123 Main St");
 
-      const root = credential.elideRevealingSet(new Set());
-      const addressAssertion = Envelope.newAssertion("address", "123 Main St");
+      const root = credential.elide({ revealing: new Set() });
+      const addressAssertion = Envelope.assertion("address", "123 Main St");
       const addressProof = credential.proofContainsTarget(addressAssertion);
 
       expect(addressProof).toBeDefined();
@@ -116,23 +116,23 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Proof of subject", () => {
     it("should create proof for subject", () => {
-      const credential = Envelope.new("Credential").addAssertion("firstName", "John");
+      const credential = Envelope.from("Credential").addAssertion("firstName", "John");
 
-      const root = credential.elideRevealingSet(new Set());
-      const subjectProof = credential.proofContainsTarget(Envelope.new("Credential"));
+      const root = credential.elide({ revealing: new Set() });
+      const subjectProof = credential.proofContainsTarget(Envelope.from("Credential"));
 
       expect(subjectProof).toBeDefined();
       if (subjectProof) {
-        expect(root.confirmContainsTarget(Envelope.new("Credential"), subjectProof)).toBe(true);
+        expect(root.confirmContainsTarget(Envelope.from("Credential"), subjectProof)).toBe(true);
       }
     });
   });
 
   describe("Wrapped envelope proof", () => {
     it("should create proof for wrapped envelope", () => {
-      const wrapped = Envelope.new("Secret Data").wrap();
-      const root = wrapped.elideRevealingSet(new Set());
-      const target = Envelope.new("Secret Data");
+      const wrapped = Envelope.from("Secret Data").wrap();
+      const root = wrapped.elide({ revealing: new Set() });
+      const target = Envelope.from("Secret Data");
       const proof = wrapped.proofContainsTarget(target);
 
       expect(proof).toBeDefined();
@@ -144,10 +144,10 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Proof digest consistency", () => {
     it("should have consistent digests", () => {
-      const aliceFriends = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const aliceFriends = Envelope.from("Alice").addAssertion("knows", "Bob");
 
-      const root = aliceFriends.elideRevealingSet(new Set());
-      const knowsBob = Envelope.newAssertion("knows", "Bob");
+      const root = aliceFriends.elide({ revealing: new Set() });
+      const knowsBob = Envelope.assertion("knows", "Bob");
       const proof = aliceFriends.proofContainsTarget(knowsBob);
 
       if (proof) {
@@ -159,9 +159,9 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Empty target set", () => {
     it("should handle empty target set", () => {
-      const aliceFriends = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const aliceFriends = Envelope.from("Alice").addAssertion("knows", "Bob");
 
-      const root = aliceFriends.elideRevealingSet(new Set());
+      const root = aliceFriends.elide({ revealing: new Set() });
       const emptySet = new Set<ReturnType<typeof Envelope.prototype.digest>>();
       const proof = aliceFriends.proofContainsSet(emptySet);
 
@@ -174,10 +174,10 @@ describe("Proofs (Inclusion Proofs)", () => {
 
   describe("Proof verification with mismatched root", () => {
     it("should fail verification with different root", () => {
-      const aliceFriends = Envelope.new("Alice").addAssertion("knows", "Bob");
+      const aliceFriends = Envelope.from("Alice").addAssertion("knows", "Bob");
 
-      const differentRoot = Envelope.new("Bob").elideRevealingSet(new Set());
-      const knowsBob = Envelope.newAssertion("knows", "Bob");
+      const differentRoot = Envelope.from("Bob").elide({ revealing: new Set() });
+      const knowsBob = Envelope.assertion("knows", "Bob");
       const proof = aliceFriends.proofContainsTarget(knowsBob);
 
       if (proof) {

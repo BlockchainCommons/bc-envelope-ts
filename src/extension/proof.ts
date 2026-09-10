@@ -29,16 +29,16 @@ import { type Digest } from "../base/digest";
 /// @example
 /// ```typescript
 /// // Create an envelope with multiple assertions
-/// const aliceFriends = Envelope.new('Alice')
+/// const aliceFriends = Envelope.from('Alice')
 ///   .addAssertion('knows', 'Bob')
 ///   .addAssertion('knows', 'Carol')
 ///   .addAssertion('knows', 'Dan');
 ///
 /// // Create a representation of just the root digest
-/// const aliceFriendsRoot = aliceFriends.elideRevealingSet(new Set());
+/// const aliceFriendsRoot = aliceFriends.elide({ revealing: new Set() });
 ///
 /// // Create the target we want to prove exists
-/// const knowsBobAssertion = Envelope.newAssertion('knows', 'Bob');
+/// const knowsBobAssertion = Envelope.assertion('knows', 'Bob');
 ///
 /// // Generate a proof that Alice knows Bob
 /// const aliceKnowsBobProof = aliceFriends.proofContainsTarget(knowsBobAssertion);
@@ -63,8 +63,8 @@ export function proofContainsSet(envelope: Envelope, target: Set<Digest>): Envel
   }
 
   // Create a proof by revealing only what's necessary, then eliding the targets
-  const revealed = envelope.elideRevealingSet(revealSet);
-  return revealed.elideRemovingSet(target);
+  const revealed = envelope.elide({ revealing: revealSet });
+  return revealed.elide({ removing: target });
 }
 
 export function proofContainsTarget(envelope: Envelope, target: Envelope): Envelope | undefined {
@@ -129,7 +129,7 @@ function revealSets(
   }
 
   // Traverse the envelope structure
-  const envelopeCase = envelope.case();
+  const envelopeCase = envelope.case;
 
   if (envelopeCase.type === "node") {
     // Traverse subject
@@ -176,7 +176,7 @@ function removeAllFound(envelope: Envelope, target: Set<Digest>): void {
   }
 
   // Traverse the envelope structure
-  const envelopeCase = envelope.case();
+  const envelopeCase = envelope.case;
 
   if (envelopeCase.type === "node") {
     // Traverse subject

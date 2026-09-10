@@ -122,7 +122,7 @@ export function summaryWithContext(
   maxLength: number,
   context: FormatContext,
 ): string {
-  const c = envelope.case();
+  const c = envelope.case;
 
   switch (c.type) {
     case "node":

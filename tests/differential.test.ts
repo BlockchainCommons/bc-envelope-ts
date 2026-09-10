@@ -23,12 +23,21 @@ import { baselineDeps, currentDeps } from "./vectors/deps";
 const here = dirname(fileURLToPath(import.meta.url));
 const BASELINE_SHA256 = "26ea50fb38fe94016bec0deaf0ab0e2fb647061bf3930c6e7f99e3495905e676";
 
-/** Tombstones: the only allowed differences. None yet. */
+/** Tombstones: the only allowed differences, each a recorded decision. */
 const TOMBSTONES: {
   id: string;
   landed: boolean;
   matches: (r: Recipe, baselineOutcome: string, currentOutcome: string) => boolean;
-}[] = [];
+}[] = [
+  {
+    // W6: `Envelope.fromBytes` wraps CBOR decode failures in
+    // `EnvelopeError("Cbor")` (cause: the CborError) like the rest of the
+    // decode path; the baseline's `envelopeFromBytes` let CborError escape.
+    id: "T1-fromBytes-wraps-cbor-error",
+    landed: true,
+    matches: (r, a, b) => r.e.k === "decode" && a === "throw:CborError" && b === "throw:CBOR",
+  },
+];
 
 const baseline = baselineAdapterFor(baselineMod, await baselineDeps());
 const current = redesignedAdapterFor(src, await currentDeps());

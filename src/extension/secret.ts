@@ -60,7 +60,7 @@ export function unlockSubject(envelope: Envelope, secret: Uint8Array): Envelope 
 
     try {
       // Try to extract the EncryptedKey
-      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromCbor(cbor));
+      const encryptedKey = obj.expectSubject((cbor) => EncryptedKey.fromCbor(cbor));
 
       // Try to unlock with the provided secret (returns ComponentsSymmetricKey)
       const componentsKey = encryptedKey.unlock(secret);
@@ -89,7 +89,7 @@ export function isLockedWithPassword(envelope: Envelope): boolean {
     if (obj === undefined) continue;
 
     try {
-      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromCbor(cbor));
+      const encryptedKey = obj.expectSubject((cbor) => EncryptedKey.fromCbor(cbor));
       if (encryptedKey.isPasswordBased()) {
         return true;
       }
@@ -110,7 +110,7 @@ export function isLockedWithSshAgent(envelope: Envelope): boolean {
     if (obj === undefined) continue;
 
     try {
-      const encryptedKey = obj.extractSubject((cbor) => EncryptedKey.fromCbor(cbor));
+      const encryptedKey = obj.expectSubject((cbor) => EncryptedKey.fromCbor(cbor));
       if (encryptedKey.isSshAgent()) {
         return true;
       }
@@ -150,7 +150,7 @@ export function lock(
 
 /// Implementation of unlock
 export function unlock(envelope: Envelope, secret: Uint8Array): Envelope {
-  return unlockSubject(envelope, secret).tryUnwrap();
+  return unlockSubject(envelope, secret).unwrap();
 }
 
 // ============================================================================

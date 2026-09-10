@@ -20,7 +20,7 @@
 import { Envelope } from "../base/envelope";
 import { type Digest } from "../base/digest";
 import { EnvelopeError } from "../base/error";
-import type { EnvelopeEncodableValue } from "../base/envelope-encodable";
+import type { EnvelopeInput } from "../base/envelope-encodable";
 import {
   ATTACHMENT as ATTACHMENT_KV,
   VENDOR as VENDOR_KV,
@@ -65,7 +65,7 @@ export class Attachments {
    * @param vendor - A string identifying the entity that defined the attachment format
    * @param conformsTo - Optional URI identifying the structure the payload conforms to
    */
-  add(payload: EnvelopeEncodableValue, vendor: string, conformsTo?: string): void {
+  add(payload: EnvelopeInput, vendor: string, conformsTo?: string): void {
     const attachment = Envelope.newAttachment(payload, vendor, conformsTo);
     this._envelopes.set(attachment.digest().toHex(), attachment);
   }
@@ -176,12 +176,12 @@ export class Attachments {
  * Creates a new attachment envelope.
  */
 export function newAttachment(
-  payload: EnvelopeEncodableValue,
+  payload: EnvelopeInput,
   vendor: string,
   conformsTo?: string,
 ): Envelope {
   // Create the payload envelope wrapped with vendor assertion
-  let attachmentObj = Envelope.new(payload).wrap().addAssertion(VENDOR, vendor);
+  let attachmentObj = Envelope.from(payload).wrap().addAssertion(VENDOR, vendor);
 
   // Add optional conformsTo
   if (conformsTo !== undefined) {
@@ -190,7 +190,7 @@ export function newAttachment(
 
   // Create an assertion with 'attachment' as predicate and the wrapped payload as object
   // This returns an assertion envelope
-  const attachmentPredicate = Envelope.new(ATTACHMENT);
+  const attachmentPredicate = Envelope.from(ATTACHMENT);
   return attachmentPredicate.addAssertion(ATTACHMENT, attachmentObj).assertions()[0];
 }
 
@@ -199,11 +199,11 @@ export function newAttachment(
  */
 export function addAttachment(
   envelope: Envelope,
-  payload: EnvelopeEncodableValue,
+  payload: EnvelopeInput,
   vendor: string,
   conformsTo?: string,
 ): Envelope {
-  let attachmentObj = Envelope.new(payload).wrap().addAssertion(VENDOR, vendor);
+  let attachmentObj = Envelope.from(payload).wrap().addAssertion(VENDOR, vendor);
 
   if (conformsTo !== undefined) {
     attachmentObj = attachmentObj.addAssertion(CONFORMS_TO, conformsTo);
@@ -216,7 +216,7 @@ export function addAttachment(
  * Returns the payload of an attachment envelope.
  */
 export function attachmentPayload(envelope: Envelope): Envelope {
-  const c = envelope.case();
+  const c = envelope.case;
   if (c.type !== "assertion") {
     throw EnvelopeError.general("Envelope is not an attachment assertion");
   }
@@ -229,7 +229,7 @@ export function attachmentPayload(envelope: Envelope): Envelope {
  * Returns the vendor of an attachment envelope.
  */
 export function attachmentVendor(envelope: Envelope): string {
-  const c = envelope.case();
+  const c = envelope.case;
   if (c.type !== "assertion") {
     throw EnvelopeError.general("Envelope is not an attachment assertion");
   }
@@ -249,7 +249,7 @@ export function attachmentVendor(envelope: Envelope): string {
  * Returns the conformsTo of an attachment envelope.
  */
 export function attachmentConformsTo(envelope: Envelope): string | undefined {
-  const c = envelope.case();
+  const c = envelope.case;
   if (c.type !== "assertion") {
     throw EnvelopeError.general("Envelope is not an attachment assertion");
   }
@@ -269,7 +269,7 @@ export function attachmentConformsTo(envelope: Envelope): string | undefined {
  */
 export function attachments(envelope: Envelope): Envelope[] {
   return envelope.assertionsWithPredicate(ATTACHMENT).map((a) => {
-    const c = a.case();
+    const c = a.case;
     if (c.type === "assertion") {
       return c.assertion.object();
     }
@@ -329,14 +329,14 @@ export function attachmentsWithVendorAndConformsTo(
  * @throws EnvelopeError if the envelope is not a valid attachment
  */
 export function validateAttachment(envelope: Envelope): void {
-  const c = envelope.case();
+  const c = envelope.case;
   if (c.type !== "assertion") {
     throw EnvelopeError.invalidAttachment("Envelope is not an assertion");
   }
 
   // Verify predicate is 'attachment' (using digest comparison for KnownValue predicates)
   const predicate = c.assertion.predicate();
-  const expectedPredicate = Envelope.new(ATTACHMENT);
+  const expectedPredicate = Envelope.from(ATTACHMENT);
   if (!predicate.digest().equals(expectedPredicate.digest())) {
     throw EnvelopeError.invalidAttachment("Assertion predicate is not 'attachment'");
   }

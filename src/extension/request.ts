@@ -28,7 +28,7 @@ import { taggedValue, CborDate, expectTaggedContent } from "@blockchaincommons/d
 import { BODY, NOTE, DATE } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
-import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
+import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import { Expression, Function, type ParameterID } from "./expression";
 import { formatFlat } from "../format/notation.js";
@@ -43,7 +43,7 @@ export interface RequestBehavior {
   /**
    * Adds a parameter to the request.
    */
-  withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request;
+  withParameter(param: ParameterID, value: EnvelopeInput): Request;
 
   /**
    * Adds a note to the request.
@@ -111,7 +111,7 @@ export interface RequestBehavior {
  * const envelope = request.toEnvelope();
  * ```
  */
-export class Request implements RequestBehavior, EnvelopeEncodable {
+export class Request implements RequestBehavior, ToEnvelope {
   private readonly _body: Expression;
   private readonly _id: ARID;
   private _note: string;
@@ -156,7 +156,7 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
 
   // RequestBehavior implementation
 
-  withParameter(param: ParameterID, value: EnvelopeEncodableValue): Request {
+  withParameter(param: ParameterID, value: EnvelopeInput): Request {
     this._body.withParameter(param, value);
     return this;
   }
@@ -211,7 +211,7 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
     // of `ARID(<short>)` — observable in the GSTP byte-shape pins.
     const taggedArid = taggedValue(TAG_REQUEST, this._id.toCbor());
 
-    let envelope = Envelope.newLeaf(taggedArid).addAssertion(BODY, this._body.envelope());
+    let envelope = Envelope.leaf(taggedArid).addAssertion(BODY, this._body.envelope());
 
     if (this._note !== "") {
       envelope = envelope.addAssertion(NOTE, this._note);
@@ -226,13 +226,6 @@ export class Request implements RequestBehavior, EnvelopeEncodable {
     }
 
     return envelope;
-  }
-
-  /**
-   * Converts this request into an envelope (EnvelopeEncodable implementation).
-   */
-  intoEnvelope(): Envelope {
-    return this.toEnvelope();
   }
 
   /**

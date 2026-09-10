@@ -24,7 +24,7 @@ import { taggedValue, expectTaggedContent } from "@blockchaincommons/dcbor";
 import { RESULT, ERROR, OK_VALUE, UNKNOWN_VALUE } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
-import { type EnvelopeEncodable, type EnvelopeEncodableValue } from "../base/envelope-encodable";
+import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import { formatFlat } from "../format/notation.js";
 
@@ -59,13 +59,13 @@ export interface ResponseBehavior {
    * Sets the result value for a successful response.
    * @throws Error if called on a failure response.
    */
-  withResult(result: EnvelopeEncodableValue): Response;
+  withResult(result: EnvelopeInput): Response;
 
   /**
    * Sets the error value for a failure response.
    * @throws Error if called on a successful response.
    */
-  withError(error: EnvelopeEncodableValue): Response;
+  withError(error: EnvelopeInput): Response;
 
   /**
    * Returns true if this is a successful response.
@@ -124,7 +124,7 @@ export interface ResponseBehavior {
  * const errorEnvelope = errorResponse.toEnvelope();
  * ```
  */
-export class Response implements ResponseBehavior, EnvelopeEncodable {
+export class Response implements ResponseBehavior, ToEnvelope {
   private _result: ResponseResult;
 
   private constructor(result: ResponseResult) {
@@ -177,14 +177,14 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
    * Creates an envelope containing the 'Unknown' known value.
    */
   static unknown(): Envelope {
-    return Envelope.new(UNKNOWN_VALUE);
+    return Envelope.from(UNKNOWN_VALUE);
   }
 
   /**
    * Creates an envelope containing the 'OK' known value.
    */
   static ok(): Envelope {
-    return Envelope.new(OK_VALUE);
+    return Envelope.from(OK_VALUE);
   }
 
   /**
@@ -202,38 +202,38 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
 
   // ResponseBehavior implementation
 
-  withResult(result: EnvelopeEncodableValue): Response {
+  withResult(result: EnvelopeInput): Response {
     if (!this._result.ok) {
       throw new Error("Cannot set result on a failed response");
     }
     this._result = {
       ok: true,
       id: this._result.id,
-      result: Envelope.new(result),
+      result: Envelope.from(result),
     };
     return this;
   }
 
-  withOptionalResult(result: EnvelopeEncodableValue | undefined): Response {
+  withOptionalResult(result: EnvelopeInput | undefined): Response {
     if (result !== undefined) {
       return this.withResult(result);
     }
     return this.withResult(null);
   }
 
-  withError(error: EnvelopeEncodableValue): Response {
+  withError(error: EnvelopeInput): Response {
     if (this._result.ok) {
       throw new Error("Cannot set error on a successful response");
     }
     this._result = {
       ok: false,
       id: this._result.id,
-      error: Envelope.new(error),
+      error: Envelope.from(error),
     };
     return this;
   }
 
-  withOptionalError(error: EnvelopeEncodableValue | undefined): Response {
+  withOptionalError(error: EnvelopeInput | undefined): Response {
     if (error !== undefined) {
       return this.withError(error);
     }
@@ -278,14 +278,14 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
    * Extracts a typed result value from a successful response.
    */
   extractResult<T>(decoder: (cbor: unknown) => T): T {
-    return this.result().extractSubject(decoder);
+    return this.result().expectSubject(decoder);
   }
 
   /**
    * Extracts a typed error value from a failure response.
    */
   extractError<T>(decoder: (cbor: unknown) => T): T {
-    return this.error().extractSubject(decoder);
+    return this.error().expectSubject(decoder);
   }
 
   /**
@@ -302,28 +302,21 @@ export class Response implements ResponseBehavior, EnvelopeEncodable {
       // dispatches via `From<ARID> for CBOR` (the tagged form). See
       // request.ts for the same fix and rationale.
       const taggedArid = taggedValue(TAG_RESPONSE, this._result.id.toCbor());
-      return Envelope.newLeaf(taggedArid).addAssertion(RESULT, this._result.result);
+      return Envelope.leaf(taggedArid).addAssertion(RESULT, this._result.result);
     } else {
       let subject: Envelope;
       if (this._result.id !== undefined) {
         const taggedArid = taggedValue(TAG_RESPONSE, this._result.id.toCbor());
-        subject = Envelope.newLeaf(taggedArid);
+        subject = Envelope.leaf(taggedArid);
       } else {
         // UNKNOWN_VALUE is a `KnownValue`; its tagged-CBOR form is
         // tag(40000, uint(N)). Mirror Rust's
         // `CBOR::to_tagged_value(TAG_RESPONSE, KnownValue::Unknown)`.
         const taggedUnknown = taggedValue(TAG_RESPONSE, UNKNOWN_VALUE.toCbor());
-        subject = Envelope.newLeaf(taggedUnknown);
+        subject = Envelope.leaf(taggedUnknown);
       }
       return subject.addAssertion(ERROR, this._result.error);
     }
-  }
-
-  /**
-   * Converts this response into an envelope (EnvelopeEncodable implementation).
-   */
-  intoEnvelope(): Envelope {
-    return this.toEnvelope();
   }
 
   /**

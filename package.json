@@ -113,17 +113,6 @@
       },
       "default": "./dist/recipient.mjs"
     },
-    "./salt": {
-      "import": {
-        "types": "./dist/salt.d.mts",
-        "default": "./dist/salt.mjs"
-      },
-      "require": {
-        "types": "./dist/salt.d.cts",
-        "default": "./dist/salt.cjs"
-      },
-      "default": "./dist/salt.mjs"
-    },
     "./secret": {
       "import": {
         "types": "./dist/secret.d.mts",

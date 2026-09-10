@@ -15,6 +15,7 @@ import {
   SEP,
 } from "./recipes";
 import "../../src/all.js";
+import { UR, decodeURWith } from "@blockchaincommons/uniform-resources";
 
 export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
   const C = deps.components;
@@ -67,34 +68,34 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
   const build = (e: E): any => {
     switch (e.k) {
       case "leaf": {
-        if (e.v.t === "null") return m.Envelope.null();
-        if (e.v.t === "kv") return m.Envelope.newWithKnownValue(e.v.v);
-        return m.Envelope.new(leafValue(e.v));
+        if (e.v.t === "null") return m.Envelope.NULL;
+        if (e.v.t === "kv") return m.Envelope.knownValue(e.v.v);
+        return m.Envelope.from(leafValue(e.v));
       }
       case "kv":
-        return m.Envelope.newWithKnownValue(e.v);
+        return m.Envelope.knownValue(e.v);
       case "node": {
         let env = build(e.subject);
         for (const [p, o] of e.assertions)
-          env = env.addAssertionEnvelope(m.Envelope.newAssertion(build(p), build(o)));
+          env = env.addAssertionEnvelope(m.Envelope.assertion(build(p), build(o)));
         return env;
       }
       case "wrap":
         return build(e.e).wrap();
       case "assertion":
-        return m.Envelope.newAssertion(build(e.pred), build(e.obj));
+        return m.Envelope.assertion(build(e.pred), build(e.obj));
       case "elide": {
         const env = build(e.e);
         const digests = (list: E[]): Set<any> => new Set(list.map((x) => build(x).digest()));
         const action =
           e.action === undefined || e.action === "elide"
-            ? { type: "elide" }
+            ? "elide"
             : e.action === "compress"
-              ? { type: "compress" }
-              : { type: "encrypt", key: C.SymmetricKey.from(unhex(e.action.encrypt)) };
+              ? "compress"
+              : { encrypt: C.SymmetricKey.from(unhex(e.action.encrypt)) };
         if (e.revealing !== undefined)
-          return env.elideRevealingSetWithAction(digests(e.revealing), action);
-        return env.elideRemovingSetWithAction(digests(e.removing ?? []), action);
+          return env.elide({ revealing: digests(e.revealing), action: action });
+        return env.elide({ removing: digests(e.removing ?? []), action: action });
       }
       case "encrypt": {
         const env = build(e.e);
@@ -117,7 +118,7 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "salt": {
         const env = build(e.e);
         const rng = deps.seededRng(e.rng);
-        return e.len === undefined ? env.addSaltUsing(rng) : env.addSaltWithLenUsing(e.len, rng);
+        return e.len === undefined ? env.addSalt({ rng }) : env.addSalt({ length: e.len, rng });
       }
       case "sskr": {
         const env = build(e.e);
@@ -177,9 +178,9 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
         return env.lock(method, unhex(e.secret));
       }
       case "decode":
-        return m.envelopeFromBytes(unhex(e.hex));
+        return m.Envelope.fromBytes(unhex(e.hex));
       case "ur":
-        return m.Envelope.fromURString(e.s);
+        return decodeURWith(UR.parse(e.s), m.Envelope.codec);
     }
   };
   const report = (env: any, outs: string[]): string =>
@@ -187,9 +188,9 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       .map((o) => {
         switch (o) {
           case "cbor":
-            return hex(m.envelopeToBytes(env));
+            return hex(env.toCbor().toData());
           case "ur":
-            return env.urString();
+            return env.toUR().toString();
           case "digest":
             return env.digest().toHex();
           case "format":
@@ -230,6 +231,10 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       ];
       if (name.endsWith("Error") && UR.includes(name.slice(0, -5))) return name.slice(0, -5);
       if (name === "URError") return String(x.code);
+      // EnvelopeErrorCode is PascalCase after W1; the vectors keep the
+      // pre-redesign SCREAMING_CASE spelling (`Cbor` → `CBOR`).
+      if (name === "EnvelopeError" && typeof x.code === "string")
+        return x.code.replace(/(?<=[a-z0-9])(?=[A-Z])/g, "_").toUpperCase();
       return String(x?.code ?? x?.errorCode ?? name);
     },
     run(r: Recipe) {

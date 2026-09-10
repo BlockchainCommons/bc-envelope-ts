@@ -22,7 +22,7 @@ describe("SSKR Extension", () => {
 
   describe("sskrSplit()", () => {
     it("should split envelope into shares", () => {
-      const envelope = Envelope.new("Secret data");
+      const envelope = Envelope.from("Secret data");
       const contentKey = SymmetricKey.random();
 
       // Encrypt first
@@ -42,7 +42,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should create unique shares", () => {
-      const envelope = Envelope.new("Secret data");
+      const envelope = Envelope.from("Secret data");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -55,7 +55,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should handle multi-group spec", () => {
-      const envelope = Envelope.new("Multi-group secret");
+      const envelope = Envelope.from("Multi-group secret");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -71,7 +71,7 @@ describe("SSKR Extension", () => {
 
   describe("sskrSplitFlattened()", () => {
     it("should return flat array of all shares", () => {
-      const envelope = Envelope.new("Secret data");
+      const envelope = Envelope.from("Secret data");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -82,7 +82,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should flatten multi-group shares", () => {
-      const envelope = Envelope.new("Secret data");
+      const envelope = Envelope.from("Secret data");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -95,7 +95,7 @@ describe("SSKR Extension", () => {
 
   describe("Envelope.sskrJoin()", () => {
     it("should reconstruct with threshold shares", () => {
-      const original = Envelope.new("Secret to recover");
+      const original = Envelope.from("Secret to recover");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
@@ -114,7 +114,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should fail with insufficient shares", () => {
-      const original = Envelope.new("Secret to recover");
+      const original = Envelope.from("Secret to recover");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
@@ -136,7 +136,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should work with any threshold combination", () => {
-      const original = Envelope.new("Testing all combinations");
+      const original = Envelope.from("Testing all combinations");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
@@ -158,7 +158,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should work with all 3 shares", () => {
-      const original = Envelope.new("Full recovery");
+      const original = Envelope.from("Full recovery");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
@@ -175,7 +175,7 @@ describe("SSKR Extension", () => {
 
   describe("Multi-group recovery", () => {
     it("should recover with shares from one group", () => {
-      const original = Envelope.new("Multi-group secret");
+      const original = Envelope.from("Multi-group secret");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
@@ -192,7 +192,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should recover with shares from second group", () => {
-      const original = Envelope.new("Multi-group secret");
+      const original = Envelope.from("Multi-group secret");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 
@@ -211,7 +211,7 @@ describe("SSKR Extension", () => {
 
   describe("Complex content", () => {
     it("should handle envelope with assertions", () => {
-      const original = Envelope.new("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
+      const original = Envelope.from("Alice").addAssertion("knows", "Bob").addAssertion("age", 30);
 
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
@@ -227,7 +227,7 @@ describe("SSKR Extension", () => {
 
     it("should handle binary content", () => {
       const binaryData = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
-      const original = Envelope.new(binaryData);
+      const original = Envelope.from(binaryData);
 
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
@@ -237,7 +237,7 @@ describe("SSKR Extension", () => {
         shares.slice(0, 2),
       );
 
-      const recoveredBytes = recovered.extractBytes();
+      const recoveredBytes = recovered.expectBytes();
       expect(recoveredBytes).toBeDefined();
       expect(new Uint8Array(recoveredBytes)).toEqual(binaryData);
     });
@@ -253,7 +253,7 @@ describe("SSKR Extension", () => {
     ];
 
     it("should produce deterministic shares with same RNG seed", () => {
-      const envelope = Envelope.new("Deterministic test");
+      const envelope = Envelope.from("Deterministic test");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -277,7 +277,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should produce different shares with different RNG seeds", () => {
-      const envelope = Envelope.new("Different seeds test");
+      const envelope = Envelope.from("Different seeds test");
       const contentKey = SymmetricKey.random();
       const encrypted = envelope.encryptSubject(contentKey);
 
@@ -299,7 +299,7 @@ describe("SSKR Extension", () => {
     });
 
     it("should still allow recovery from deterministic shares", () => {
-      const original = Envelope.new("Recoverable deterministic");
+      const original = Envelope.from("Recoverable deterministic");
       const contentKey = SymmetricKey.random();
       const encrypted = original.encryptSubject(contentKey);
 

@@ -111,7 +111,7 @@ const extractSskrSharesGrouped = (envelopes: Envelope[]): Map<number, SskrShare[
 
       try {
         // Try to extract the SskrShare
-        const share = obj.extractSubject((cbor) => SskrShare.fromCbor(cbor));
+        const share = obj.expectSubject((cbor) => SskrShare.fromCbor(cbor));
         const identifier = share.identifier;
 
         const existing = result.get(identifier);

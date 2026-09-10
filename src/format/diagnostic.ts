@@ -38,7 +38,7 @@ import { type FormatContext, getGlobalFormatContext } from "./format-context";
 /// Plain CBOR diagnostic notation, no tag-name annotations. The annotated
 /// variant lives on `diagnosticAnnotated()` below.
 export function diagnostic(envelope: Envelope): string {
-  return cborDiagnostic(envelope.taggedCbor());
+  return cborDiagnostic(envelope.toCbor());
 }
 
 /// Implementation of diagnosticAnnotated()
@@ -52,5 +52,5 @@ export function diagnosticAnnotated(envelope: Envelope, context?: FormatContext)
   const opts: DiagFormatOpts = { annotate: true };
   const ctx = context ?? getGlobalFormatContext();
   opts.tags = ctx.tags();
-  return cborDiagnostic(envelope.taggedCbor(), opts);
+  return cborDiagnostic(envelope.toCbor(), opts);
 }

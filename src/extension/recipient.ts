@@ -264,7 +264,7 @@ export function recipients(envelope: Envelope): SealedMessage[] {
 
   return recipientAssertions.map((assertion) => {
     // Get the object from the assertion case
-    const assertionCase = assertion.case();
+    const assertionCase = assertion.case;
     if (assertionCase.type !== "assertion") {
       throw EnvelopeError.general("Invalid recipient assertion structure");
     }
@@ -284,7 +284,7 @@ export function recipients(envelope: Envelope): SealedMessage[] {
       }
 
       // Try extracting from the full envelope CBOR as fallback
-      const encodeCbor = obj.taggedCborData();
+      const encodeCbor = obj.toCbor().toData();
       const inner = ComponentsSealedMessage.fromCbor(decodeCbor(encodeCbor));
       return new SealedMessage(inner);
     } catch {
@@ -315,7 +315,7 @@ export function recipients(envelope: Envelope): SealedMessage[] {
  */
 export function decryptSubjectToRecipient(envelope: Envelope, recipient: Decrypter): Envelope {
   // Check that the subject is encrypted
-  const subjectCase = envelope.subject().case();
+  const subjectCase = envelope.subject().case;
   if (subjectCase.type !== "encrypted") {
     throw EnvelopeError.general("Subject is not encrypted");
   }

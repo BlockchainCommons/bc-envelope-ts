@@ -8,11 +8,11 @@ describe("Compression Extension", () => {
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ".repeat(
           5,
         );
-      const envelope = Envelope.new(lorem);
-      const originalSize = envelope.cborBytes().length;
+      const envelope = Envelope.from(lorem);
+      const originalSize = envelope.toCbor().toData().length;
 
       const compressed = envelope.compress();
-      const compressedSize = compressed.cborBytes().length;
+      const compressedSize = compressed.toCbor().toData().length;
 
       expect(compressedSize).toBeLessThan(originalSize);
       expect(envelope.digest().equals(compressed.digest())).toBe(true);
@@ -26,7 +26,7 @@ describe("Compression Extension", () => {
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ".repeat(
           5,
         );
-      const envelope = Envelope.new(lorem);
+      const envelope = Envelope.from(lorem);
 
       const compressed = envelope.compress();
       const decompressed = compressed.decompress();
@@ -40,7 +40,7 @@ describe("Compression Extension", () => {
   describe("Double compression", () => {
     it("should return same envelope on double compress", () => {
       const lorem = "Lorem ipsum dolor sit amet. ".repeat(10);
-      const envelope = Envelope.new(lorem);
+      const envelope = Envelope.from(lorem);
 
       const compressed = envelope.compress();
       const doubleCompressed = compressed.compress();
@@ -51,7 +51,7 @@ describe("Compression Extension", () => {
 
   describe("Compression with assertions", () => {
     it("should compress envelope with assertions", () => {
-      const withAssertions = Envelope.new("Subject")
+      const withAssertions = Envelope.from("Subject")
         .addAssertion("key1", "A".repeat(100))
         .addAssertion("key2", "B".repeat(100))
         .addAssertion("key3", "C".repeat(100));
@@ -65,7 +65,7 @@ describe("Compression Extension", () => {
 
   describe("Subject-only compression", () => {
     it("should compress only the subject", () => {
-      const largeSubject = Envelope.new("X".repeat(200))
+      const largeSubject = Envelope.from("X".repeat(200))
         .addAssertion("note", "Small metadata")
         .addAssertion("tag", "important");
 
@@ -79,7 +79,7 @@ describe("Compression Extension", () => {
 
   describe("Subject decompression", () => {
     it("should decompress subject", () => {
-      const largeSubject = Envelope.new("X".repeat(200)).addAssertion("note", "Small metadata");
+      const largeSubject = Envelope.from("X".repeat(200)).addAssertion("note", "Small metadata");
 
       const subjectCompressed = largeSubject.compressSubject();
       const subjectDecompressed = subjectCompressed.decompressSubject();
@@ -91,7 +91,7 @@ describe("Compression Extension", () => {
 
   describe("Error handling", () => {
     it("should throw error when decompressing non-compressed envelope", () => {
-      const envelope = Envelope.new("Not compressed");
+      const envelope = Envelope.from("Not compressed");
 
       expect(() => envelope.decompress()).toThrow();
     });
@@ -99,10 +99,10 @@ describe("Compression Extension", () => {
 
   describe("Nested envelope compression", () => {
     it("should compress nested envelopes", () => {
-      const nested = Envelope.new("Alice")
+      const nested = Envelope.from("Alice")
         .addAssertion(
           "profile",
-          Envelope.new("Profile data: " + "Y".repeat(100)).addAssertion("bio", "Z".repeat(100)),
+          Envelope.from("Profile data: " + "Y".repeat(100)).addAssertion("bio", "Z".repeat(100)),
         )
         .addAssertion("settings", "W".repeat(100));
 
