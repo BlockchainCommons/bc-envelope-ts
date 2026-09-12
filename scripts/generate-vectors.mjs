@@ -1,0 +1,36 @@
+/**
+ * Golden vector generator. `bun scripts/generate-vectors.mjs`.
+ * Materialises the golden recipe subset with the WORKING TREE and writes
+ * tests/vectors/vectors.json. With VECTORS_FROM=baseline it materialises
+ * with the frozen bundle instead, the way the file was first created.
+ * Regenerating is a deliberate, reviewed act.
+ */
+import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  materialize,
+  recipeName,
+  outputsFor,
+  baselineAdapterFor,
+  redesignedAdapterFor,
+} from "../tests/vectors/recipes.ts";
+import { goldenRecipes } from "../tests/corpus/corpus.ts";
+import { baselineDeps, currentDeps } from "../tests/vectors/deps.ts";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const api =
+  process.env.VECTORS_FROM === "baseline"
+    ? baselineAdapterFor(await import("../tests/baseline/envelope-baseline.mjs"), await baselineDeps())
+    : redesignedAdapterFor(await import("../src/all.ts"), await currentDeps());
+const vectors = [];
+for (const recipe of goldenRecipes()) {
+  vectors.push({
+    name: recipeName(recipe),
+    recipe: { ...recipe, outs: outputsFor(recipe) },
+    expect: materialize(api, recipe),
+  });
+}
+const out = join(root, "tests/vectors/vectors.json");
+writeFileSync(out, JSON.stringify({ count: vectors.length, vectors }, null, 1) + "\n");
+console.log(`wrote ${vectors.length} vectors from ${process.env.VECTORS_FROM === "baseline" ? "the frozen baseline" : "working tree"}`);

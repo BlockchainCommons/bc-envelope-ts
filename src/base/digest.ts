@@ -1,0 +1,78 @@
+/**
+ * Re-export Digest from @blockchaincommons/components for type compatibility.
+ *
+ * The @blockchaincommons/components Digest class is the canonical implementation with:
+ * - Full CBOR support (tagged/untagged)
+ * - UR support
+ * - Complete factory methods and instance methods
+ *
+ * This re-export ensures type compatibility between @blockchaincommons/envelope
+ * and @blockchaincommons/components when used together.
+ */
+import { Digest } from "@blockchaincommons/components";
+// Internal modules take Digest from here; the public barrels do not re-export it.
+export { Digest };
+
+/**
+ * Trait for types that can provide a digest.
+ *
+ * This is equivalent to the reference's `DigestProvider` trait. Types that
+ * implement this interface can be used in contexts where a digest
+ * is needed for identity or integrity verification.
+ */
+export interface DigestProvider {
+  /**
+   * Returns the digest of this object.
+   *
+   * The digest uniquely identifies the semantic content of the object,
+   * regardless of whether parts of it are elided, encrypted, or compressed.
+   */
+  digest(): Digest;
+}
+
+/**
+ * Helper function to create a digest from a string.
+ *
+ * This is a convenience function for creating digests from text strings,
+ * which are encoded as UTF-8 before hashing.
+ *
+ * @param text - The text to hash
+ * @returns A new Digest instance
+ *
+ * @example
+ * ```typescript
+ * const digest = digestFromString("Hello, world!");
+ * ```
+ */
+export function digestFromString(text: string): Digest {
+  const encoder = new TextEncoder();
+  return Digest.fromImage(encoder.encode(text));
+}
+
+/**
+ * Helper function to create a digest from a number.
+ *
+ * The number is converted to a big-endian byte representation before hashing.
+ *
+ * @param num - The number to hash
+ * @returns A new Digest instance
+ *
+ * @example
+ * ```typescript
+ * const digest = digestFromNumber(42);
+ * ```
+ */
+export function digestFromNumber(num: number): Digest {
+  const buffer = new ArrayBuffer(8);
+  const view = new DataView(buffer);
+  view.setFloat64(0, num, false); // big-endian
+  return Digest.fromImage(new Uint8Array(buffer));
+}
+
+/** The hex keys of a highlighting target (digests or anything with a `digest()`). */
+export function digestKeys(target: Iterable<Digest | DigestProvider> | undefined): Set<string> {
+  const keys = new Set<string>();
+  if (target === undefined) return keys;
+  for (const t of target) keys.add((t instanceof Digest ? t : t.digest()).toHex());
+  return keys;
+}

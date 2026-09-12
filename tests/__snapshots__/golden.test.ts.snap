@@ -1,0 +1,2915 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden: freeze additions > B1: the sealed content key is 32 raw bytes 1`] = `
+[
+  "recipients()[0].decrypt(bob).length: ok:37",
+  "decryptSubjectToRecipient(bob): ok:"Hello." [ 'hasRecipient': SealedMessage ]",
+]
+`;
+
+exports[`golden: freeze additions > B2: duplicate assertions are appended 1`] = `
+[
+  "assertions: 1, digest 8955db5e (a1 8955db5e)",
+  "addOptionalAssertionEnvelope(dup): 1",
+  "format: "Alice" [ "knows": "Bob" ]",
+]
+`;
+
+exports[`golden: freeze additions > B3: a node whose subject is obscured 1`] = `
+[
+  "format: "A" [ ELIDED [ 'salt': Salt ] ]",
+  "isSubjectObscured true, isSubjectElided true",
+  "fromBytes: ok:"A" [ ELIDED [ 'salt': Salt ] ]",
+  "node(): ok:"A" [ ELIDED [ 'salt': Salt ] ]",
+]
+`;
+
+exports[`golden: freeze additions > B4: Date and undefined inputs 1`] = `
+[
+  "from(new Date(0)): ok:d8c8d8c9c100",
+  "from(undefined): throw:EnvelopeError:InvalidParameter:value must be an encodable value (undefined is not)",
+]
+`;
+
+exports[`golden: freeze additions > B5: mutability 1`] = `
+[
+  "assertions().push → throw:TypeError:Cannot add property 1, object is not extensible; count 1, digest same true, cbor same true",
+  "case frozen true, case.assertions is assertions() true",
+  "asBytes()[0] = 0xff → toCbor d8c8d8c943010203",
+  "digest().bytes[0] ^= 0xff → digest unchanged true (components' Digest.bytes is already a copy)",
+]
+`;
+
+exports[`golden: freeze additions > B6: salt bypasses the assertion check 1`] = `
+[
+  "construct: throw:EnvelopeError:InvalidFormat:invalid format",
+  "fromBytes: throw:EnvelopeError:InvalidFormat:invalid format",
+]
+`;
+
+exports[`golden: freeze additions > B7: General where the reference has a variant 1`] = `
+[
+  "encrypt twice: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
+  "encrypt elided: throw:EnvelopeError:AlreadyElided:envelope was elided, so it cannot be compressed or encrypted",
+  "decrypt plain: throw:EnvelopeError:NotEncrypted:cannot decrypt an envelope that was not encrypted",
+  "wrong key: throw:EnvelopeError:Components:components error: AEAD error <- CryptoError:AuthenticationFailed:AEAD authentication failed <- Error:invalid tag",
+  "compress encrypted: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
+  "decompress plain: throw:EnvelopeError:NotCompressed:cannot decompress an envelope that was not compressed",
+  "decryptSubjectToRecipient non-recipient: throw:EnvelopeError:UnknownRecipient:unknown recipient",
+  "decryptSubjectToRecipient no recipients: throw:EnvelopeError:UnknownRecipient:unknown recipient",
+  "attachmentPayload on non-attachment: throw:EnvelopeError:InvalidAttachment:invalid attachment",
+  "expectAttachment none: throw:EnvelopeError:NonexistentAttachment:nonexistent attachment",
+  "Request.fromEnvelope mismatch: throw:EnvelopeError:Cbor:dcbor error: expected function «"g"», but found «"f"»",
+]
+`;
+
+exports[`golden: freeze additions > B8: decode error wrapping 1`] = `
+[
+  "fromCbor(200([1])): throw:EnvelopeError:Cbor:dcbor error: node must have at least two elements",
+  "fromBytes(ff00): throw:EnvelopeError:Cbor:dcbor error: invalid envelope <- CborError:UnsupportedHeaderValue:unsupported value in CBOR header",
+  "fromCbor(201(42)): throw:EnvelopeError:Cbor:dcbor error: expected CBOR tag envelope (200), but got 201 <- CborError:WrongTag:expected CBOR tag 200, but got 201",
+]
+`;
+
+exports[`golden: freeze additions > B9: an obscured recipient 1`] = `
+[
+  "format: ENCRYPTED [ 'hasRecipient': SealedMessage ELIDED ]",
+  "recipients(): ok:1",
+  "decryptSubjectToRecipient(carol): ok:"Hello." [ 'hasRecipient': SealedMessage ELIDED ]",
+]
+`;
+
+exports[`golden: freeze additions > B10: empty verifier lists 1`] = `
+[
+  "hasSignaturesFrom([]): ok:false",
+  "verifySignaturesFrom([]): throw:EnvelopeError:UnverifiedSignature:could not verify a signature",
+]
+`;
+
+exports[`golden: freeze additions > B11/B12/B16: format strings 1`] = `
+[
+  "Function.known(5): ok:«5»",
+  "format(NOTE, { context: "none" }): ok:'4'",
+  "ADD.toString(): ok:«1»",
+  "Response.failure(id).withError("e").summary(): ok:id: c6c7c8c9, error: "e"",
+]
+`;
+
+exports[`golden: freeze additions > B13/B14/B15/B17: acceptance 1`] = `
+[
+  "Request.fromEnvelope(e).toEnvelope() digest equals: ok:false",
+  "wrapped expectSubject(expectText): throw:EnvelopeError:InvalidFormat:invalid format",
+  "attachments() with a bogus 'attachment': ok:0",
+  "addSalt({ salt: 4 bytes }): ok:"Hello." [ 'salt': Salt ]",
+  "encryptSubjectToRecipients([]): ok:ENCRYPTED",
+  "'signed' wrapping a non-signature → verify(pub): throw:EnvelopeError:InvalidInnerSignatureType:unexpected inner signature object type",
+]
+`;
+
+exports[`golden: freeze additions > §3: the JS input domain 1`] = `
+[
+  "node(s, []): throw:EnvelopeError:InvalidParameter:assertions must be a non-empty array",
+  "knownValue(-1): throw:EnvelopeError:InvalidParameter:value must be an unsigned 64-bit integer, got -1 <- RangeError:KnownValue must be an unsigned 64-bit integer, got -1",
+  "setPosition(1.5): throw:EnvelopeError:InvalidParameter:position must be a non-negative integer, got 1.5",
+  "digests(1.5).size: throw:EnvelopeError:InvalidParameter:levelLimit must be a non-negative integer, got 1.5",
+  "addSalt({ length: 1.5 }): throw:EnvelopeError:InvalidParameter:length must be an integer of at least 8, got 1.5",
+  "addSalt({ length: NaN }): throw:EnvelopeError:InvalidParameter:length must be an integer of at least 8, got NaN",
+  "lock(e, 99, pw): throw:EnvelopeError:InvalidParameter:method must be a KeyDerivationMethod, got 99",
+  "EnvelopeError has a private constructor: function",
+]
+`;
+
+exports[`golden: hand corpus > assertion(kv:1:kv:2) 1`] = `
+"'isA': 'id'
+---
+ecb4ba38 ASSERTION
+    2be2d79b pred 'isA'
+    1d7b7c68 obj 'id'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(["ASSERTION<br>ecb4ba38"])
+    0 -- pred --> 1[/"'isA'<br>2be2d79b"/]
+    0 -- obj --> 2[/"'id'<br>1d7b7c68"/]
+style 0 stroke:green,stroke-width:4px
+style 1 stroke:goldenrod,stroke-width:4px
+style 2 stroke:goldenrod,stroke-width:4px
+linkStyle 0 stroke:cyan,stroke-width:2px
+linkStyle 1 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > assertion(leaf:text:knows:leaf:text:Bob) 1`] = `
+""knows": "Bob"
+---
+78d666eb ASSERTION
+    db7dd21c pred "knows"
+    13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(["ASSERTION<br>78d666eb"])
+    0 -- pred --> 1["&quot;knows&quot;<br>db7dd21c"]
+    0 -- obj --> 2["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:green,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:cyan,stroke-width:2px
+linkStyle 1 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > attach:com.example(node(leaf:text:Alice+4)) 1`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'attachment': {
+        "payload"
+    } [
+        'conformsTo': "https://example.com/attachment/v1"
+        'vendor': "com.example"
+    ]
+    'note': "A note"
+]
+---
+3e1f4199 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    5acaccbc ASSERTION
+        6d446f10 pred 'attachment'
+        4c9dbafc obj NODE
+            81bae1d2 subj WRAPPED
+                5164a5e9 cont "payload"
+            27591475 ASSERTION
+                f78a3754 pred 'conformsTo'
+                71313b7a obj "https://example.com/attachment/v1"
+            fc4acd1f ASSERTION
+                682461bf pred 'vendor'
+                7e3f6827 obj "com.example"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>3e1f4199"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>5acaccbc"])
+        11 -- pred --> 12[/"'attachment'<br>6d446f10"/]
+        11 -- obj --> 13(("NODE<br>4c9dbafc"))
+            13 -- subj --> 14[/"WRAPPED<br>81bae1d2"\\]
+                14 -- cont --> 15["&quot;payload&quot;<br>5164a5e9"]
+            13 --> 16(["ASSERTION<br>27591475"])
+                16 -- pred --> 17[/"'conformsTo'<br>f78a3754"/]
+                16 -- obj --> 18["&quot;https://example.com/…&quot;<br>71313b7a"]
+            13 --> 19(["ASSERTION<br>fc4acd1f"])
+                19 -- pred --> 20[/"'vendor'<br>682461bf"/]
+                19 -- obj --> 21["&quot;com.example&quot;<br>7e3f6827"]
+    0 --> 22(["ASSERTION<br>78d666eb"])
+        22 -- pred --> 23["&quot;knows&quot;<br>db7dd21c"]
+        22 -- obj --> 24["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:red,stroke-width:4px
+style 14 stroke:blue,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:goldenrod,stroke-width:4px
+style 18 stroke:teal,stroke-width:4px
+style 19 stroke:green,stroke-width:4px
+style 20 stroke:goldenrod,stroke-width:4px
+style 21 stroke:teal,stroke-width:4px
+style 22 stroke:green,stroke-width:4px
+style 23 stroke:teal,stroke-width:4px
+style 24 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke:red,stroke-width:2px
+linkStyle 14 stroke:blue,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px
+linkStyle 18 stroke-width:2px
+linkStyle 19 stroke:cyan,stroke-width:2px
+linkStyle 20 stroke:magenta,stroke-width:2px
+linkStyle 21 stroke-width:2px
+linkStyle 22 stroke:cyan,stroke-width:2px
+linkStyle 23 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > attach:org.test(leaf:text:x) 1`] = `
+""x" [
+    'attachment': {
+        "p" [
+            "q": 1
+        ]
+    } [
+        'vendor': "org.test"
+    ]
+]
+---
+429764ac NODE
+    5e85370e subj "x"
+    4b47db32 ASSERTION
+        6d446f10 pred 'attachment'
+        466da377 obj NODE
+            1d1e36ea subj WRAPPED
+                7a5afad6 cont NODE
+                    7978f506 subj "p"
+                    81ff2c2b ASSERTION
+                        dd9603a1 pred "q"
+                        4bf5122f obj 1
+            129e572b ASSERTION
+                682461bf pred 'vendor'
+                58d54d85 obj "org.test"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>429764ac"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>4b47db32"])
+        2 -- pred --> 3[/"'attachment'<br>6d446f10"/]
+        2 -- obj --> 4(("NODE<br>466da377"))
+            4 -- subj --> 5[/"WRAPPED<br>1d1e36ea"\\]
+                5 -- cont --> 6(("NODE<br>7a5afad6"))
+                    6 -- subj --> 7["&quot;p&quot;<br>7978f506"]
+                    6 --> 8(["ASSERTION<br>81ff2c2b"])
+                        8 -- pred --> 9["&quot;q&quot;<br>dd9603a1"]
+                        8 -- obj --> 10["1<br>4bf5122f"]
+            4 --> 11(["ASSERTION<br>129e572b"])
+                11 -- pred --> 12[/"'vendor'<br>682461bf"/]
+                11 -- obj --> 13["&quot;org.test&quot;<br>58d54d85"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:blue,stroke-width:4px
+style 6 stroke:red,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke:blue,stroke-width:2px
+linkStyle 6 stroke:red,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > category domain 1`] = `
+[
+  "domain node.emptyAssertions: throw:EnvelopeError:InvalidParameter",
+  "domain knownValue.-1: throw:EnvelopeError:InvalidParameter",
+  "domain knownValue.1.5: throw:EnvelopeError:InvalidParameter",
+  "domain setPosition.1.5: throw:EnvelopeError:InvalidParameter",
+  "domain setPosition.-1: throw:EnvelopeError:InvalidParameter",
+  "domain digests.1.5: throw:EnvelopeError:InvalidParameter",
+  "domain addSalt.length.1.5: throw:EnvelopeError:InvalidParameter",
+  "domain addSalt.length.NaN: throw:EnvelopeError:InvalidParameter",
+  "domain lock.method.99: throw:EnvelopeError:InvalidParameter",
+  "domain function.known.-1: throw:EnvelopeError:InvalidParameter",
+  "domain function.known.1.5: throw:EnvelopeError:InvalidParameter",
+  "domain parameter.from.empty: ok:❰""❱",
+  "domain hasSignaturesFromThreshold.1.5: throw:EnvelopeError:InvalidParameter",
+  "domain leaf.date: ok:d8c8d8c9c100",
+  "domain leaf.undefined: throw:EnvelopeError:InvalidParameter",
+]
+`;
+
+exports[`golden: hand corpus > category reject 1`] = `
+[
+  "op encryptSubject(encryptSubject(leaf:text:Hello.)): throw:ALREADY_ENCRYPTED",
+  "op encryptSubject(elide[elide](leaf:text:Hello.)): throw:ALREADY_ELIDED",
+  "op decryptSubject(leaf:text:Hello.): throw:NOT_ENCRYPTED",
+  "op decryptSubject(encryptSubject(leaf:text:Hello.)): throw:COMPONENTS",
+  "op compress(encryptSubject(leaf:text:Hello.)): throw:ALREADY_ENCRYPTED",
+  "op compress(elide[elide](leaf:text:Hello.)): throw:ALREADY_ELIDED",
+  "op decompress(leaf:text:Hello.): throw:NOT_COMPRESSED",
+  "op decryptToRecipient(recipient(leaf:text:Hello.); to=59f2293a): throw:UNKNOWN_RECIPIENT",
+  "op decryptToRecipient(encryptSubject(leaf:text:Hello.); to=ff00ff00): throw:UNKNOWN_RECIPIENT",
+  "op decryptToRecipient(leaf:text:Hello.; to=ff00ff00): throw:UNKNOWN_RECIPIENT",
+  "op attachmentPayload(leaf:text:Hello.): throw:INVALID_ATTACHMENT",
+  "op expectAttachment(leaf:text:Hello.): throw:NONEXISTENT_ATTACHMENT",
+  "op requestFrom(request:f; fn=g): throw:CBOR",
+  "op verify(node(leaf:text:Hello.+1)): throw:INVALID_INNER_SIGNATURE_TYPE",
+  "op decryptToRecipient(recipient(leaf:text:Hello.); to=ff00ff00): "Hello." [     'hasRecipient': SealedMessage ]",
+]
+`;
+
+exports[`golden: hand corpus > category wire 1`] = `
+[
+  "node(leaf:text:Alice+2): "Alice" [     "knows": "Bob" ]",
+  "nodeEnv(leaf:text:Alice; assertion(leaf:text:knows:leaf:text:Bob), assertion(leaf:text:knows:leaf:text:Bob)): "Alice" [     "knows": "Bob" ]",
+  "nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
+  "elide[elide](nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o)))): "A" [     ELIDED [         'salt': Salt     ] ]",
+  "op roundtrip(elide[elide](nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))))): "A" [     ELIDED [         'salt': Salt     ] ]",
+  "leaf:date: 1970-01-01",
+  "leaf:date: 2022-07-11T04:00:00Z",
+  "node(leaf:text:event+1): "event" [     "at": 2022-07-11T04:00:00Z ]",
+  "recipientDecode lftansfwlrgrdidp… seed=ff00ff00: "Hello." [     'hasRecipient': SealedMessage ]",
+  "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion salted): throw:INVALID_FORMAT",
+  "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion): throw:INVALID_FORMAT",
+  "op addAssertionEnvelope(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
+  "request:5: request(ARID(c66be27d)) [     'body': «5» [         ❰lhs❱: 1     ] ]",
+  "request:6: request(ARID(c66be27d)) [     'body': «6» [         ❰lhs❱: 1     ] ]",
+  "request:7: request(ARID(c66be27d)) [     'body': «7» [         ❰lhs❱: 1     ] ]",
+  "request:8: request(ARID(c66be27d)) [     'body': «8» [         ❰lhs❱: 1     ] ]",
+  "request:9: request(ARID(c66be27d)) [     'body': «9» [         ❰lhs❱: 1     ] ]",
+  "request:10: request(ARID(c66be27d)) [     'body': «10» [         ❰lhs❱: 1     ] ]",
+  "request:11: request(ARID(c66be27d)) [     'body': «11» [         ❰lhs❱: 1     ] ]",
+  "request:12: request(ARID(c66be27d)) [     'body': «12» [         ❰lhs❱: 1     ] ]",
+  "request:13: request(ARID(c66be27d)) [     'body': «13» [         ❰lhs❱: 1     ] ]",
+  "request:14: request(ARID(c66be27d)) [     'body': «14» [         ❰lhs❱: 1     ] ]",
+  "request:15: request(ARID(c66be27d)) [     'body': «15» [         ❰lhs❱: 1     ] ]",
+  "encryptSubject(leaf:text:Hello.): ENCRYPTED",
+  "encrypt(leaf:text:Hello.): ENCRYPTED",
+  "encryptSubject(node(leaf:text:Alice+1)): ENCRYPTED [     "knows": "Bob" ]",
+  "op encryptSubject(node(leaf:text:Alice+1)): ENCRYPTED [     'isA': "Bob" ]",
+]
+`;
+
+exports[`golden: hand corpus > compress(leaf:text:Lorem ipsum dolo) 1`] = `
+"COMPRESSED
+---
+793f5d52 COMPRESSED
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[["COMPRESSED<br>793f5d52"]]
+style 0 stroke:purple,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > compress(node(leaf:text:Alice+4)) 1`] = `
+"COMPRESSED
+---
+ab2344e4 COMPRESSED
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[["COMPRESSED<br>ab2344e4"]]
+style 0 stroke:purple,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > compressSubject(node(leaf:text:Alice+4)) 1`] = `
+"COMPRESSED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+]
+---
+ab2344e4 NODE
+    13941b48 subj COMPRESSED
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ab2344e4"))
+    0 -- subj --> 1[["COMPRESSED<br>13941b48"]]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>78d666eb"])
+        11 -- pred --> 12["&quot;knows&quot;<br>db7dd21c"]
+        11 -- obj --> 13["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:purple,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > decode rejections 1`] = `
+[
+  "decode:d8c8d8c96648656c: "Hello."",
+  "decode:d8c882d8c965416c: "Alice" [     "knows": "Bob" ]",
+  "decode:d8c885d8c965416c: "Alice" [     'isA': "Person"     "knows": "Bob"     "knows": "Carol"     'note': "A note" ]",
+  "decode:d8c801: 'isA'",
+  "decode:d8c8d8c882d8c965: {     "Alice" [         "knows": "Bob"     ] }",
+  "decode:d8c8a1d8c9656b6e: "knows": "Bob"",
+  "decode:d8c885d8c965416c: "Alice" [     'isA': "Person"     "knows": "Carol"     "knows": ELIDED     'note': "A note" ]",
+  "decode:d8c882d8c885d8c9: {     "Alice" [         'isA': "Person"         "knows": "Bob"         "knows": "Carol"         'note': "A note"     ] } [     'signed': Signature(Ed25519) ]",
+  "decode:d8c8d99c43841a3b: COMPRESSED",
+  "decode:d8c8a2d8c96161d8: throw:CBOR",
+  "decode:d8c8581f00000000: throw:CBOR",
+  "decode:d8c9d8c965416c69: throw:CBOR",
+  "decode:d8c880: throw:CBOR",
+  "decode:d8c881d8c965416c: throw:CBOR",
+  "decode:d8c8d8c965416c69: throw:CBOR",
+  "decode:d8c8f6: throw:CBOR",
+  "decode:d8c8d8c9f6: null",
+  "ur:ur:envelope/tpsoiyfdihjz: "Hello."",
+  "ur:ur:envelope/lptpsoihfpjz: "Alice" [     'isA': "Person"     "knows": "Bob"     "knows": "Carol"     'note': "A note" ]",
+  "ur:ur:envelope/lptpsoihfpjz: "Alice" [     'isA': "Person"     "knows": "Carol"     "knows": ELIDED     'note': "A note" ]",
+  "ur:ur:envelope/aeae: throw:Bytewords",
+  "ur:ur:digest/hdcxaeaeaeaeae: throw:UnexpectedType",
+]
+`;
+
+exports[`golden: hand corpus > elide[compress](node(leaf:text:Alice+2)) 1`] = `
+""Alice" [
+    "age": 30
+    "knows": "Bob" [
+        "knows": COMPRESSED
+    ]
+]
+---
+a8715b93 NODE
+    13941b48 subj "Alice"
+    0eb5609b ASSERTION
+        5943be12 pred "age"
+        cf972730 obj 30
+    970da8b3 ASSERTION
+        db7dd21c pred "knows"
+        15ec830a obj NODE
+            13b74194 subj "Bob"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj COMPRESSED
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>a8715b93"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>0eb5609b"])
+        2 -- pred --> 3["&quot;age&quot;<br>5943be12"]
+        2 -- obj --> 4["30<br>cf972730"]
+    0 --> 5(["ASSERTION<br>970da8b3"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7(("NODE<br>15ec830a"))
+            7 -- subj --> 8["&quot;Bob&quot;<br>13b74194"]
+            7 --> 9(["ASSERTION<br>4012caf2"])
+                9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
+                9 -- obj --> 11[["COMPRESSED<br>afb8122e"]]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:red,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:purple,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke:red,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > elide[elide](node(leaf:text:Alice+1)) 1`] = `
+""Alice" [
+    "knows": "Bob"
+]
+---
+8955db5e NODE
+    13941b48 subj "Alice"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>8955db5e"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>78d666eb"])
+        2 -- pred --> 3["&quot;knows&quot;<br>db7dd21c"]
+        2 -- obj --> 4["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > elide[elide](node(leaf:text:Alice+4)) 1`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Carol"
+    "knows": ELIDED
+    'note': "A note"
+]
+---
+ab2344e4 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj ELIDED
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ab2344e4"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>78d666eb"])
+        11 -- pred --> 12["&quot;knows&quot;<br>db7dd21c"]
+        11 -- obj --> 13{{"ELIDED<br>13b74194"}}
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:gray,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > elide[elide](node(leaf:text:Alice+4)) 2`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Carol"
+    'note': "A note"
+    ELIDED
+]
+---
+ab2344e4 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ELIDED
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ab2344e4"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11{{"ELIDED<br>78d666eb"}}
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:gray,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > elide[elide](node(leaf:text:Alice+4)) 3`] = `
+""Alice" [
+    ELIDED (4)
+]
+---
+ab2344e4 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ELIDED
+    4012caf2 ELIDED
+    581d8efe ELIDED
+    78d666eb ELIDED
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ab2344e4"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2{{"ELIDED<br>3c3ca1f1"}}
+    0 --> 3{{"ELIDED<br>4012caf2"}}
+    0 --> 4{{"ELIDED<br>581d8efe"}}
+    0 --> 5{{"ELIDED<br>78d666eb"}}
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:gray,stroke-width:4px
+style 3 stroke:gray,stroke-width:4px
+style 4 stroke:gray,stroke-width:4px
+style 5 stroke:gray,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > elide[elide](node(leaf:text:Alice+4)) 4`] = `
+"ELIDED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+]
+---
+ab2344e4 NODE
+    13941b48 subj ELIDED
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ab2344e4"))
+    0 -- subj --> 1{{"ELIDED<br>13941b48"}}
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>78d666eb"])
+        11 -- pred --> 12["&quot;knows&quot;<br>db7dd21c"]
+        11 -- obj --> 13["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:gray,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > elide[encrypt](node(leaf:text:Alice+2)) 1`] = `
+""Alice" [
+    "age": 30
+    "knows": "Bob" [
+        "knows": ENCRYPTED
+    ]
+]
+---
+a8715b93 NODE
+    13941b48 subj "Alice"
+    0eb5609b ASSERTION
+        5943be12 pred "age"
+        cf972730 obj 30
+    970da8b3 ASSERTION
+        db7dd21c pred "knows"
+        15ec830a obj NODE
+            13b74194 subj "Bob"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj ENCRYPTED"
+`;
+
+exports[`golden: hand corpus > encrypt(leaf:text:Hello.) 1`] = `
+"ENCRYPTED
+---
+172a5e51 ENCRYPTED"
+`;
+
+exports[`golden: hand corpus > encrypt(node(leaf:text:Alice+4)) 1`] = `
+"ENCRYPTED
+---
+0511ba41 ENCRYPTED"
+`;
+
+exports[`golden: hand corpus > encryptSubject(node(leaf:text:Alice+4)) 1`] = `
+"ENCRYPTED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+]
+---
+ab2344e4 NODE
+    13941b48 subj ENCRYPTED
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob""
+`;
+
+exports[`golden: hand corpus > kv:0 1`] = `
+"''
+---
+934312d6 ''
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"''<br>934312d6"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > kv:1 1`] = `
+"'isA'
+---
+2be2d79b 'isA'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"'isA'<br>2be2d79b"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > kv:706 1`] = `
+"'Self'
+---
+028254e4 'Self'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"'Self'<br>028254e4"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > kv:100000 1`] = `
+"'100000'
+---
+2fad20c5 '100000'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"'100000'<br>2fad20c5"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:arid:c66be27d 1`] = `
+"ARID(c66be27d)
+---
+9280e5a6 ARID(c66be27d)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["ARID(c66be27d)<br>9280e5a6"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:array 1`] = `
+"[1, "two", true]
+---
+29ca33d7 [1, "two", true]
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["[1, &quot;two&quot;, true]<br>29ca33d7"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:array 2`] = `
+"[]
+---
+76be8b52 []
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["[]<br>76be8b52"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:bool:false 1`] = `
+"false
+---
+2017ff34 false
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["false<br>2017ff34"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:bool:true 1`] = `
+"true
+---
+27abdedd true
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["true<br>27abdedd"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:bytes: 1`] = `
+"Bytes(0)
+---
+c3641f85 Bytes(0)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["Bytes(0)<br>c3641f85"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:bytes:00000000 1`] = `
+"Bytes(40)
+---
+3ebaeb2c Bytes(40)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["Bytes(40)<br>3ebaeb2c"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:bytes:01020304 1`] = `
+"Bytes(5)
+---
+96cb178b Bytes(5)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["Bytes(5)<br>96cb178b"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:digest:2be2d79b 1`] = `
+"Digest(2be2d79b)
+---
+18bcb182 Digest(2be2d79b)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["Digest(2be2d79b)<br>18bcb182"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:float:-0.001 1`] = `
+"-0.001
+---
+2d72ccce -0.001
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["-0.001<br>2d72ccce"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:float:1.5 1`] = `
+"1.5
+---
+b68bb45e 1.5
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["1.5<br>b68bb45e"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:-1 1`] = `
+"-1
+---
+36a9e7f1 -1
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["-1<br>36a9e7f1"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:-184467440737095 1`] = `
+"-18446744073709551616
+---
+fe890823 -18446744073709551616
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["-18446744073709551616<br>fe890823"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:0 1`] = `
+"0
+---
+6e340b9c 0
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["0<br>6e340b9c"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:23 1`] = `
+"23
+---
+8f11b05d 23
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["23<br>8f11b05d"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:42 1`] = `
+"42
+---
+7f83f7bd 42
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["42<br>7f83f7bd"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:256 1`] = `
+"256
+---
+70aa0275 256
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["256<br>70aa0275"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:1844674407370955 1`] = `
+"18446744073709551615
+---
+2d7cb092 18446744073709551615
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["18446744073709551615<br>2d7cb092"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:int:9007199254740991 1`] = `
+"9007199254740991
+---
+14f502e8 9007199254740991
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["9007199254740991<br>14f502e8"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:kv:1 1`] = `
+"'isA'
+---
+2be2d79b 'isA'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"'isA'<br>2be2d79b"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:map 1`] = `
+"{1: "one", "b": 2}
+---
+c84a4098 {1: "one", "b": 2}
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["{1: &quot;one&quot;, &quot;b&quot;: 2}<br>c84a4098"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:null 1`] = `
+"null
+---
+b0b2988b null
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["null<br>b0b2988b"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:text: 1`] = `
+"""
+---
+8d33f520 ""
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["&quot;&quot;<br>8d33f520"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:text:Alice 1`] = `
+""Alice"
+---
+13941b48 "Alice"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["&quot;Alice&quot;<br>13941b48"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:text:Hello. 1`] = `
+""Hello."
+---
+8cc96cdb "Hello."
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["&quot;Hello.&quot;<br>8cc96cdb"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:text:quote " and \\ ba 1`] = `
+""quote " and \\ backslash"
+---
+39dbe659 "quote " and \\ backslash"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["&quot;quote &quot; and \\ backsl…&quot;<br>39dbe659"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:text:unicode ✓ ☺ 日本 1`] = `
+""unicode ✓ ☺ 日本"
+---
+8d1403ea "unicode ✓ ☺ 日本"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["&quot;unicode ✓ ☺ 日本&quot;<br>8d1403ea"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:uri:https://example. 1`] = `
+"URI(https://example.com/path?q=1)
+---
+8183bc41 URI(https://example.com/path?q=1)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["URI(https://example.com/path?q=1)<br>8183bc41"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:uuid:6ea4a9d6 1`] = `
+"UUID(6ea4a9d6-b9be-4b7f-9d5d-1a2b3c4d5e6f)
+---
+f814166e UUID(6ea4a9d6-b9be-4b7f-9d5d-1a2b3c4d5e6f)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["UUID(6ea4a9d6-b9be-4b7f-9d5d-1a2b3c4d5e6f)<br>f814166e"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > lock:hkdf(node(leaf:text:Alice+4)) 1`] = `
+"ENCRYPTED [
+    'hasSecret': EncryptedKey(HKDF(SHA256))
+]"
+`;
+
+exports[`golden: hand corpus > lock:pbkdf2(leaf:text:x) 1`] = `
+"ENCRYPTED [
+    'hasSecret': EncryptedKey(PBKDF2(SHA256))
+]"
+`;
+
+exports[`golden: hand corpus > node(assertion(leaf:text:p:leaf:text:o)+1) 1`] = `
+"{
+    "p": "o"
+} [
+    "q": "r"
+]
+---
+269780af NODE
+    58d63446 subj ASSERTION
+        7978f506 pred "p"
+        2dd41130 obj "o"
+    17adb033 ASSERTION
+        dd9603a1 pred "q"
+        ab5b6208 obj "r"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>269780af"))
+    0 -- subj --> 1(["ASSERTION<br>58d63446"])
+        1 -- pred --> 2["&quot;p&quot;<br>7978f506"]
+        1 -- obj --> 3["&quot;o&quot;<br>2dd41130"]
+    0 --> 4(["ASSERTION<br>17adb033"])
+        4 -- pred --> 5["&quot;q&quot;<br>dd9603a1"]
+        4 -- obj --> 6["&quot;r&quot;<br>ab5b6208"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:green,stroke-width:4px
+style 2 stroke:teal,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:cyan,stroke-width:2px
+linkStyle 2 stroke:magenta,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(leaf:text:Alice+1) 1`] = `
+""Alice" [
+    "knows": "Bob"
+]
+---
+8955db5e NODE
+    13941b48 subj "Alice"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>8955db5e"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>78d666eb"])
+        2 -- pred --> 3["&quot;knows&quot;<br>db7dd21c"]
+        2 -- obj --> 4["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(leaf:text:Alice+2) 1`] = `
+""Alice" [
+    "age": 30
+    "knows": "Bob" [
+        "knows": "Carol"
+    ]
+]
+---
+a8715b93 NODE
+    13941b48 subj "Alice"
+    0eb5609b ASSERTION
+        5943be12 pred "age"
+        cf972730 obj 30
+    970da8b3 ASSERTION
+        db7dd21c pred "knows"
+        15ec830a obj NODE
+            13b74194 subj "Bob"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>a8715b93"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>0eb5609b"])
+        2 -- pred --> 3["&quot;age&quot;<br>5943be12"]
+        2 -- obj --> 4["30<br>cf972730"]
+    0 --> 5(["ASSERTION<br>970da8b3"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7(("NODE<br>15ec830a"))
+            7 -- subj --> 8["&quot;Bob&quot;<br>13b74194"]
+            7 --> 9(["ASSERTION<br>4012caf2"])
+                9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
+                9 -- obj --> 11["&quot;Carol&quot;<br>afb8122e"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:red,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke:red,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(leaf:text:Alice+4) 1`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+]
+---
+ab2344e4 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ab2344e4"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>78d666eb"])
+        11 -- pred --> 12["&quot;knows&quot;<br>db7dd21c"]
+        11 -- obj --> 13["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(wrap(node(leaf:text:Alice+4))+1) 1`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    "meta": 1 [
+        2: 3
+    ]
+]
+---
+e770d606 NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    1e25c2cb ASSERTION
+        c96cd5dc pred "meta"
+        a4a4ffdd obj NODE
+            4bf5122f subj 1
+            c2768b34 ASSERTION
+                dbc1b4c9 pred 2
+                084fed08 obj 3
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>e770d606"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>1e25c2cb"])
+        16 -- pred --> 17["&quot;meta&quot;<br>c96cd5dc"]
+        16 -- obj --> 18(("NODE<br>a4a4ffdd"))
+            18 -- subj --> 19["1<br>4bf5122f"]
+            18 --> 20(["ASSERTION<br>c2768b34"])
+                20 -- pred --> 21["2<br>dbc1b4c9"]
+                20 -- obj --> 22["3<br>084fed08"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:teal,stroke-width:4px
+style 18 stroke:red,stroke-width:4px
+style 19 stroke:teal,stroke-width:4px
+style 20 stroke:green,stroke-width:4px
+style 21 stroke:teal,stroke-width:4px
+style 22 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px
+linkStyle 18 stroke:red,stroke-width:2px
+linkStyle 19 stroke-width:2px
+linkStyle 20 stroke:cyan,stroke-width:2px
+linkStyle 21 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > position:0(leaf:text:x) 1`] = `
+""x" [
+    'position': 0
+]
+---
+12430728 NODE
+    5e85370e subj "x"
+    d2bdfa7d ASSERTION
+        9c0ff971 pred 'position'
+        6e340b9c obj 0
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>12430728"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>d2bdfa7d"])
+        2 -- pred --> 3[/"'position'<br>9c0ff971"/]
+        2 -- obj --> 4["0<br>6e340b9c"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > position:3(node(leaf:text:Alice+4)) 1`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+    'position': 3
+]
+---
+e4148984 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    41a182ac ASSERTION
+        9c0ff971 pred 'position'
+        084fed08 obj 3
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>e4148984"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>41a182ac"])
+        8 -- pred --> 9[/"'position'<br>9c0ff971"/]
+        8 -- obj --> 10["3<br>084fed08"]
+    0 --> 11(["ASSERTION<br>581d8efe"])
+        11 -- pred --> 12[/"'isA'<br>2be2d79b"/]
+        11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]
+    0 --> 14(["ASSERTION<br>78d666eb"])
+        14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
+        14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > recipient(node(leaf:text:Alice+4)) 1`] = `
+"ENCRYPTED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'hasRecipient': SealedMessage
+    'note': "A note"
+]"
+`;
+
+exports[`golden: hand corpus > request:1 1`] = `
+"request(ARID(c66be27d)) [
+    'body': «add» [
+        ❰lhs❱: 2
+        ❰rhs❱: 3
+    ]
+]
+---
+ac324baa NODE
+    446b69f7 subj request(ARID(c66be27d))
+    c4f8b91d ASSERTION
+        1dd8f298 pred 'body'
+        61777eaf obj NODE
+            a40276df subj «add»
+            5b4417b6 ASSERTION
+                e66ebe24 pred ❰rhs❱
+                084fed08 obj 3
+            8dbcbaeb ASSERTION
+                fcf0d275 pred ❰lhs❱
+                dbc1b4c9 obj 2
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ac324baa"))
+    0 -- subj --> 1["request(ARID(c66be27d))<br>446b69f7"]
+    0 --> 2(["ASSERTION<br>c4f8b91d"])
+        2 -- pred --> 3[/"'body'<br>1dd8f298"/]
+        2 -- obj --> 4(("NODE<br>61777eaf"))
+            4 -- subj --> 5["«add»<br>a40276df"]
+            4 --> 6(["ASSERTION<br>5b4417b6"])
+                6 -- pred --> 7["❰rhs❱<br>e66ebe24"]
+                6 -- obj --> 8["3<br>084fed08"]
+            4 --> 9(["ASSERTION<br>8dbcbaeb"])
+                9 -- pred --> 10["❰lhs❱<br>fcf0d275"]
+                9 -- obj --> 11["2<br>dbc1b4c9"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+style 6 stroke:green,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke-width:2px
+linkStyle 6 stroke:cyan,stroke-width:2px
+linkStyle 7 stroke:magenta,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > request:100 1`] = `
+"request(ARID(11111111)) [
+    'body': «100» [
+        ❰"x"❱: "y"
+    ]
+    'date': 2022-07-11T04:00:00Z
+    'note': "a note"
+]
+---
+6f8ef879 NODE
+    dab962ee subj request(ARID(11111111))
+    3058ab15 ASSERTION
+        2e40139b pred 'date'
+        9b697801 obj 2022-07-11T04:00:00Z
+    8beef536 ASSERTION
+        0fcd6a39 pred 'note'
+        87c2e5ea obj "a note"
+    eef3e816 ASSERTION
+        1dd8f298 pred 'body'
+        301784e8 obj NODE
+            82ceaaa5 subj «100»
+            4e76b014 ASSERTION
+                571af9bc pred ❰"x"❱
+                69d61997 obj "y"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>6f8ef879"))
+    0 -- subj --> 1["request(ARID(11111111))<br>dab962ee"]
+    0 --> 2(["ASSERTION<br>3058ab15"])
+        2 -- pred --> 3[/"'date'<br>2e40139b"/]
+        2 -- obj --> 4["2022-07-11T04:00:00Z<br>9b697801"]
+    0 --> 5(["ASSERTION<br>8beef536"])
+        5 -- pred --> 6[/"'note'<br>0fcd6a39"/]
+        5 -- obj --> 7["&quot;a note&quot;<br>87c2e5ea"]
+    0 --> 8(["ASSERTION<br>eef3e816"])
+        8 -- pred --> 9[/"'body'<br>1dd8f298"/]
+        8 -- obj --> 10(("NODE<br>301784e8"))
+            10 -- subj --> 11["«100»<br>82ceaaa5"]
+            10 --> 12(["ASSERTION<br>4e76b014"])
+                12 -- pred --> 13["❰&quot;x&quot;❱<br>571af9bc"]
+                12 -- obj --> 14["&quot;y&quot;<br>69d61997"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:goldenrod,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:red,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+style 12 stroke:green,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke:red,stroke-width:2px
+linkStyle 11 stroke-width:2px
+linkStyle 12 stroke:cyan,stroke-width:2px
+linkStyle 13 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > request:add 1`] = `
+"request(ARID(c66be27d)) [
+    'body': «"add"» [
+        ❰"lhs"❱: 2
+        ❰"rhs"❱: 3
+    ]
+]
+---
+31f12ec6 NODE
+    446b69f7 subj request(ARID(c66be27d))
+    41234698 ASSERTION
+        1dd8f298 pred 'body'
+        d616af76 obj NODE
+            ff3ef996 subj «"add"»
+            148c516c ASSERTION
+                48a5110d pred ❰"rhs"❱
+                084fed08 obj 3
+            4351e5b9 ASSERTION
+                2532c751 pred ❰"lhs"❱
+                dbc1b4c9 obj 2
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>31f12ec6"))
+    0 -- subj --> 1["request(ARID(c66be27d))<br>446b69f7"]
+    0 --> 2(["ASSERTION<br>41234698"])
+        2 -- pred --> 3[/"'body'<br>1dd8f298"/]
+        2 -- obj --> 4(("NODE<br>d616af76"))
+            4 -- subj --> 5["«&quot;add&quot;»<br>ff3ef996"]
+            4 --> 6(["ASSERTION<br>148c516c"])
+                6 -- pred --> 7["❰&quot;rhs&quot;❱<br>48a5110d"]
+                6 -- obj --> 8["3<br>084fed08"]
+            4 --> 9(["ASSERTION<br>4351e5b9"])
+                9 -- pred --> 10["❰&quot;lhs&quot;❱<br>2532c751"]
+                9 -- obj --> 11["2<br>dbc1b4c9"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+style 6 stroke:green,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke-width:2px
+linkStyle 6 stroke:cyan,stroke-width:2px
+linkStyle 7 stroke:magenta,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > response:err 1`] = `
+"response(ARID(11111111)) [
+    'error': "failed"
+]
+---
+411ab398 NODE
+    33b5ead6 subj response(ARID(11111111))
+    395257ee ASSERTION
+        13d3bae4 pred 'error'
+        48c9fb58 obj "failed"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>411ab398"))
+    0 -- subj --> 1["response(ARID(11111111))<br>33b5ead6"]
+    0 --> 2(["ASSERTION<br>395257ee"])
+        2 -- pred --> 3[/"'error'<br>13d3bae4"/]
+        2 -- obj --> 4["&quot;failed&quot;<br>48c9fb58"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > response:ok 1`] = `
+"response(ARID(c66be27d)) [
+    'result': 5
+]
+---
+7527db91 NODE
+    b9d53e76 subj response(ARID(c66be27d))
+    12b6dbe6 ASSERTION
+        68298468 pred 'result'
+        e77b9a9a obj 5
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>7527db91"))
+    0 -- subj --> 1["response(ARID(c66be27d))<br>b9d53e76"]
+    0 --> 2(["ASSERTION<br>12b6dbe6"])
+        2 -- pred --> 3[/"'result'<br>68298468"/]
+        2 -- obj --> 4["5<br>e77b9a9a"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt(leaf:text:x) 1`] = `
+""x" [
+    'salt': Salt
+]
+---
+f5fca122 NODE
+    5e85370e subj "x"
+    9e15c9cb ASSERTION
+        618975ce pred 'salt'
+        8c4283c2 obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>f5fca122"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>9e15c9cb"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>8c4283c2"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt(node(leaf:text:Alice+1)) 1`] = `
+""Alice" [
+    "knows": "Bob"
+    'salt': Salt
+]
+---
+4368cf06 NODE
+    13941b48 subj "Alice"
+    51912233 ASSERTION
+        618975ce pred 'salt'
+        ac8bac43 obj Salt
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>4368cf06"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>51912233"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>ac8bac43"]
+    0 --> 5(["ASSERTION<br>78d666eb"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt(node(leaf:text:Alice+4)) 1`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+    'salt': Salt
+]
+---
+03810d16 NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+    dd412f1d ASSERTION
+        618975ce pred 'salt'
+        7915f200 obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>03810d16"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>78d666eb"])
+        11 -- pred --> 12["&quot;knows&quot;<br>db7dd21c"]
+        11 -- obj --> 13["&quot;Bob&quot;<br>13b74194"]
+    0 --> 14(["ASSERTION<br>dd412f1d"])
+        14 -- pred --> 15[/"'salt'<br>618975ce"/]
+        14 -- obj --> 16["Salt<br>7915f200"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:goldenrod,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ecdsa(node(leaf:text:Alice+4)) 1`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    'signed': Signature(Ecdsa)
+]
+---
+6a90b1cf NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    7943f3cd ASSERTION
+        d0e39e78 pred 'signed'
+        e0a918d6 obj Signature(Ecdsa)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>6a90b1cf"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>7943f3cd"])
+        16 -- pred --> 17[/"'signed'<br>d0e39e78"/]
+        16 -- obj --> 18["Signature(Ecdsa)<br>e0a918d6"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:goldenrod,stroke-width:4px
+style 18 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ecdsa(sign:ed25519(node(leaf:text:Alice+4))) 1`] = `
+"{
+    {
+        "Alice" [
+            'isA': "Person"
+            "knows": "Bob"
+            "knows": "Carol"
+            'note': "A note"
+        ]
+    } [
+        'signed': Signature(Ed25519)
+    ]
+} [
+    'signed': Signature(Ecdsa)
+]
+---
+ccfa3964 NODE
+    eb3bc7aa subj WRAPPED
+        00d5efa9 cont NODE
+            0511ba41 subj WRAPPED
+                ab2344e4 cont NODE
+                    13941b48 subj "Alice"
+                    3c3ca1f1 ASSERTION
+                        0fcd6a39 pred 'note'
+                        61c8e387 obj "A note"
+                    4012caf2 ASSERTION
+                        db7dd21c pred "knows"
+                        afb8122e obj "Carol"
+                    581d8efe ASSERTION
+                        2be2d79b pred 'isA'
+                        bd52917f obj "Person"
+                    78d666eb ASSERTION
+                        db7dd21c pred "knows"
+                        13b74194 obj "Bob"
+            0fae512f ASSERTION
+                d0e39e78 pred 'signed'
+                3f773744 obj Signature(Ed25519)
+    870420c4 ASSERTION
+        d0e39e78 pred 'signed'
+        17f262bd obj Signature(Ecdsa)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ccfa3964"))
+    0 -- subj --> 1[/"WRAPPED<br>eb3bc7aa"\\]
+        1 -- cont --> 2(("NODE<br>00d5efa9"))
+            2 -- subj --> 3[/"WRAPPED<br>0511ba41"\\]
+                3 -- cont --> 4(("NODE<br>ab2344e4"))
+                    4 -- subj --> 5["&quot;Alice&quot;<br>13941b48"]
+                    4 --> 6(["ASSERTION<br>3c3ca1f1"])
+                        6 -- pred --> 7[/"'note'<br>0fcd6a39"/]
+                        6 -- obj --> 8["&quot;A note&quot;<br>61c8e387"]
+                    4 --> 9(["ASSERTION<br>4012caf2"])
+                        9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
+                        9 -- obj --> 11["&quot;Carol&quot;<br>afb8122e"]
+                    4 --> 12(["ASSERTION<br>581d8efe"])
+                        12 -- pred --> 13[/"'isA'<br>2be2d79b"/]
+                        12 -- obj --> 14["&quot;Person&quot;<br>bd52917f"]
+                    4 --> 15(["ASSERTION<br>78d666eb"])
+                        15 -- pred --> 16["&quot;knows&quot;<br>db7dd21c"]
+                        15 -- obj --> 17["&quot;Bob&quot;<br>13b74194"]
+            2 --> 18(["ASSERTION<br>0fae512f"])
+                18 -- pred --> 19[/"'signed'<br>d0e39e78"/]
+                18 -- obj --> 20["Signature(Ed25519)<br>3f773744"]
+    0 --> 21(["ASSERTION<br>870420c4"])
+        21 -- pred --> 22[/"'signed'<br>d0e39e78"/]
+        21 -- obj --> 23["Signature(Ecdsa)<br>17f262bd"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:blue,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+style 6 stroke:green,stroke-width:4px
+style 7 stroke:goldenrod,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+style 12 stroke:green,stroke-width:4px
+style 13 stroke:goldenrod,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:green,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
+style 17 stroke:teal,stroke-width:4px
+style 18 stroke:green,stroke-width:4px
+style 19 stroke:goldenrod,stroke-width:4px
+style 20 stroke:teal,stroke-width:4px
+style 21 stroke:green,stroke-width:4px
+style 22 stroke:goldenrod,stroke-width:4px
+style 23 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke:blue,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke-width:2px
+linkStyle 6 stroke:cyan,stroke-width:2px
+linkStyle 7 stroke:magenta,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px
+linkStyle 11 stroke-width:2px
+linkStyle 12 stroke:cyan,stroke-width:2px
+linkStyle 13 stroke:magenta,stroke-width:2px
+linkStyle 14 stroke-width:2px
+linkStyle 15 stroke:cyan,stroke-width:2px
+linkStyle 16 stroke:magenta,stroke-width:2px
+linkStyle 17 stroke-width:2px
+linkStyle 18 stroke:cyan,stroke-width:2px
+linkStyle 19 stroke:magenta,stroke-width:2px
+linkStyle 20 stroke-width:2px
+linkStyle 21 stroke:cyan,stroke-width:2px
+linkStyle 22 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ed25519(node(leaf:text:Alice+4)) 1`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    'signed': Signature(Ed25519)
+]
+---
+00d5efa9 NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    0fae512f ASSERTION
+        d0e39e78 pred 'signed'
+        3f773744 obj Signature(Ed25519)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>00d5efa9"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>0fae512f"])
+        16 -- pred --> 17[/"'signed'<br>d0e39e78"/]
+        16 -- obj --> 18["Signature(Ed25519)<br>3f773744"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:goldenrod,stroke-width:4px
+style 18 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ed25519(node(leaf:text:Alice+4)) 2`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    'signed': {
+        Signature(Ed25519) [
+            'note': "Signed by B"
+        ]
+    } [
+        'signed': Signature(Ed25519)
+    ]
+]
+---
+5b339ca5 NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    341a5352 ASSERTION
+        d0e39e78 pred 'signed'
+        7d39ee35 obj NODE
+            5e21aa0d subj WRAPPED
+                f3c9a8ec cont NODE
+                    e80b1d3e subj Signature(Ed25519)
+                    c82c4be0 ASSERTION
+                        0fcd6a39 pred 'note'
+                        6dc84e99 obj "Signed by B"
+            358568ca ASSERTION
+                d0e39e78 pred 'signed'
+                de6c62d7 obj Signature(Ed25519)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>5b339ca5"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>341a5352"])
+        16 -- pred --> 17[/"'signed'<br>d0e39e78"/]
+        16 -- obj --> 18(("NODE<br>7d39ee35"))
+            18 -- subj --> 19[/"WRAPPED<br>5e21aa0d"\\]
+                19 -- cont --> 20(("NODE<br>f3c9a8ec"))
+                    20 -- subj --> 21["Signature(Ed25519)<br>e80b1d3e"]
+                    20 --> 22(["ASSERTION<br>c82c4be0"])
+                        22 -- pred --> 23[/"'note'<br>0fcd6a39"/]
+                        22 -- obj --> 24["&quot;Signed by B&quot;<br>6dc84e99"]
+            18 --> 25(["ASSERTION<br>358568ca"])
+                25 -- pred --> 26[/"'signed'<br>d0e39e78"/]
+                25 -- obj --> 27["Signature(Ed25519)<br>de6c62d7"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:goldenrod,stroke-width:4px
+style 18 stroke:red,stroke-width:4px
+style 19 stroke:blue,stroke-width:4px
+style 20 stroke:red,stroke-width:4px
+style 21 stroke:teal,stroke-width:4px
+style 22 stroke:green,stroke-width:4px
+style 23 stroke:goldenrod,stroke-width:4px
+style 24 stroke:teal,stroke-width:4px
+style 25 stroke:green,stroke-width:4px
+style 26 stroke:goldenrod,stroke-width:4px
+style 27 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px
+linkStyle 18 stroke:red,stroke-width:2px
+linkStyle 19 stroke:blue,stroke-width:2px
+linkStyle 20 stroke:red,stroke-width:2px
+linkStyle 21 stroke-width:2px
+linkStyle 22 stroke:cyan,stroke-width:2px
+linkStyle 23 stroke:magenta,stroke-width:2px
+linkStyle 24 stroke-width:2px
+linkStyle 25 stroke:cyan,stroke-width:2px
+linkStyle 26 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ed25519(wrap(node(leaf:text:Alice+4))) 1`] = `
+"{
+    {
+        "Alice" [
+            'isA': "Person"
+            "knows": "Bob"
+            "knows": "Carol"
+            'note': "A note"
+        ]
+    }
+} [
+    'signed': Signature(Ed25519)
+]
+---
+b52c8168 NODE
+    4120a476 subj WRAPPED
+        0511ba41 cont WRAPPED
+            ab2344e4 cont NODE
+                13941b48 subj "Alice"
+                3c3ca1f1 ASSERTION
+                    0fcd6a39 pred 'note'
+                    61c8e387 obj "A note"
+                4012caf2 ASSERTION
+                    db7dd21c pred "knows"
+                    afb8122e obj "Carol"
+                581d8efe ASSERTION
+                    2be2d79b pred 'isA'
+                    bd52917f obj "Person"
+                78d666eb ASSERTION
+                    db7dd21c pred "knows"
+                    13b74194 obj "Bob"
+    115bf1df ASSERTION
+        d0e39e78 pred 'signed'
+        35b3faf3 obj Signature(Ed25519)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>b52c8168"))
+    0 -- subj --> 1[/"WRAPPED<br>4120a476"\\]
+        1 -- cont --> 2[/"WRAPPED<br>0511ba41"\\]
+            2 -- cont --> 3(("NODE<br>ab2344e4"))
+                3 -- subj --> 4["&quot;Alice&quot;<br>13941b48"]
+                3 --> 5(["ASSERTION<br>3c3ca1f1"])
+                    5 -- pred --> 6[/"'note'<br>0fcd6a39"/]
+                    5 -- obj --> 7["&quot;A note&quot;<br>61c8e387"]
+                3 --> 8(["ASSERTION<br>4012caf2"])
+                    8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]
+                    8 -- obj --> 10["&quot;Carol&quot;<br>afb8122e"]
+                3 --> 11(["ASSERTION<br>581d8efe"])
+                    11 -- pred --> 12[/"'isA'<br>2be2d79b"/]
+                    11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]
+                3 --> 14(["ASSERTION<br>78d666eb"])
+                    14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
+                    14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
+    0 --> 17(["ASSERTION<br>115bf1df"])
+        17 -- pred --> 18[/"'signed'<br>d0e39e78"/]
+        17 -- obj --> 19["Signature(Ed25519)<br>35b3faf3"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:blue,stroke-width:4px
+style 3 stroke:red,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:goldenrod,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
+style 17 stroke:green,stroke-width:4px
+style 18 stroke:goldenrod,stroke-width:4px
+style 19 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:blue,stroke-width:2px
+linkStyle 3 stroke:red,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px
+linkStyle 16 stroke-width:2px
+linkStyle 17 stroke:cyan,stroke-width:2px
+linkStyle 18 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:schnorr(node(leaf:text:Alice+4)) 1`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    'signed': Signature
+]"
+`;
+
+exports[`golden: hand corpus > sskr:1/2of3(node(leaf:text:Alice+4)) 1`] = `
+"e62a6a84974e0b9c96ff7d478ed923c8e8cdbd520139769a1e7813a11d906e4b
+---
+ENCRYPTED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+    'sskrShare': SSKRShare
+]
+,,,
+6c1135205ed0d0ea08522f3f09da1b626539752ae9646d7d5ab00eb1f98007eb
+---
+ENCRYPTED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+    'sskrShare': SSKRShare
+]
+,,,
+e7cee49e5af86fa0abaf73a05035141f47cc3f6d8d9ee7a1d9e16cbc456981fb
+---
+ENCRYPTED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+    'sskrShare': SSKRShare
+]
+---
+JOIN-MISMATCH"
+`;
+
+exports[`golden: hand corpus > sskr:2/2of3,3of5(leaf:text:secret) 1`] = `
+"c49e0f458120d8a3d370dbda6a392f6946d2bedbda24088e0a5ff6961a0a25c2
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+,,,
+4c07a748dda6caeca296d785e2e7cfcc8eefcb2e0576cdd16111ee8768a09603
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+,,,
+01bcf892c7f04a321a09f8500dd6e4f7962ef835818b81c48cd69668e097c9e7
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+;;;
+d65f73687329f95f58dd653e79be443268cdd05e6304e9bcc662b2ea4b777810
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+,,,
+a55526e5800f0c1da88c664bb80a948d76dad7c7db87a144e8fc2bb2767bce42
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+,,,
+9dc2e788af46d60cc99174094bab87dec2978750a309c944f439014ad9f52e29
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+,,,
+181ba3b46549c8e2fae2e06dcda3e15fa5b5bea6024bc9f1c17996bd1bcb028a
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+,,,
+7395b89f6c450ea2ff9f6f4812eb03eaef9090a0cd1cd4b3e3cbaf376eceeb52
+---
+ENCRYPTED [
+    'sskrShare': SSKRShare
+]
+---
+joined"
+`;
+
+exports[`golden: hand corpus > type(leaf:text:x) 1`] = `
+""x" [
+    'isA': "Thing"
+]
+---
+eb9adf14 NODE
+    5e85370e subj "x"
+    c3ff2c97 ASSERTION
+        2be2d79b pred 'isA'
+        9bad2e1f obj "Thing"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>eb9adf14"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>c3ff2c97"])
+        2 -- pred --> 3[/"'isA'<br>2be2d79b"/]
+        2 -- obj --> 4["&quot;Thing&quot;<br>9bad2e1f"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > type(node(leaf:text:Alice+4)) 1`] = `
+""Alice" [
+    'isA': "Person"
+    'isA': 'isA'
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+]
+---
+71c7d63e NODE
+    13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+    ea61cef7 ASSERTION
+        2be2d79b pred 'isA'
+        2be2d79b obj 'isA'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>71c7d63e"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>78d666eb"])
+        11 -- pred --> 12["&quot;knows&quot;<br>db7dd21c"]
+        11 -- obj --> 13["&quot;Bob&quot;<br>13b74194"]
+    0 --> 14(["ASSERTION<br>ea61cef7"])
+        14 -- pred --> 15[/"'isA'<br>2be2d79b"/]
+        14 -- obj --> 16[/"'isA'<br>2be2d79b"/]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:goldenrod,stroke-width:4px
+style 16 stroke:goldenrod,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > wrap(node(leaf:text:Alice+1)) 1`] = `
+"{
+    "Alice" [
+        "knows": "Bob"
+    ]
+}
+---
+fd881a24 WRAPPED
+    8955db5e cont NODE
+        13941b48 subj "Alice"
+        78d666eb ASSERTION
+            db7dd21c pred "knows"
+            13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"WRAPPED<br>fd881a24"\\]
+    0 -- cont --> 1(("NODE<br>8955db5e"))
+        1 -- subj --> 2["&quot;Alice&quot;<br>13941b48"]
+        1 --> 3(["ASSERTION<br>78d666eb"])
+            3 -- pred --> 4["&quot;knows&quot;<br>db7dd21c"]
+            3 -- obj --> 5["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:blue,stroke-width:4px
+style 1 stroke:red,stroke-width:4px
+style 2 stroke:teal,stroke-width:4px
+style 3 stroke:green,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:blue,stroke-width:2px
+linkStyle 1 stroke:red,stroke-width:2px
+linkStyle 2 stroke-width:2px
+linkStyle 3 stroke:cyan,stroke-width:2px
+linkStyle 4 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > wrap(wrap(leaf:text:x)) 1`] = `
+"{
+    {
+        "x"
+    }
+}
+---
+06bb2465 WRAPPED
+    70b5f17d cont WRAPPED
+        5e85370e cont "x"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"WRAPPED<br>06bb2465"\\]
+    0 -- cont --> 1[/"WRAPPED<br>70b5f17d"\\]
+        1 -- cont --> 2["&quot;x&quot;<br>5e85370e"]
+style 0 stroke:blue,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:blue,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px"
+`;
