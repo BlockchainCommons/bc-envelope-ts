@@ -347,9 +347,9 @@ fn run(recipe: &J) -> Result<String, String> {
 ///     outputs differ, everything else matches.
 /// D2  the TypeScript registry names codepoints the reference's format context
 ///     does not (e.g. 706 'Self'): `'Name'` vs `'706'` in the format strings.
-/// D3  summaries truncate by characters in TypeScript and by bytes in the
-///     reference, so a non-ASCII text leaf may be cut differently.
 /// E1  both reject, different error taxonomies.
+/// (D3 — summary truncation and diagnostic line breaking by UTF-8 bytes — is
+/// resolved since bc-envelope-ts / dcbor 1.0.0-beta.2; no rule remains.)
 fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -> Option<&'static str> {
     // E1: both reject and the port reports a foreign class (dcbor's `CborError`, a UR error) or the
     // reference's dcbor / components wrapper: a message-level difference with no code to compare.
@@ -369,11 +369,6 @@ fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -
         }
         if byte_level.contains(o) && text.contains("\"compress\"") {
             classes.push("D1");
-        } else if g.contains('\u{2026}') && !w.is_ascii() && !w.contains('\u{2026}') {
-            classes.push("D3");
-        } else if *o == "diagnostic" && !w.is_ascii() && g.split_whitespace().collect::<String>() == w.split_whitespace().collect::<String>() {
-            // the diagnostic line-breaking threshold counts bytes in the reference
-            classes.push("D3");
         } else if g.contains('\'') && w.contains('\'') && !g.is_empty() {
             // D2: exactly the two constants the reference declares but never registers
             // (`VALUE` 25, `SELF` 706 — known-values D4): TypeScript prints their names,
@@ -398,7 +393,6 @@ fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -
     Some(match classes.as_slice() {
         ["D1"] => "D1",
         ["D2"] => "D2",
-        ["D3"] => "D3",
         _ => "mixed",
     })
 }

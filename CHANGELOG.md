@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **Diagnostic notation breaks lines by UTF-8 bytes** through dcbor
+  1.0.0-beta.2, to which `diagnostic` delegates: a group holding a
+  non-ASCII string of more than 20 bytes — `201("unicode ✓ ☺ 日本")` —
+  breaks over several lines exactly as the reference prints it. No envelope
+  code changed: the `leaf:text:unicode` golden vector is regenerated, the
+  harness rule that allowed the old shape is gone (differential tombstone
+  T14), and the package now requires `@blockchaincommons/dcbor`
+  1.0.0-beta.2 for its tests to pass. ASCII output is unchanged.
+
 ## 1.0.0-beta.2 - 2026-09-12
 
 The review against `bc-envelope-rust` 0.43.0 corrected text summaries and

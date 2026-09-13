@@ -22,8 +22,8 @@ pins `bc-envelope = 0.43.0` and replays `tests/vectors/vectors.json` through
 the reference, building each recipe with the reference's own API and
 comparing the outputs — and, for rejections, the **error codes** (a thrown
 reference variant is reported in SCREAMING_SNAKE_CASE, which is what the
-port's `EnvelopeError.code` spells). The current run: **213 vectors — 185
-match, 13 expected divergences (D1 2, D2 1, D3 1, E1 9), 15 JS-only, 0
+port's `EnvelopeError.code` spells). The current run: **213 vectors — 186
+match, 12 expected divergences (D1 2, D2 1, E1 9), 15 JS-only, 0
 mismatches.**
 
 ## 1. True behavioral divergences
@@ -44,18 +44,6 @@ constants — `VALUE` (25) and `SELF` (706) are missing from its list
 and `'706'` there. Every codepoint both know prints identically; the
 harness allows exactly these two names and nothing else.
 
-### D3. Diagnostic line breaking counts bytes in the reference (1 vector)
-
-dcbor's diagnostic notation breaks a group over several lines when its
-strings exceed 20 **bytes** in the reference (`dcbor-rust diag.rs`,
-`total_strings_len` sums `str::len()`) and 20 **UTF-16 units** here
-(`dcbor-ts diag.ts`, `.length`), so `"unicode ✓ ☺ 日本"` (14 characters,
-22 bytes) prints `201("…")` on one line here and over three lines there.
-That is the dcbor package's item; the envelope only passes the value
-through. (The summary half of this vector — the reference decides
-truncation by UTF-8 length and cuts by characters — matches since
-1.0.0-beta.2, see *Resolved*.) ASCII text is identical.
-
 ### D4. Renderings the port keeps (not vectored)
 
 - Error *messages* mirror the reference's wording except one typo:
@@ -69,8 +57,8 @@ truncation by UTF-8 length and cuts by characters — matches since
 ### Resolved
 
 Validating against the reference closed these; the pinned vectors and the
-frozen baseline (`tests/differential.test.ts`, tombstones T5–T10, T12 and
-T13) record each flip:
+frozen baseline (`tests/differential.test.ts`, tombstones T5–T10 and
+T12–T14) record each flip:
 
 - **Text summaries** (1.0.0-beta.2) truncate as the reference does: the
   UTF-8 byte length decides (`string.len() > max_length`), the cut keeps
@@ -79,6 +67,15 @@ T13) record each flip:
   `"unicode ✓ ☺ 日本"` is `"unicode ✓ ☺ 日本…"` on both sides, and the
   mermaid label (`summary(20)`) matches. The port counted UTF-16 units for
   both steps.
+- **Diagnostic line breaking** (D3; dcbor 1.0.0-beta.2): dcbor's
+  diagnostic notation breaks a group over several lines when its strings
+  exceed 20 **bytes** (`diag.rs`, `total_strings_len` sums `str::len()`);
+  the port counted UTF-16 units, so `"unicode ✓ ☺ 日本"` (14 characters,
+  22 bytes) printed `201("…")` on one line here and over three lines there.
+  The envelope only passes the value through (`diagnostic` delegates to
+  `@blockchaincommons/dcbor/diagnostic`); with dcbor 1.0.0-beta.2 the
+  `leaf:text:unicode` vector matches and the harness rule is gone
+  (tombstone T14). ASCII text was always identical.
 - **Debug renderings** (1.0.0-beta.2): `Function.toString()` /
   `Parameter.toString()` print the reference's `Display` — the name or the
   number, the name in quotes for a named one (`add`, `99`, `"greet"`) — not

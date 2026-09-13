@@ -143,6 +143,18 @@ const TOMBSTONES: {
     matches: (_r, a, b) =>
       a !== b && stripTagNames(a).replace(/…/g, "") === stripTagNames(b).replace(/…/g, ""),
   },
+  {
+    // dcbor 1.0.0-beta.2 (envelope review D3, diagnostic half): the
+    // diagnostic line-breaking threshold counts UTF-8 bytes as the
+    // reference's `diag.rs` does, so a group holding a non-ASCII string of
+    // more than 20 bytes breaks over several lines where the baseline
+    // (UTF-16 units) kept it on one. Only whitespace differs — beyond the
+    // T13 differences the same non-ASCII leaf also shows.
+    id: "T14-diagnostic-bytes",
+    landed: true,
+    matches: (_r, a, b) =>
+      a !== b && /[\u0080-\uffff]/.test(b) && stripDifferences(a) === stripDifferences(b),
+  },
 ];
 
 const DATE = /\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ/;
@@ -150,6 +162,10 @@ const DATE_G = /\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ/g;
 
 /** `# tag(200) envelope` → `# tag(200)` on every annotated-hex line. */
 const stripTagNames = (s: string): string => s.replace(/# tag\((\d+)\)[^\n]*/g, "# tag($1)");
+
+/** T13's differences (tag names, ellipses) and T14's (whitespace) removed. */
+const stripDifferences = (s: string): string =>
+  stripTagNames(s).replace(/…/g, "").replace(/\s+/g, "");
 
 const baseline = baselineAdapterFor(baselineMod, await baselineDeps());
 const current = redesignedAdapterFor(src, await currentDeps());

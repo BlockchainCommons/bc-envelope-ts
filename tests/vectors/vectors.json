@@ -129,7 +129,7 @@
      "summary"
     ]
    },
-   "expect": "d8c8d8c976756e69636f646520e29c9320e298ba20e697a5e69cac\n---\nur:envelope/tpsokokpjtiniajlieihcxvonsmucxvomkrdcxvamsonvanspssftkhetk\n---\n8d1403ea22a9c0c711a2a0bd5456968f79efad8f7f7858b486fe60edf4d6d3ba\n---\n\"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;unicode ✓ ☺ 日本…&quot;<br>8d1403ea\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\"unicode ✓ ☺ 日本\")\n)\n---\nd8 c8                                   # tag(200) envelope\n    d8 c9                               # tag(201) leaf\n        76                              # text(22)\n            756e69636f646520e29c9320e298ba20e697a5e69cac # \"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\""
+   "expect": "d8c8d8c976756e69636f646520e29c9320e298ba20e697a5e69cac\n---\nur:envelope/tpsokokpjtiniajlieihcxvonsmucxvomkrdcxvamsonvanspssftkhetk\n---\n8d1403ea22a9c0c711a2a0bd5456968f79efad8f7f7858b486fe60edf4d6d3ba\n---\n\"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;unicode ✓ ☺ 日本…&quot;<br>8d1403ea\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\n        \"unicode ✓ ☺ 日本\"\n    )\n)\n---\nd8 c8                                   # tag(200) envelope\n    d8 c9                               # tag(201) leaf\n        76                              # text(22)\n            756e69636f646520e29c9320e298ba20e697a5e69cac # \"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\""
   },
   {
    "name": "leaf:int:0",
