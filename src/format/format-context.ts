@@ -214,11 +214,13 @@ const setupKnownValueSummarizer = (context: FormatContext): void => {
   const knownValues = context.knownValues;
   const tags = context.tags;
 
-  // Known value summarizer - formats known values with single quotes
+  // Known value summarizer - formats known values with single quotes. A
+  // summarizer receives the *content* of tag 40000 (the bare integer), so
+  // this is the untagged decoder — the reference's
+  // `KnownValue::from_untagged_cbor` in `format_context.rs`.
   const summarizer: CborSummarizer = (cbor, _flat) => {
     try {
-      // Try to extract the known value from the CBOR
-      const kv = KnownValue.fromCbor(cbor);
+      const kv = KnownValue.fromUntaggedCbor(cbor);
       const name = knownValues.nameOf(kv);
       return { ok: true, value: `'${name}'` };
     } catch {

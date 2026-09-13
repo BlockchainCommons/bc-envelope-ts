@@ -30,6 +30,16 @@ const flankedBy = (s: string, prefix: string, suffix: string): string => {
   return `${prefix}${s}${suffix}`;
 };
 
+/** The UTF-8 length of `text` (Rust's `str::len()`), without encoding it. */
+const utf8Length = (text: string): number => {
+  let n = 0;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0) ?? 0;
+    n += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+  }
+  return n;
+};
+
 /** Generate an envelope summary for a CBOR value. */
 export const cborEnvelopeSummary = (
   cbor: Cbor,
@@ -50,8 +60,13 @@ export const cborEnvelopeSummary = (
   // Handle text strings
   if (isText(cbor)) {
     let text = asText(cbor) ?? "";
-    if (text.length > maxLength) {
-      text = `${text.substring(0, maxLength)}…`;
+    // The reference's rule (`envelope_summary.rs`): the UTF-8 byte length
+    // decides whether to truncate (`string.len() > max_length`), the cut
+    // keeps the first `max_length` *characters* (`chars().take(max_length)`)
+    // — so a non-ASCII text can gain an ellipsis without losing a character.
+    // Matched exactly: byte length via a code-point walk, cut by code point.
+    if (utf8Length(text) > maxLength) {
+      text = `${[...text].slice(0, maxLength).join("")}…`;
     }
     // Replace newlines with escaped version
     text = text.replace(/\n/g, "\\n");

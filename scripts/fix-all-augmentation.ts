@@ -10,7 +10,14 @@ import { readFileSync, writeFileSync } from "node:fs";
 for (const ext of ["mts", "cts"]) {
   const file = `dist/all.d.${ext}`;
   const text = readFileSync(file, "utf8");
-  if (!text.includes('declare module "./base/envelope.js"')) throw new Error(`${file}: augmentation not found`);
-  writeFileSync(file, text.replace('declare module "./base/envelope.js"', 'declare module "@blockchaincommons/envelope"'));
+  if (!text.includes('declare module "./base/envelope.js"'))
+    throw new Error(`${file}: augmentation not found`);
+  writeFileSync(
+    file,
+    text.replace(
+      'declare module "./base/envelope.js"',
+      'declare module "@blockchaincommons/envelope"',
+    ),
+  );
   console.log(`${file}: augmentation -> @blockchaincommons/envelope`);
 }

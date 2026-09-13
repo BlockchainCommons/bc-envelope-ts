@@ -20,3 +20,7 @@ an accidental rebuild cannot turn the differential into a self-comparison.
 
 Baseline commit: b7d92c8ae0fb7966fb05788309c10bf1fe7bd15f
 Baseline sha256: d5347de6e6cec9b04d3d6344f7d43b1767047bfe9e5ef9b3046a600d5958543a
+
+Rebuilding requires historical source and matching dependency revisions.
+Run `bun scripts/build-baseline.ts` in that environment; the current source
+would replace the independent compatibility reference.

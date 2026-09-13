@@ -167,9 +167,14 @@ fn build_env(e: &J) -> Result<Envelope, String> {
         "salt" => {
             let env = sub("e")?;
             let mut rng = seeded(&e["rng"]);
-            match e.get("len").and_then(|l| l.as_u64()) {
-                Some(len) => env.add_salt_with_len_using(len as usize, &mut rng).map_err(|x| format!("{x:?}")),
-                None => Ok(env.add_salt_using(&mut rng)),
+            if let Some(range) = e.get("range").and_then(|r| r.as_array()) {
+                let (min, max) = (range[0].as_u64().unwrap() as usize, range[1].as_u64().unwrap() as usize);
+                env.add_salt_in_range_using(&(min..=max), &mut rng).map_err(|x| format!("{x:?}"))
+            } else {
+                match e.get("len").and_then(|l| l.as_u64()) {
+                    Some(len) => env.add_salt_with_len_using(len as usize, &mut rng).map_err(|x| format!("{x:?}")),
+                    None => Ok(env.add_salt_using(&mut rng)),
+                }
             }
         }
         "attach" => {
@@ -370,9 +375,10 @@ fn expected_divergence(recipe: &J, got: &[&str], want: &[&str], outs: &[&str]) -
             // the diagnostic line-breaking threshold counts bytes in the reference
             classes.push("D3");
         } else if g.contains('\'') && w.contains('\'') && !g.is_empty() {
-            // a known value the TypeScript registry names and the reference does not
-            let strip = |s: &str| s.replace(|c: char| c.is_ascii_digit() || c.is_alphabetic(), "");
-            if strip(g) == strip(w) {
+            // D2: exactly the two constants the reference declares but never registers
+            // (`VALUE` 25, `SELF` 706 — known-values D4): TypeScript prints their names,
+            // the reference their codepoints. Any other name difference is a mismatch.
+            if w.replace("'value'", "'25'").replace("'Self'", "'706'") == *g {
                 classes.push("D2");
             } else {
                 if std::env::var("DEBUG_CLASS").is_ok() {

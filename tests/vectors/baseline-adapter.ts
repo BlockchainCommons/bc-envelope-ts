@@ -116,6 +116,7 @@ export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "salt": {
         const env = build(e.e);
         const rng = deps.seededRng(e.rng);
+        if (e.range !== undefined) throw new Error("baseline: no seeded addSaltInRange");
         return e.len === undefined ? env.addSaltUsing(rng) : env.addSaltWithLenUsing(e.len, rng);
       }
       case "sskr": {

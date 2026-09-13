@@ -1,5 +1,5 @@
 {
- "count": 207,
+ "count": 213,
  "vectors": [
   {
    "name": "leaf:text:Hello.",
@@ -129,7 +129,7 @@
      "summary"
     ]
    },
-   "expect": "d8c8d8c976756e69636f646520e29c9320e298ba20e697a5e69cac\n---\nur:envelope/tpsokokpjtiniajlieihcxvonsmucxvomkrdcxvamsonvanspssftkhetk\n---\n8d1403ea22a9c0c711a2a0bd5456968f79efad8f7f7858b486fe60edf4d6d3ba\n---\n\"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;unicode ✓ ☺ 日本&quot;<br>8d1403ea\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\"unicode ✓ ☺ 日本\")\n)\n---\nd8 c8                                   # tag(200) envelope\n    d8 c9                               # tag(201) leaf\n        76                              # text(22)\n            756e69636f646520e29c9320e298ba20e697a5e69cac # \"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\""
+   "expect": "d8c8d8c976756e69636f646520e29c9320e298ba20e697a5e69cac\n---\nur:envelope/tpsokokpjtiniajlieihcxvonsmucxvomkrdcxvamsonvanspssftkhetk\n---\n8d1403ea22a9c0c711a2a0bd5456968f79efad8f7f7858b486fe60edf4d6d3ba\n---\n\"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n8d1403ea \"unicode ✓ ☺ 日本\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;unicode ✓ ☺ 日本…&quot;<br>8d1403ea\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\"unicode ✓ ☺ 日本\")\n)\n---\nd8 c8                                   # tag(200) envelope\n    d8 c9                               # tag(201) leaf\n        76                              # text(22)\n            756e69636f646520e29c9320e298ba20e697a5e69cac # \"unicode ✓ ☺ 日本\"\n---\n\"unicode ✓ ☺ 日本\""
   },
   {
    "name": "leaf:int:0",
@@ -3249,7 +3249,7 @@
    "expect": "d8c886d8c965416c696365a104d8c96641206e6f7465a1d8c9656b6e6f7773d8c9654361726f6ca101d8c966506572736f6ea1d8c9656b6e6f7773d8c963426f62a10fd8c9d99c5248b559bbbf6cce2632\n---\nur:envelope/lntpsoihfpjziniaihoyaatpsoiyfpcxjtjljyihoytpsoihjejtjlktjktpsoihfxhsjpjljzoyadtpsoiygdihjpjkjljtoytpsoihjejtjlktjktpsoiafwjlidoybstpsotansgmfdrehkrkrsjztodseypmrfchhh\n---\n03810d169df46f0f377ebde7d110537ca99b5797239d74bedd3c7f895ecdd9da\n---\n\"Alice\" [\n    'isA': \"Person\"\n    \"knows\": \"Bob\"\n    \"knows\": \"Carol\"\n    'note': \"A note\"\n    'salt': Salt\n]\n---\n\"Alice\" [ 'isA': \"Person\", \"knows\": \"Bob\", \"knows\": \"Carol\", 'note': \"A note\", 'salt': Salt ]\n---\n03810d16 NODE\n    13941b48 subj \"Alice\"\n    3c3ca1f1 ASSERTION\n        0fcd6a39 pred 'note'\n        61c8e387 obj \"A note\"\n    4012caf2 ASSERTION\n        db7dd21c pred \"knows\"\n        afb8122e obj \"Carol\"\n    581d8efe ASSERTION\n        2be2d79b pred 'isA'\n        bd52917f obj \"Person\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n    dd412f1d ASSERTION\n        618975ce pred 'salt'\n        7915f200 obj Salt\n---\n03810d16 NODE\n    13941b48 subj \"Alice\"\n    3c3ca1f1 ASSERTION\n        0fcd6a39 pred 'note'\n        61c8e387 obj \"A note\"\n    4012caf2 ASSERTION\n        db7dd21c pred \"knows\"\n        afb8122e obj \"Carol\"\n    581d8efe ASSERTION\n        2be2d79b pred 'isA'\n        bd52917f obj \"Person\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n    dd412f1d ASSERTION\n        618975ce pred 'salt'\n        7915f200 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>03810d16\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>3c3ca1f1\"])\n        2 -- pred --> 3[/\"'note'<br>0fcd6a39\"/]\n        2 -- obj --> 4[\"&quot;A note&quot;<br>61c8e387\"]\n    0 --> 5([\"ASSERTION<br>4012caf2\"])\n        5 -- pred --> 6[\"&quot;knows&quot;<br>db7dd21c\"]\n        5 -- obj --> 7[\"&quot;Carol&quot;<br>afb8122e\"]\n    0 --> 8([\"ASSERTION<br>581d8efe\"])\n        8 -- pred --> 9[/\"'isA'<br>2be2d79b\"/]\n        8 -- obj --> 10[\"&quot;Person&quot;<br>bd52917f\"]\n    0 --> 11([\"ASSERTION<br>78d666eb\"])\n        11 -- pred --> 12[\"&quot;knows&quot;<br>db7dd21c\"]\n        11 -- obj --> 13[\"&quot;Bob&quot;<br>13b74194\"]\n    0 --> 14([\"ASSERTION<br>dd412f1d\"])\n        14 -- pred --> 15[/\"'salt'<br>618975ce\"/]\n        14 -- obj --> 16[\"Salt<br>7915f200\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:teal,stroke-width:4px\nstyle 8 stroke:green,stroke-width:4px\nstyle 9 stroke:goldenrod,stroke-width:4px\nstyle 10 stroke:teal,stroke-width:4px\nstyle 11 stroke:green,stroke-width:4px\nstyle 12 stroke:teal,stroke-width:4px\nstyle 13 stroke:teal,stroke-width:4px\nstyle 14 stroke:green,stroke-width:4px\nstyle 15 stroke:goldenrod,stroke-width:4px\nstyle 16 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\nlinkStyle 7 stroke-width:2px\nlinkStyle 8 stroke:cyan,stroke-width:2px\nlinkStyle 9 stroke:magenta,stroke-width:2px\nlinkStyle 10 stroke-width:2px\nlinkStyle 11 stroke:cyan,stroke-width:2px\nlinkStyle 12 stroke:magenta,stroke-width:2px\nlinkStyle 13 stroke-width:2px\nlinkStyle 14 stroke:cyan,stroke-width:2px\nlinkStyle 15 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            4:\n            201(\"A note\")\n        },\n        {\n            201(\"knows\"):\n            201(\"Carol\")\n        },\n        {\n            1:\n            201(\"Person\")\n        },\n        {\n            201(\"knows\"):\n            201(\"Bob\")\n        },\n        {\n            15:\n            201(\n                40018(h'b559bbbf6cce2632')\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    86                                  # array(6)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            04                          # unsigned(4)\n            d8 c9                       # tag(201) leaf\n                66                      # text(6)\n                    41206e6f7465        # \"A note\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    4361726f6c          # \"Carol\"\n        a1                              # map(1)\n            01                          # unsigned(1)\n            d8 c9                       # tag(201) leaf\n                66                      # text(6)\n                    506572736f6e        # \"Person\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    426f62              # \"Bob\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    48                  # bytes(8)\n                        b559bbbf6cce2632\n---\nNODE"
   },
   {
-   "name": "salt(leaf:text:x)",
+   "name": "salt:16(leaf:text:x)",
    "recipe": {
     "e": {
      "k": "salt",
@@ -3285,7 +3285,7 @@
    "expect": "d8c882d8c96178a10fd8c9d99c5250808000800020a0a0a088bc0eefdbce00\n---\nur:envelope/lftpsohsksoybstpsotansgmgdlalaaelaaecxnbnbnblorfbawsuytoaekgroqddi\n---\nf5fca1226b3ff0c8edaf96fd11ca83eb964afc1c093a431f5451ac8c9dbe9905\n---\n\"x\" [\n    'salt': Salt\n]\n---\n\"x\" [ 'salt': Salt ]\n---\nf5fca122 NODE\n    5e85370e subj \"x\"\n    9e15c9cb ASSERTION\n        618975ce pred 'salt'\n        8c4283c2 obj Salt\n---\nf5fca122 NODE\n    5e85370e subj \"x\"\n    9e15c9cb ASSERTION\n        618975ce pred 'salt'\n        8c4283c2 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>f5fca122\"))\n    0 -- subj --> 1[\"&quot;x&quot;<br>5e85370e\"]\n    0 --> 2([\"ASSERTION<br>9e15c9cb\"])\n        2 -- pred --> 3[/\"'salt'<br>618975ce\"/]\n        2 -- obj --> 4[\"Salt<br>8c4283c2\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"x\"),\n        {\n            15:\n            201(\n                40018(\n                    h'808000800020a0a0a088bc0eefdbce00'\n                )\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    82                                  # array(2)\n        d8 c9                           # tag(201) leaf\n            61                          # text(1)\n                78                      # \"x\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    50                  # bytes(16)\n                        808000800020a0a0a088bc0eefdbce00\n---\nNODE"
   },
   {
-   "name": "salt(node(leaf:text:Alice+1))",
+   "name": "salt:8(node(leaf:text:Alice+1))",
    "recipe": {
     "e": {
      "k": "salt",
@@ -3340,6 +3340,540 @@
     ]
    },
    "expect": "d8c883d8c965416c696365a10fd8c9d99c52487eb559bbbf6cce26a1d8c9656b6e6f7773d8c963426f62\n---\nur:envelope/lstpsoihfpjziniaihoybstpsotansgmfdkbrehkrkrsjztodsoytpsoihjejtjlktjktpsoiafwjlidbnnlcwot\n---\n4368cf067d47be46550f795a7549145fee8e21ebc9097213141da416a178e3f1\n---\n\"Alice\" [\n    \"knows\": \"Bob\"\n    'salt': Salt\n]\n---\n\"Alice\" [ \"knows\": \"Bob\", 'salt': Salt ]\n---\n4368cf06 NODE\n    13941b48 subj \"Alice\"\n    51912233 ASSERTION\n        618975ce pred 'salt'\n        ac8bac43 obj Salt\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n4368cf06 NODE\n    13941b48 subj \"Alice\"\n    51912233 ASSERTION\n        618975ce pred 'salt'\n        ac8bac43 obj Salt\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>4368cf06\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>51912233\"])\n        2 -- pred --> 3[/\"'salt'<br>618975ce\"/]\n        2 -- obj --> 4[\"Salt<br>ac8bac43\"]\n    0 --> 5([\"ASSERTION<br>78d666eb\"])\n        5 -- pred --> 6[\"&quot;knows&quot;<br>db7dd21c\"]\n        5 -- obj --> 7[\"&quot;Bob&quot;<br>13b74194\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            15:\n            201(\n                40018(h'7eb559bbbf6cce26')\n            )\n        },\n        {\n            201(\"knows\"):\n            201(\"Bob\")\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    83                                  # array(3)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    48                  # bytes(8)\n                        7eb559bbbf6cce26\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    426f62              # \"Bob\"\n---\nNODE"
+  },
+  {
+   "name": "salt(node(leaf:text:Alice+2))",
+   "recipe": {
+    "e": {
+     "k": "salt",
+     "e": {
+      "k": "node",
+      "subject": {
+       "k": "leaf",
+       "v": {
+        "t": "text",
+        "v": "Alice"
+       }
+      },
+      "assertions": [
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "node",
+         "subject": {
+          "k": "leaf",
+          "v": {
+           "t": "text",
+           "v": "Bob"
+          }
+         },
+         "assertions": [
+          [
+           {
+            "k": "leaf",
+            "v": {
+             "t": "text",
+             "v": "knows"
+            }
+           },
+           {
+            "k": "leaf",
+            "v": {
+             "t": "text",
+             "v": "Carol"
+            }
+           }
+          ]
+         ]
+        }
+       ],
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "age"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "int",
+          "v": "30"
+         }
+        }
+       ]
+      ]
+     },
+     "rng": [
+      "17295166580085024720",
+      "422929670265678780",
+      "5577237070365765850",
+      "7953171132032326923"
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c884d8c965416c696365a1d8c963616765d8c9181ea1d8c9656b6e6f777382d8c963426f62a1d8c9656b6e6f7773d8c9654361726f6ca10fd8c9d99c5248b559bbbf6cce2632\n---\nur:envelope/lrtpsoihfpjziniaihoytpsoiahsioihtpsocsckoytpsoihjejtjlktjklftpsoiafwjlidoytpsoihjejtjlktjktpsoihfxhsjpjljzoybstpsotansgmfdrehkrkrsjztodseyzontwydt\n---\n0b96a0cfda81fc542a73a191c1d204232b7c7557255d904767c65043a3e25559\n---\n\"Alice\" [\n    \"age\": 30\n    \"knows\": \"Bob\" [\n        \"knows\": \"Carol\"\n    ]\n    'salt': Salt\n]\n---\n\"Alice\" [ \"age\": 30, \"knows\": \"Bob\" [ \"knows\": \"Carol\" ], 'salt': Salt ]\n---\n0b96a0cf NODE\n    13941b48 subj \"Alice\"\n    0eb5609b ASSERTION\n        5943be12 pred \"age\"\n        cf972730 obj 30\n    970da8b3 ASSERTION\n        db7dd21c pred \"knows\"\n        15ec830a obj NODE\n            13b74194 subj \"Bob\"\n            4012caf2 ASSERTION\n                db7dd21c pred \"knows\"\n                afb8122e obj \"Carol\"\n    dd412f1d ASSERTION\n        618975ce pred 'salt'\n        7915f200 obj Salt\n---\n0b96a0cf NODE\n    13941b48 subj \"Alice\"\n    0eb5609b ASSERTION\n        5943be12 pred \"age\"\n        cf972730 obj 30\n    970da8b3 ASSERTION\n        db7dd21c pred \"knows\"\n        15ec830a obj NODE\n            13b74194 subj \"Bob\"\n            4012caf2 ASSERTION\n                db7dd21c pred \"knows\"\n                afb8122e obj \"Carol\"\n    dd412f1d ASSERTION\n        618975ce pred 'salt'\n        7915f200 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>0b96a0cf\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>0eb5609b\"])\n        2 -- pred --> 3[\"&quot;age&quot;<br>5943be12\"]\n        2 -- obj --> 4[\"30<br>cf972730\"]\n    0 --> 5([\"ASSERTION<br>970da8b3\"])\n        5 -- pred --> 6[\"&quot;knows&quot;<br>db7dd21c\"]\n        5 -- obj --> 7((\"NODE<br>15ec830a\"))\n            7 -- subj --> 8[\"&quot;Bob&quot;<br>13b74194\"]\n            7 --> 9([\"ASSERTION<br>4012caf2\"])\n                9 -- pred --> 10[\"&quot;knows&quot;<br>db7dd21c\"]\n                9 -- obj --> 11[\"&quot;Carol&quot;<br>afb8122e\"]\n    0 --> 12([\"ASSERTION<br>dd412f1d\"])\n        12 -- pred --> 13[/\"'salt'<br>618975ce\"/]\n        12 -- obj --> 14[\"Salt<br>7915f200\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:red,stroke-width:4px\nstyle 8 stroke:teal,stroke-width:4px\nstyle 9 stroke:green,stroke-width:4px\nstyle 10 stroke:teal,stroke-width:4px\nstyle 11 stroke:teal,stroke-width:4px\nstyle 12 stroke:green,stroke-width:4px\nstyle 13 stroke:goldenrod,stroke-width:4px\nstyle 14 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\nlinkStyle 7 stroke:red,stroke-width:2px\nlinkStyle 8 stroke-width:2px\nlinkStyle 9 stroke:cyan,stroke-width:2px\nlinkStyle 10 stroke:magenta,stroke-width:2px\nlinkStyle 11 stroke-width:2px\nlinkStyle 12 stroke:cyan,stroke-width:2px\nlinkStyle 13 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            201(\"age\"):\n            201(30)\n        },\n        {\n            201(\"knows\"):\n            [\n                201(\"Bob\"),\n                {\n                    201(\"knows\"):\n                    201(\"Carol\")\n                }\n            ]\n        },\n        {\n            15:\n            201(\n                40018(h'b559bbbf6cce2632')\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    84                                  # array(4)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    616765              # \"age\"\n            d8 c9                       # tag(201) leaf\n                181e                    # unsigned(30)\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            82                          # array(2)\n                d8 c9                   # tag(201) leaf\n                    63                  # text(3)\n                        426f62          # \"Bob\"\n                a1                      # map(1)\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            6b6e6f7773  # \"knows\"\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            4361726f6c  # \"Carol\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    48                  # bytes(8)\n                        b559bbbf6cce2632\n---\nNODE"
+  },
+  {
+   "name": "salt(node(wrap(node(leaf:text:Alice+4))+1))",
+   "recipe": {
+    "e": {
+     "k": "salt",
+     "e": {
+      "k": "node",
+      "subject": {
+       "k": "wrap",
+       "e": {
+        "k": "node",
+        "subject": {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Alice"
+         }
+        },
+        "assertions": [
+         [
+          {
+           "k": "leaf",
+           "v": {
+            "t": "text",
+            "v": "knows"
+           }
+          },
+          {
+           "k": "leaf",
+           "v": {
+            "t": "text",
+            "v": "Bob"
+           }
+          }
+         ],
+         [
+          {
+           "k": "leaf",
+           "v": {
+            "t": "text",
+            "v": "knows"
+           }
+          },
+          {
+           "k": "leaf",
+           "v": {
+            "t": "text",
+            "v": "Carol"
+           }
+          }
+         ],
+         [
+          {
+           "k": "kv",
+           "v": 1
+          },
+          {
+           "k": "leaf",
+           "v": {
+            "t": "text",
+            "v": "Person"
+           }
+          }
+         ],
+         [
+          {
+           "k": "kv",
+           "v": 4
+          },
+          {
+           "k": "leaf",
+           "v": {
+            "t": "text",
+            "v": "A note"
+           }
+          }
+         ]
+        ]
+       }
+      },
+      "assertions": [
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "meta"
+         }
+        },
+        {
+         "k": "node",
+         "subject": {
+          "k": "leaf",
+          "v": {
+           "t": "int",
+           "v": "1"
+          }
+         },
+         "assertions": [
+          [
+           {
+            "k": "leaf",
+            "v": {
+             "t": "int",
+             "v": "2"
+            }
+           },
+           {
+            "k": "leaf",
+            "v": {
+             "t": "int",
+             "v": "3"
+            }
+           }
+          ]
+         ]
+        }
+       ]
+      ]
+     },
+     "rng": [
+      "1",
+      "1",
+      "1",
+      "1"
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c883d8c885d8c965416c696365a104d8c96641206e6f7465a1d8c9656b6e6f7773d8c9654361726f6ca101d8c966506572736f6ea1d8c9656b6e6f7773d8c963426f62a1d8c9646d65746182d8c901a1d8c902d8c903a10fd8c9d99c52488000800020a0a0a0\n---\nur:envelope/lstpsplptpsoihfpjziniaihoyaatpsoiyfpcxjtjljyihoytpsoihjejtjlktjktpsoihfxhsjpjljzoyadtpsoiygdihjpjkjljtoytpsoihjejtjlktjktpsoiafwjlidoytpsoiejnihjyhslftpsoadoytpsoaotpsoaxoybstpsotansgmfdlaaelaaecxnbnbnbsradntih\n---\n959c860968fb45d36af11efcdd83f2db93cf029e000a37e811eb546cfbd838db\n---\n{\n    \"Alice\" [\n        'isA': \"Person\"\n        \"knows\": \"Bob\"\n        \"knows\": \"Carol\"\n        'note': \"A note\"\n    ]\n} [\n    \"meta\": 1 [\n        2: 3\n    ]\n    'salt': Salt\n]\n---\n{ \"Alice\" [ 'isA': \"Person\", \"knows\": \"Bob\", \"knows\": \"Carol\", 'note': \"A note\" ] } [ \"meta\": 1 [ 2: 3 ], 'salt': Salt ]\n---\n959c8609 NODE\n    0511ba41 subj WRAPPED\n        ab2344e4 cont NODE\n            13941b48 subj \"Alice\"\n            3c3ca1f1 ASSERTION\n                0fcd6a39 pred 'note'\n                61c8e387 obj \"A note\"\n            4012caf2 ASSERTION\n                db7dd21c pred \"knows\"\n                afb8122e obj \"Carol\"\n            581d8efe ASSERTION\n                2be2d79b pred 'isA'\n                bd52917f obj \"Person\"\n            78d666eb ASSERTION\n                db7dd21c pred \"knows\"\n                13b74194 obj \"Bob\"\n    1e25c2cb ASSERTION\n        c96cd5dc pred \"meta\"\n        a4a4ffdd obj NODE\n            4bf5122f subj 1\n            c2768b34 ASSERTION\n                dbc1b4c9 pred 2\n                084fed08 obj 3\n    611cf332 ASSERTION\n        618975ce pred 'salt'\n        d2a9a38a obj Salt\n---\n959c8609 NODE\n    0511ba41 subj WRAPPED\n        ab2344e4 cont NODE\n            13941b48 subj \"Alice\"\n            3c3ca1f1 ASSERTION\n                0fcd6a39 pred 'note'\n                61c8e387 obj \"A note\"\n            4012caf2 ASSERTION\n                db7dd21c pred \"knows\"\n                afb8122e obj \"Carol\"\n            581d8efe ASSERTION\n                2be2d79b pred 'isA'\n                bd52917f obj \"Person\"\n            78d666eb ASSERTION\n                db7dd21c pred \"knows\"\n                13b74194 obj \"Bob\"\n    1e25c2cb ASSERTION\n        c96cd5dc pred \"meta\"\n        a4a4ffdd obj NODE\n            4bf5122f subj 1\n            c2768b34 ASSERTION\n                dbc1b4c9 pred 2\n                084fed08 obj 3\n    611cf332 ASSERTION\n        618975ce pred 'salt'\n        d2a9a38a obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>959c8609\"))\n    0 -- subj --> 1[/\"WRAPPED<br>0511ba41\"\\]\n        1 -- cont --> 2((\"NODE<br>ab2344e4\"))\n            2 -- subj --> 3[\"&quot;Alice&quot;<br>13941b48\"]\n            2 --> 4([\"ASSERTION<br>3c3ca1f1\"])\n                4 -- pred --> 5[/\"'note'<br>0fcd6a39\"/]\n                4 -- obj --> 6[\"&quot;A note&quot;<br>61c8e387\"]\n            2 --> 7([\"ASSERTION<br>4012caf2\"])\n                7 -- pred --> 8[\"&quot;knows&quot;<br>db7dd21c\"]\n                7 -- obj --> 9[\"&quot;Carol&quot;<br>afb8122e\"]\n            2 --> 10([\"ASSERTION<br>581d8efe\"])\n                10 -- pred --> 11[/\"'isA'<br>2be2d79b\"/]\n                10 -- obj --> 12[\"&quot;Person&quot;<br>bd52917f\"]\n            2 --> 13([\"ASSERTION<br>78d666eb\"])\n                13 -- pred --> 14[\"&quot;knows&quot;<br>db7dd21c\"]\n                13 -- obj --> 15[\"&quot;Bob&quot;<br>13b74194\"]\n    0 --> 16([\"ASSERTION<br>1e25c2cb\"])\n        16 -- pred --> 17[\"&quot;meta&quot;<br>c96cd5dc\"]\n        16 -- obj --> 18((\"NODE<br>a4a4ffdd\"))\n            18 -- subj --> 19[\"1<br>4bf5122f\"]\n            18 --> 20([\"ASSERTION<br>c2768b34\"])\n                20 -- pred --> 21[\"2<br>dbc1b4c9\"]\n                20 -- obj --> 22[\"3<br>084fed08\"]\n    0 --> 23([\"ASSERTION<br>611cf332\"])\n        23 -- pred --> 24[/\"'salt'<br>618975ce\"/]\n        23 -- obj --> 25[\"Salt<br>d2a9a38a\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:blue,stroke-width:4px\nstyle 2 stroke:red,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:green,stroke-width:4px\nstyle 5 stroke:goldenrod,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:green,stroke-width:4px\nstyle 8 stroke:teal,stroke-width:4px\nstyle 9 stroke:teal,stroke-width:4px\nstyle 10 stroke:green,stroke-width:4px\nstyle 11 stroke:goldenrod,stroke-width:4px\nstyle 12 stroke:teal,stroke-width:4px\nstyle 13 stroke:green,stroke-width:4px\nstyle 14 stroke:teal,stroke-width:4px\nstyle 15 stroke:teal,stroke-width:4px\nstyle 16 stroke:green,stroke-width:4px\nstyle 17 stroke:teal,stroke-width:4px\nstyle 18 stroke:red,stroke-width:4px\nstyle 19 stroke:teal,stroke-width:4px\nstyle 20 stroke:green,stroke-width:4px\nstyle 21 stroke:teal,stroke-width:4px\nstyle 22 stroke:teal,stroke-width:4px\nstyle 23 stroke:green,stroke-width:4px\nstyle 24 stroke:goldenrod,stroke-width:4px\nstyle 25 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke:blue,stroke-width:2px\nlinkStyle 2 stroke:red,stroke-width:2px\nlinkStyle 3 stroke-width:2px\nlinkStyle 4 stroke:cyan,stroke-width:2px\nlinkStyle 5 stroke:magenta,stroke-width:2px\nlinkStyle 6 stroke-width:2px\nlinkStyle 7 stroke:cyan,stroke-width:2px\nlinkStyle 8 stroke:magenta,stroke-width:2px\nlinkStyle 9 stroke-width:2px\nlinkStyle 10 stroke:cyan,stroke-width:2px\nlinkStyle 11 stroke:magenta,stroke-width:2px\nlinkStyle 12 stroke-width:2px\nlinkStyle 13 stroke:cyan,stroke-width:2px\nlinkStyle 14 stroke:magenta,stroke-width:2px\nlinkStyle 15 stroke-width:2px\nlinkStyle 16 stroke:cyan,stroke-width:2px\nlinkStyle 17 stroke:magenta,stroke-width:2px\nlinkStyle 18 stroke:red,stroke-width:2px\nlinkStyle 19 stroke-width:2px\nlinkStyle 20 stroke:cyan,stroke-width:2px\nlinkStyle 21 stroke:magenta,stroke-width:2px\nlinkStyle 22 stroke-width:2px\nlinkStyle 23 stroke:cyan,stroke-width:2px\nlinkStyle 24 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        200(\n            [\n                201(\"Alice\"),\n                {\n                    4:\n                    201(\"A note\")\n                },\n                {\n                    201(\"knows\"):\n                    201(\"Carol\")\n                },\n                {\n                    1:\n                    201(\"Person\")\n                },\n                {\n                    201(\"knows\"):\n                    201(\"Bob\")\n                }\n            ]\n        ),\n        {\n            201(\"meta\"):\n            [\n                201(1),\n                {\n                    201(2):\n                    201(3)\n                }\n            ]\n        },\n        {\n            15:\n            201(\n                40018(h'8000800020a0a0a0')\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    83                                  # array(3)\n        d8 c8                           # tag(200) envelope\n            85                          # array(5)\n                d8 c9                   # tag(201) leaf\n                    65                  # text(5)\n                        416c696365      # \"Alice\"\n                a1                      # map(1)\n                    04                  # unsigned(4)\n                    d8 c9               # tag(201) leaf\n                        66              # text(6)\n                            41206e6f7465 # \"A note\"\n                a1                      # map(1)\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            6b6e6f7773  # \"knows\"\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            4361726f6c  # \"Carol\"\n                a1                      # map(1)\n                    01                  # unsigned(1)\n                    d8 c9               # tag(201) leaf\n                        66              # text(6)\n                            506572736f6e # \"Person\"\n                a1                      # map(1)\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            6b6e6f7773  # \"knows\"\n                    d8 c9               # tag(201) leaf\n                        63              # text(3)\n                            426f62      # \"Bob\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                64                      # text(4)\n                    6d657461            # \"meta\"\n            82                          # array(2)\n                d8 c9                   # tag(201) leaf\n                    01                  # unsigned(1)\n                a1                      # map(1)\n                    d8 c9               # tag(201) leaf\n                        02              # unsigned(2)\n                    d8 c9               # tag(201) leaf\n                        03              # unsigned(3)\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    48                  # bytes(8)\n                        8000800020a0a0a0\n---\nNODE"
+  },
+  {
+   "name": "salt:8..=32(node(leaf:text:Alice+1))",
+   "recipe": {
+    "e": {
+     "k": "salt",
+     "e": {
+      "k": "node",
+      "subject": {
+       "k": "leaf",
+       "v": {
+        "t": "text",
+        "v": "Alice"
+       }
+      },
+      "assertions": [
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Bob"
+         }
+        }
+       ]
+      ]
+     },
+     "rng": [
+      "17295166580085024720",
+      "422929670265678780",
+      "5577237070365765850",
+      "7953171132032326923"
+     ],
+     "range": [
+      8,
+      32
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c883d8c965416c696365a1d8c9656b6e6f7773d8c963426f62a10fd8c9d99c5249b559bbbf6cce2632cf\n---\nur:envelope/lstpsoihfpjziniaihoytpsoihjejtjlktjktpsoiafwjlidoybstpsotansgmgarehkrkrsjztodseytkuoaowsle\n---\n92d59b8b78a7758daa56621cafdbe8142b7ee8e1e70a57c0e7f51865d7c8afc7\n---\n\"Alice\" [\n    \"knows\": \"Bob\"\n    'salt': Salt\n]\n---\n\"Alice\" [ \"knows\": \"Bob\", 'salt': Salt ]\n---\n92d59b8b NODE\n    13941b48 subj \"Alice\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n    e11c979c ASSERTION\n        618975ce pred 'salt'\n        16d66451 obj Salt\n---\n92d59b8b NODE\n    13941b48 subj \"Alice\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n    e11c979c ASSERTION\n        618975ce pred 'salt'\n        16d66451 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>92d59b8b\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>78d666eb\"])\n        2 -- pred --> 3[\"&quot;knows&quot;<br>db7dd21c\"]\n        2 -- obj --> 4[\"&quot;Bob&quot;<br>13b74194\"]\n    0 --> 5([\"ASSERTION<br>e11c979c\"])\n        5 -- pred --> 6[/\"'salt'<br>618975ce\"/]\n        5 -- obj --> 7[\"Salt<br>16d66451\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:goldenrod,stroke-width:4px\nstyle 7 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            201(\"knows\"):\n            201(\"Bob\")\n        },\n        {\n            15:\n            201(\n                40018(\n                    h'b559bbbf6cce2632cf'\n                )\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    83                                  # array(3)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    426f62              # \"Bob\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    49                  # bytes(9)\n                        b559bbbf6cce2632cf\n---\nNODE"
+  },
+  {
+   "name": "salt:16..=64(node(leaf:text:Alice+4))",
+   "recipe": {
+    "e": {
+     "k": "salt",
+     "e": {
+      "k": "node",
+      "subject": {
+       "k": "leaf",
+       "v": {
+        "t": "text",
+        "v": "Alice"
+       }
+      },
+      "assertions": [
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Bob"
+         }
+        }
+       ],
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Carol"
+         }
+        }
+       ],
+       [
+        {
+         "k": "kv",
+         "v": 1
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Person"
+         }
+        }
+       ],
+       [
+        {
+         "k": "kv",
+         "v": 4
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "A note"
+         }
+        }
+       ]
+      ]
+     },
+     "rng": [
+      "1",
+      "1",
+      "1",
+      "1"
+     ],
+     "range": [
+      16,
+      64
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c886d8c965416c696365a10fd8c9d99c52508000800020a0a0a088bc0eefdbce00b0a104d8c96641206e6f7465a1d8c9656b6e6f7773d8c9654361726f6ca101d8c966506572736f6ea1d8c9656b6e6f7773d8c963426f62\n---\nur:envelope/lntpsoihfpjziniaihoybstpsotansgmgdlaaelaaecxnbnbnblorfbawsuytoaepfoyaatpsoiyfpcxjtjljyihoytpsoihjejtjlktjktpsoihfxhsjpjljzoyadtpsoiygdihjpjkjljtoytpsoihjejtjlktjktpsoiafwjlidgeldgdgl\n---\n2471218905b123d7146db84ecbddffcf2cdfb70ed3062f6470bea9311aedce04\n---\n\"Alice\" [\n    'isA': \"Person\"\n    \"knows\": \"Bob\"\n    \"knows\": \"Carol\"\n    'note': \"A note\"\n    'salt': Salt\n]\n---\n\"Alice\" [ 'isA': \"Person\", \"knows\": \"Bob\", \"knows\": \"Carol\", 'note': \"A note\", 'salt': Salt ]\n---\n24712189 NODE\n    13941b48 subj \"Alice\"\n    15ee3bdd ASSERTION\n        618975ce pred 'salt'\n        3ddee5f0 obj Salt\n    3c3ca1f1 ASSERTION\n        0fcd6a39 pred 'note'\n        61c8e387 obj \"A note\"\n    4012caf2 ASSERTION\n        db7dd21c pred \"knows\"\n        afb8122e obj \"Carol\"\n    581d8efe ASSERTION\n        2be2d79b pred 'isA'\n        bd52917f obj \"Person\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n24712189 NODE\n    13941b48 subj \"Alice\"\n    15ee3bdd ASSERTION\n        618975ce pred 'salt'\n        3ddee5f0 obj Salt\n    3c3ca1f1 ASSERTION\n        0fcd6a39 pred 'note'\n        61c8e387 obj \"A note\"\n    4012caf2 ASSERTION\n        db7dd21c pred \"knows\"\n        afb8122e obj \"Carol\"\n    581d8efe ASSERTION\n        2be2d79b pred 'isA'\n        bd52917f obj \"Person\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>24712189\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>15ee3bdd\"])\n        2 -- pred --> 3[/\"'salt'<br>618975ce\"/]\n        2 -- obj --> 4[\"Salt<br>3ddee5f0\"]\n    0 --> 5([\"ASSERTION<br>3c3ca1f1\"])\n        5 -- pred --> 6[/\"'note'<br>0fcd6a39\"/]\n        5 -- obj --> 7[\"&quot;A note&quot;<br>61c8e387\"]\n    0 --> 8([\"ASSERTION<br>4012caf2\"])\n        8 -- pred --> 9[\"&quot;knows&quot;<br>db7dd21c\"]\n        8 -- obj --> 10[\"&quot;Carol&quot;<br>afb8122e\"]\n    0 --> 11([\"ASSERTION<br>581d8efe\"])\n        11 -- pred --> 12[/\"'isA'<br>2be2d79b\"/]\n        11 -- obj --> 13[\"&quot;Person&quot;<br>bd52917f\"]\n    0 --> 14([\"ASSERTION<br>78d666eb\"])\n        14 -- pred --> 15[\"&quot;knows&quot;<br>db7dd21c\"]\n        14 -- obj --> 16[\"&quot;Bob&quot;<br>13b74194\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:goldenrod,stroke-width:4px\nstyle 7 stroke:teal,stroke-width:4px\nstyle 8 stroke:green,stroke-width:4px\nstyle 9 stroke:teal,stroke-width:4px\nstyle 10 stroke:teal,stroke-width:4px\nstyle 11 stroke:green,stroke-width:4px\nstyle 12 stroke:goldenrod,stroke-width:4px\nstyle 13 stroke:teal,stroke-width:4px\nstyle 14 stroke:green,stroke-width:4px\nstyle 15 stroke:teal,stroke-width:4px\nstyle 16 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\nlinkStyle 7 stroke-width:2px\nlinkStyle 8 stroke:cyan,stroke-width:2px\nlinkStyle 9 stroke:magenta,stroke-width:2px\nlinkStyle 10 stroke-width:2px\nlinkStyle 11 stroke:cyan,stroke-width:2px\nlinkStyle 12 stroke:magenta,stroke-width:2px\nlinkStyle 13 stroke-width:2px\nlinkStyle 14 stroke:cyan,stroke-width:2px\nlinkStyle 15 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            15:\n            201(\n                40018(\n                    h'8000800020a0a0a088bc0eefdbce00b0'\n                )\n            )\n        },\n        {\n            4:\n            201(\"A note\")\n        },\n        {\n            201(\"knows\"):\n            201(\"Carol\")\n        },\n        {\n            1:\n            201(\"Person\")\n        },\n        {\n            201(\"knows\"):\n            201(\"Bob\")\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    86                                  # array(6)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    50                  # bytes(16)\n                        8000800020a0a0a088bc0eefdbce00b0\n        a1                              # map(1)\n            04                          # unsigned(4)\n            d8 c9                       # tag(201) leaf\n                66                      # text(6)\n                    41206e6f7465        # \"A note\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    4361726f6c          # \"Carol\"\n        a1                              # map(1)\n            01                          # unsigned(1)\n            d8 c9                       # tag(201) leaf\n                66                      # text(6)\n                    506572736f6e        # \"Person\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    426f62              # \"Bob\"\n---\nNODE"
+  },
+  {
+   "name": "salt:100..=4000(node(leaf:text:Alice+2))",
+   "recipe": {
+    "e": {
+     "k": "salt",
+     "e": {
+      "k": "node",
+      "subject": {
+       "k": "leaf",
+       "v": {
+        "t": "text",
+        "v": "Alice"
+       }
+      },
+      "assertions": [
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "node",
+         "subject": {
+          "k": "leaf",
+          "v": {
+           "t": "text",
+           "v": "Bob"
+          }
+         },
+         "assertions": [
+          [
+           {
+            "k": "leaf",
+            "v": {
+             "t": "text",
+             "v": "knows"
+            }
+           },
+           {
+            "k": "leaf",
+            "v": {
+             "t": "text",
+             "v": "Carol"
+            }
+           }
+          ]
+         ]
+        }
+       ],
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "age"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "int",
+          "v": "30"
+         }
+        }
+       ]
+      ]
+     },
+     "rng": [
+      "17295166580085024720",
+      "422929670265678780",
+      "5577237070365765850",
+      "7953171132032326923"
+     ],
+     "range": [
+      100,
+      4000
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c884d8c965416c696365a1d8c963616765d8c9181ea1d8c9656b6e6f777382d8c963426f62a1d8c9656b6e6f7773d8c9654361726f6ca10fd8c9d99c5259014db559bbbf6cce2632cf9f194aeb50943de7e1cbad54dcfab27a42759f5e2fed518684c556472008a67932f7c682125b50cb72e8216f6906358fdaf28d3545532daee0c5bb5023f50cd8e71ec14901ac746c576c481b893be6656b80622b3a564e59b4e2c5282ff526a4d4fb0482cb85248cee509b1bcbe8f4177e516740f51bbbc88f5e0ee245bbef1501db27c28a48c9bd0b768f2948ff0b2071c6fc44300fb2c49e750e64cdc6071ffdee1998c1eded72368f8820d8dfca4a1c9bd813782a218e90caa023ab43224f94fbfa25acdc17c7ccd79cb25f25128c207a63a9bfb73673b12e831bdd1b0a222a803121ac5c13ca47121d4dd999dcc23ee2067ce633fe3d4e1e9449d12456beb9e016f40f9eab22211b03f396ca5f2b1e20db0644fd5c77a01bf00c3989d20ec99cd32a09098b4950e718962f82452c0ce2948cabdd98577cd7d9dd75c4b2678b5ff764\n---\nur:envelope/lrtpsoihfpjziniaihoytpsoiahsioihtpsocsckoytpsoihjejtjlktjklftpsoiafwjlidoytpsoihjejtjlktjktpsoihfxhsjpjljzoybstpsotansgmhkadgtrehkrkrsjztodseytknecfgewmgdmwfsvdvysbpmghuozsprknfwkpnehydlwegylnlrskhfflcxayolkkeyylswlfbghpgdsbjpvscljlinamecmytnwzlgecfegudpplvtskrkgdcnykbntpvdcksegaadpsjyjzhgjzfdcwldfrvaihjelaiddnfthfglhkqzvoskdedlykdsoxtyzoaalfsblpdklkwygdndcwsbvswkchkbgyiofzykcwrkspmyhybavoferkwsbzaduydisalefdsorybdkomydtfdzmbdcxjsswztfydybsprssnnkpbaiesnswatctzcwycfmksewewejpenmylocxtpursggecendtpbwksdrclmnmhsgnbcnpyfxcpgwmwzozsdapsuochstsftsnsprhedabglkcxkniaptrsrlenjkpadmlscwutcwbkcpdrlaehclpshhbwsgflbgcagttanluosafmvoamkevaeozefsglckmwgattdkhfrnrhvtcmwkbsnnpycpclcwaxwfmtsghednckcxuyamfyzchhktnbcwwtbnesldtdbasonstedrasaslugagdvdcsmtdllffedwbnvomwlkpyutmkhgketstautkpssprioluheyliemotlktlk\n---\n1cf206116936d1ff58d2cf8cb67642034272a17f640cc5a1717abf2aef459017\n---\n\"Alice\" [\n    \"age\": 30\n    \"knows\": \"Bob\" [\n        \"knows\": \"Carol\"\n    ]\n    'salt': Salt\n]\n---\n\"Alice\" [ \"age\": 30, \"knows\": \"Bob\" [ \"knows\": \"Carol\" ], 'salt': Salt ]\n---\n1cf20611 NODE\n    13941b48 subj \"Alice\"\n    0eb5609b ASSERTION\n        5943be12 pred \"age\"\n        cf972730 obj 30\n    970da8b3 ASSERTION\n        db7dd21c pred \"knows\"\n        15ec830a obj NODE\n            13b74194 subj \"Bob\"\n            4012caf2 ASSERTION\n                db7dd21c pred \"knows\"\n                afb8122e obj \"Carol\"\n    a283782f ASSERTION\n        618975ce pred 'salt'\n        40338f38 obj Salt\n---\n1cf20611 NODE\n    13941b48 subj \"Alice\"\n    0eb5609b ASSERTION\n        5943be12 pred \"age\"\n        cf972730 obj 30\n    970da8b3 ASSERTION\n        db7dd21c pred \"knows\"\n        15ec830a obj NODE\n            13b74194 subj \"Bob\"\n            4012caf2 ASSERTION\n                db7dd21c pred \"knows\"\n                afb8122e obj \"Carol\"\n    a283782f ASSERTION\n        618975ce pred 'salt'\n        40338f38 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>1cf20611\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>0eb5609b\"])\n        2 -- pred --> 3[\"&quot;age&quot;<br>5943be12\"]\n        2 -- obj --> 4[\"30<br>cf972730\"]\n    0 --> 5([\"ASSERTION<br>970da8b3\"])\n        5 -- pred --> 6[\"&quot;knows&quot;<br>db7dd21c\"]\n        5 -- obj --> 7((\"NODE<br>15ec830a\"))\n            7 -- subj --> 8[\"&quot;Bob&quot;<br>13b74194\"]\n            7 --> 9([\"ASSERTION<br>4012caf2\"])\n                9 -- pred --> 10[\"&quot;knows&quot;<br>db7dd21c\"]\n                9 -- obj --> 11[\"&quot;Carol&quot;<br>afb8122e\"]\n    0 --> 12([\"ASSERTION<br>a283782f\"])\n        12 -- pred --> 13[/\"'salt'<br>618975ce\"/]\n        12 -- obj --> 14[\"Salt<br>40338f38\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:red,stroke-width:4px\nstyle 8 stroke:teal,stroke-width:4px\nstyle 9 stroke:green,stroke-width:4px\nstyle 10 stroke:teal,stroke-width:4px\nstyle 11 stroke:teal,stroke-width:4px\nstyle 12 stroke:green,stroke-width:4px\nstyle 13 stroke:goldenrod,stroke-width:4px\nstyle 14 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\nlinkStyle 7 stroke:red,stroke-width:2px\nlinkStyle 8 stroke-width:2px\nlinkStyle 9 stroke:cyan,stroke-width:2px\nlinkStyle 10 stroke:magenta,stroke-width:2px\nlinkStyle 11 stroke-width:2px\nlinkStyle 12 stroke:cyan,stroke-width:2px\nlinkStyle 13 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            201(\"age\"):\n            201(30)\n        },\n        {\n            201(\"knows\"):\n            [\n                201(\"Bob\"),\n                {\n                    201(\"knows\"):\n                    201(\"Carol\")\n                }\n            ]\n        },\n        {\n            15:\n            201(\n                40018(\n                    h'b559bbbf6cce2632cf9f194aeb50943de7e1cbad54dcfab27a42759f5e2fed518684c556472008a67932f7c682125b50cb72e8216f6906358fdaf28d3545532daee0c5bb5023f50cd8e71ec14901ac746c576c481b893be6656b80622b3a564e59b4e2c5282ff526a4d4fb0482cb85248cee509b1bcbe8f4177e516740f51bbbc88f5e0ee245bbef1501db27c28a48c9bd0b768f2948ff0b2071c6fc44300fb2c49e750e64cdc6071ffdee1998c1eded72368f8820d8dfca4a1c9bd813782a218e90caa023ab43224f94fbfa25acdc17c7ccd79cb25f25128c207a63a9bfb73673b12e831bdd1b0a222a803121ac5c13ca47121d4dd999dcc23ee2067ce633fe3d4e1e9449d12456beb9e016f40f9eab22211b03f396ca5f2b1e20db0644fd5c77a01bf00c3989d20ec99cd32a09098b4950e718962f82452c0ce2948cabdd98577cd7d9dd75c4b2678b5ff764'\n                )\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    84                                  # array(4)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    616765              # \"age\"\n            d8 c9                       # tag(201) leaf\n                181e                    # unsigned(30)\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            82                          # array(2)\n                d8 c9                   # tag(201) leaf\n                    63                  # text(3)\n                        426f62          # \"Bob\"\n                a1                      # map(1)\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            6b6e6f7773  # \"knows\"\n                    d8 c9               # tag(201) leaf\n                        65              # text(5)\n                            4361726f6c  # \"Carol\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    59014d              # bytes(333)\n                        b559bbbf6cce2632cf9f194aeb50943de7e1cbad54dcfab27a42759f5e2fed518684c556472008a67932f7c682125b50cb72e8216f6906358fdaf28d3545532daee0c5bb5023f50cd8e71ec14901ac746c576c481b893be6656b80622b3a564e59b4e2c5282ff526a4d4fb0482cb85248cee509b1bcbe8f4177e516740f51bbbc88f5e0ee245bbef1501db27c28a48c9bd0b768f2948ff0b2071c6fc44300fb2c49e750e64cdc6071ffdee1998c1eded72368f8820d8dfca4a1c9bd813782a218e90caa023ab43224f94fbfa25acdc17c7ccd79cb25f25128c207a63a9bfb73673b12e831bdd1b0a222a803121ac5c13ca47121d4dd999dcc23ee2067ce633fe3d4e1e9449d12456beb9e016f40f9eab22211b03f396ca5f2b1e20db0644fd5c77a01bf00c3989d20ec99cd32a09098b4950e718962f82452c0ce2948cabdd98577cd7d9dd75c4b2678b5ff764\n---\nNODE"
+  },
+  {
+   "name": "salt:8..=8(leaf:text:x)",
+   "recipe": {
+    "e": {
+     "k": "salt",
+     "e": {
+      "k": "leaf",
+      "v": {
+       "t": "text",
+       "v": "x"
+      }
+     },
+     "rng": [
+      "1",
+      "1",
+      "1",
+      "1"
+     ],
+     "range": [
+      8,
+      8
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c882d8c96178a10fd8c9d99c52488000800020a0a0a0\n---\nur:envelope/lftpsohsksoybstpsotansgmfdlaaelaaecxnbnbnbbttdecfz\n---\n9d5a1d63dc213088c556c27575974892d3df408173ea8a9cc2fa305cd6c78975\n---\n\"x\" [\n    'salt': Salt\n]\n---\n\"x\" [ 'salt': Salt ]\n---\n9d5a1d63 NODE\n    5e85370e subj \"x\"\n    611cf332 ASSERTION\n        618975ce pred 'salt'\n        d2a9a38a obj Salt\n---\n9d5a1d63 NODE\n    5e85370e subj \"x\"\n    611cf332 ASSERTION\n        618975ce pred 'salt'\n        d2a9a38a obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>9d5a1d63\"))\n    0 -- subj --> 1[\"&quot;x&quot;<br>5e85370e\"]\n    0 --> 2([\"ASSERTION<br>611cf332\"])\n        2 -- pred --> 3[/\"'salt'<br>618975ce\"/]\n        2 -- obj --> 4[\"Salt<br>d2a9a38a\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"x\"),\n        {\n            15:\n            201(\n                40018(h'8000800020a0a0a0')\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    82                                  # array(2)\n        d8 c9                           # tag(201) leaf\n            61                          # text(1)\n                78                      # \"x\"\n        a1                              # map(1)\n            0f                          # unsigned(15)\n            d8 c9                       # tag(201) leaf\n                d9 9c52                 # tag(40018) salt\n                    48                  # bytes(8)\n                        8000800020a0a0a0\n---\nNODE"
   },
   {
    "name": "sskr:1/2of3(node(leaf:text:Alice+4))",
@@ -5202,7 +5736,7 @@
    "expect": "d8c883d8c965416c696365a1d8c909d8c963426f62a104582027abdeddfe8503496adeb623466caa47da5f63abd2bc6fa19f6cfcb73ecfed70\n---\nur:envelope/lstpsoihfpjziniaihoytpsoastpsoiafwjlidoyaahdcxdipyueutzelpaxgaimuerpcnfgjzpkfltnheiapytdrfjloynejzztrlfmtkwejocprdeshp\n---\n5b3b19ccde8da7cdc27dc2918b8cead2e9308e7cd250e6245533920b30057aa3\n---\n\"Alice\" [\n    'note': ELIDED\n    9: \"Bob\"\n]\n---\n\"Alice\" [ 'note': ELIDED, 9: \"Bob\" ]\n---\n5b3b19cc NODE\n    13941b48 subj \"Alice\"\n    8be0081d ASSERTION\n        2b4c342f pred 9\n        13b74194 obj \"Bob\"\n    cccfa896 ASSERTION\n        0fcd6a39 pred 'note'\n        27abdedd obj ELIDED\n---\n5b3b19cc NODE\n    13941b48 subj \"Alice\"\n    8be0081d ASSERTION\n        2b4c342f pred 9\n        13b74194 obj \"Bob\"\n    cccfa896 ASSERTION\n        0fcd6a39 pred 'note'\n        27abdedd obj ELIDED\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>5b3b19cc\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>8be0081d\"])\n        2 -- pred --> 3[\"9<br>2b4c342f\"]\n        2 -- obj --> 4[\"&quot;Bob&quot;<br>13b74194\"]\n    0 --> 5([\"ASSERTION<br>cccfa896\"])\n        5 -- pred --> 6[/\"'note'<br>0fcd6a39\"/]\n        5 -- obj --> 7{{\"ELIDED<br>27abdedd\"}}\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:goldenrod,stroke-width:4px\nstyle 7 stroke:gray,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            201(9):\n            201(\"Bob\")\n        },\n        {\n            4:\n            h'27abdeddfe8503496adeb623466caa47da5f63abd2bc6fa19f6cfcb73ecfed70'\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    83                                  # array(3)\n        d8 c9                           # tag(201) leaf\n            65                          # text(5)\n                416c696365              # \"Alice\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                09                      # unsigned(9)\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    426f62              # \"Bob\"\n        a1                              # map(1)\n            04                          # unsigned(4)\n            5820                        # bytes(32)\n                27abdeddfe8503496adeb623466caa47da5f63abd2bc6fa19f6cfcb73ecfed70\n---\nNODE"
   },
   {
-   "name": "salt(node(leaf:text:Alice+2))",
+   "name": "salt:8(node(leaf:text:Alice+2))",
    "recipe": {
     "e": {
      "k": "salt",
@@ -5798,7 +6332,7 @@
    "expect": "d8c882d8c907a101582037e551c94c46940ef77008989f8af1c95449379b61858a023edc58f8bb67ca86\n---\nur:envelope/lftpsoatoyadhdcxemvwgysogsfgmwbayljoaymknelewnsoghgaemndhslpleaofmuohdyarkiosglnfdlputem\n---\n16579540b6218074b10548ab7366b514559166372eac3dcea1f0a7992fc6b2aa\n---\n7 [\n    'isA': ELIDED\n]\n---\n7 [ 'isA': ELIDED ]\n---\n16579540 NODE\n    ca358758 subj 7\n    c465c6ea ASSERTION\n        2be2d79b pred 'isA'\n        37e551c9 obj ELIDED\n---\n16579540 NODE\n    ca358758 subj 7\n    c465c6ea ASSERTION\n        2be2d79b pred 'isA'\n        37e551c9 obj ELIDED\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>16579540\"))\n    0 -- subj --> 1[\"7<br>ca358758\"]\n    0 --> 2([\"ASSERTION<br>c465c6ea\"])\n        2 -- pred --> 3[/\"'isA'<br>2be2d79b\"/]\n        2 -- obj --> 4{{\"ELIDED<br>37e551c9\"}}\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:gray,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(7),\n        {\n            1:\n            h'37e551c94c46940ef77008989f8af1c95449379b61858a023edc58f8bb67ca86'\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    82                                  # array(2)\n        d8 c9                           # tag(201) leaf\n            07                          # unsigned(7)\n        a1                              # map(1)\n            01                          # unsigned(1)\n            5820                        # bytes(32)\n                37e551c94c46940ef77008989f8af1c95449379b61858a023edc58f8bb67ca86\n---\nNODE"
   },
   {
-   "name": "salt(node(leaf:int:7+1))",
+   "name": "salt:8(node(leaf:int:7+1))",
    "recipe": {
     "e": {
      "k": "salt",
@@ -7229,7 +7763,7 @@
    "expect": "d8c88401a1015820afb8122e3227657b415f9f1c930d4891fb040b3e23c1f7770f185e2d0396c737a1d8c9656b6e6f777382d8c9182aa104d8c963426f62a1d8c9095820afb8122e3227657b415f9f1c930d4891fb040b3e23c1f7770f185e2d0396c737\n---\nur:envelope/lradoyadhdcxperobgdmeydiihkgfphenecemubtfdmezoaabdfmcnseylktbscshydpaxmtstemoytpsoihjejtjlktjklftpsocsdroyaatpsoiafwjlidoytpsoashdcxperobgdmeydiihkgfphenecemubtfdmezoaabdfmcnseylktbscshydpaxmtstemjyfwkplr\n---\n735942a4994646690d48efdd66c0129057210fd786b6d08899c45c07084a5b2a\n---\n'isA' [\n    'isA': ELIDED\n    \"knows\": 42 [\n        'note': \"Bob\"\n    ]\n    9: ELIDED\n]\n---\n'isA' [ 'isA': ELIDED, \"knows\": 42 [ 'note': \"Bob\" ], 9: ELIDED ]\n---\n735942a4 NODE\n    2be2d79b subj 'isA'\n    3aa651cf ASSERTION\n        2be2d79b pred 'isA'\n        afb8122e obj ELIDED\n    9a055bf2 ASSERTION\n        db7dd21c pred \"knows\"\n        98a15a3f obj NODE\n            7f83f7bd subj 42\n            3e188be7 ASSERTION\n                0fcd6a39 pred 'note'\n                13b74194 obj \"Bob\"\n    d31ac0d1 ASSERTION\n        2b4c342f pred 9\n        afb8122e obj ELIDED\n---\n735942a4 NODE\n    2be2d79b subj 'isA'\n    3aa651cf ASSERTION\n        2be2d79b pred 'isA'\n        afb8122e obj ELIDED\n    9a055bf2 ASSERTION\n        db7dd21c pred \"knows\"\n        98a15a3f obj NODE\n            7f83f7bd subj 42\n            3e188be7 ASSERTION\n                0fcd6a39 pred 'note'\n                13b74194 obj \"Bob\"\n    d31ac0d1 ASSERTION\n        2b4c342f pred 9\n        afb8122e obj ELIDED\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>735942a4\"))\n    0 -- subj --> 1[/\"'isA'<br>2be2d79b\"/]\n    0 --> 2([\"ASSERTION<br>3aa651cf\"])\n        2 -- pred --> 3[/\"'isA'<br>2be2d79b\"/]\n        2 -- obj --> 4{{\"ELIDED<br>afb8122e\"}}\n    0 --> 5([\"ASSERTION<br>9a055bf2\"])\n        5 -- pred --> 6[\"&quot;knows&quot;<br>db7dd21c\"]\n        5 -- obj --> 7((\"NODE<br>98a15a3f\"))\n            7 -- subj --> 8[\"42<br>7f83f7bd\"]\n            7 --> 9([\"ASSERTION<br>3e188be7\"])\n                9 -- pred --> 10[/\"'note'<br>0fcd6a39\"/]\n                9 -- obj --> 11[\"&quot;Bob&quot;<br>13b74194\"]\n    0 --> 12([\"ASSERTION<br>d31ac0d1\"])\n        12 -- pred --> 13[\"9<br>2b4c342f\"]\n        12 -- obj --> 14{{\"ELIDED<br>afb8122e\"}}\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:goldenrod,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:gray,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:red,stroke-width:4px\nstyle 8 stroke:teal,stroke-width:4px\nstyle 9 stroke:green,stroke-width:4px\nstyle 10 stroke:goldenrod,stroke-width:4px\nstyle 11 stroke:teal,stroke-width:4px\nstyle 12 stroke:green,stroke-width:4px\nstyle 13 stroke:teal,stroke-width:4px\nstyle 14 stroke:gray,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\nlinkStyle 7 stroke:red,stroke-width:2px\nlinkStyle 8 stroke-width:2px\nlinkStyle 9 stroke:cyan,stroke-width:2px\nlinkStyle 10 stroke:magenta,stroke-width:2px\nlinkStyle 11 stroke-width:2px\nlinkStyle 12 stroke:cyan,stroke-width:2px\nlinkStyle 13 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        1,\n        {\n            1:\n            h'afb8122e3227657b415f9f1c930d4891fb040b3e23c1f7770f185e2d0396c737'\n        },\n        {\n            201(\"knows\"):\n            [\n                201(42),\n                {\n                    4:\n                    201(\"Bob\")\n                }\n            ]\n        },\n        {\n            201(9):\n            h'afb8122e3227657b415f9f1c930d4891fb040b3e23c1f7770f185e2d0396c737'\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    84                                  # array(4)\n        01                              # unsigned(1)\n        a1                              # map(1)\n            01                          # unsigned(1)\n            5820                        # bytes(32)\n                afb8122e3227657b415f9f1c930d4891fb040b3e23c1f7770f185e2d0396c737\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                65                      # text(5)\n                    6b6e6f7773          # \"knows\"\n            82                          # array(2)\n                d8 c9                   # tag(201) leaf\n                    182a                # unsigned(42)\n                a1                      # map(1)\n                    04                  # unsigned(4)\n                    d8 c9               # tag(201) leaf\n                        63              # text(3)\n                            426f62      # \"Bob\"\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                09                      # unsigned(9)\n            5820                        # bytes(32)\n                afb8122e3227657b415f9f1c930d4891fb040b3e23c1f7770f185e2d0396c737\n---\nNODE"
   },
   {
-   "name": "salt(node(kv:1+3))",
+   "name": "salt:8(node(kv:1+3))",
    "recipe": {
     "e": {
      "k": "salt",
@@ -7728,7 +8262,7 @@
    "expect": "d8c883d8c9420102a1d8c909d8c963426f62a104582027abdeddfe8503496adeb623466caa47da5f63abd2bc6fa19f6cfcb73ecfed70\n---\nur:envelope/lstpsofwadaooytpsoastpsoiafwjlidoyaahdcxdipyueutzelpaxgaimuerpcnfgjzpkfltnheiapytdrfjloynejzztrlfmtkwejoeyjsuyrs\n---\n508a8e377fb0480dbc7b2419ae315224f7a83046a0eb748c616b9e6b2cc8cd96\n---\nBytes(2) [\n    'note': ELIDED\n    9: \"Bob\"\n]\n---\nBytes(2) [ 'note': ELIDED, 9: \"Bob\" ]\n---\n508a8e37 NODE\n    06c39d21 subj Bytes(2)\n    8be0081d ASSERTION\n        2b4c342f pred 9\n        13b74194 obj \"Bob\"\n    cccfa896 ASSERTION\n        0fcd6a39 pred 'note'\n        27abdedd obj ELIDED\n---\n508a8e37 NODE\n    06c39d21 subj Bytes(2)\n    8be0081d ASSERTION\n        2b4c342f pred 9\n        13b74194 obj \"Bob\"\n    cccfa896 ASSERTION\n        0fcd6a39 pred 'note'\n        27abdedd obj ELIDED\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>508a8e37\"))\n    0 -- subj --> 1[\"Bytes(2)<br>06c39d21\"]\n    0 --> 2([\"ASSERTION<br>8be0081d\"])\n        2 -- pred --> 3[\"9<br>2b4c342f\"]\n        2 -- obj --> 4[\"&quot;Bob&quot;<br>13b74194\"]\n    0 --> 5([\"ASSERTION<br>cccfa896\"])\n        5 -- pred --> 6[/\"'note'<br>0fcd6a39\"/]\n        5 -- obj --> 7{{\"ELIDED<br>27abdedd\"}}\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:goldenrod,stroke-width:4px\nstyle 7 stroke:gray,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(h'0102'),\n        {\n            201(9):\n            201(\"Bob\")\n        },\n        {\n            4:\n            h'27abdeddfe8503496adeb623466caa47da5f63abd2bc6fa19f6cfcb73ecfed70'\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    83                                  # array(3)\n        d8 c9                           # tag(201) leaf\n            42                          # bytes(2)\n                0102\n        a1                              # map(1)\n            d8 c9                       # tag(201) leaf\n                09                      # unsigned(9)\n            d8 c9                       # tag(201) leaf\n                63                      # text(3)\n                    426f62              # \"Bob\"\n        a1                              # map(1)\n            04                          # unsigned(4)\n            5820                        # bytes(32)\n                27abdeddfe8503496adeb623466caa47da5f63abd2bc6fa19f6cfcb73ecfed70\n---\nNODE"
   },
   {
-   "name": "salt(node(leaf:bytes:0102+2))",
+   "name": "salt:8(node(leaf:bytes:0102+2))",
    "recipe": {
     "e": {
      "k": "salt",
@@ -8243,7 +8777,7 @@
    "expect": "d8c882d8c965416c696365a1d8c9656b6e6f7773d8c963426f62\n---\nur:envelope/lftpsoihfpjziniaihoytpsoihjejtjlktjktpsoiafwjlidutgmnnns\n---\n8955db5e016affb133df56c11fe6c5c82fa3036263d651286d134c7e56c0e9f2\n---\n\"Alice\" [\n    \"knows\": \"Bob\"\n]\n---\n\"Alice\" [ \"knows\": \"Bob\" ]\n---\n8955db5e NODE\n    13941b48 subj \"Alice\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n8955db5e NODE\n    13941b48 subj \"Alice\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>8955db5e\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>78d666eb\"])\n        2 -- pred --> 3[\"&quot;knows&quot;<br>db7dd21c\"]\n        2 -- obj --> 4[\"&quot;Bob&quot;<br>13b74194\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:teal,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            201(\"knows\"):\n            201(\"Bob\")\n        }\n    ]\n)\n---\nd8 c8                           # tag(200) envelope\n    82                          # array(2)\n        d8 c9                   # tag(201) leaf\n            65                  # text(5)\n                416c696365      # \"Alice\"\n        a1                      # map(1)\n            d8 c9               # tag(201) leaf\n                65              # text(5)\n                    6b6e6f7773  # \"knows\"\n            d8 c9               # tag(201) leaf\n                63              # text(3)\n                    426f62      # \"Bob\"\n---\nNODE"
   },
   {
-   "name": "nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o)))",
+   "name": "nodeEnv(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o)))",
    "recipe": {
     "e": {
      "k": "nodeEnv",
@@ -8301,7 +8835,7 @@
    "expect": "d8c882d8c9614182a1d8c96170d8c9616fa10fd8c9d99c52487eb559bbbf6cce26\n---\nur:envelope/lftpsohsfplfoytpsohsjotpsohsjloybstpsotansgmfdkbrehkrkrsjztodszmaapkrd\n---\nef41277f2222f9843b0cbe378e0b3fa96c7dfc05586ec9cbae6909a58e6b5da1\n---\n\"A\" [\n    {\n        \"p\": \"o\"\n    } [\n        'salt': Salt\n    ]\n]\n---\n\"A\" [ { \"p\": \"o\" } [ 'salt': Salt ] ]\n---\nef41277f NODE\n    af1c0809 subj \"A\"\n    87f8161b NODE\n        58d63446 subj ASSERTION\n            7978f506 pred \"p\"\n            2dd41130 obj \"o\"\n        51912233 ASSERTION\n            618975ce pred 'salt'\n            ac8bac43 obj Salt\n---\nef41277f NODE\n    af1c0809 subj \"A\"\n    87f8161b NODE\n        58d63446 subj ASSERTION\n            7978f506 pred \"p\"\n            2dd41130 obj \"o\"\n        51912233 ASSERTION\n            618975ce pred 'salt'\n            ac8bac43 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>ef41277f\"))\n    0 -- subj --> 1[\"&quot;A&quot;<br>af1c0809\"]\n    0 --> 2((\"NODE<br>87f8161b\"))\n        2 -- subj --> 3([\"ASSERTION<br>58d63446\"])\n            3 -- pred --> 4[\"&quot;p&quot;<br>7978f506\"]\n            3 -- obj --> 5[\"&quot;o&quot;<br>2dd41130\"]\n        2 --> 6([\"ASSERTION<br>51912233\"])\n            6 -- pred --> 7[/\"'salt'<br>618975ce\"/]\n            6 -- obj --> 8[\"Salt<br>ac8bac43\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:red,stroke-width:4px\nstyle 3 stroke:green,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:teal,stroke-width:4px\nstyle 6 stroke:green,stroke-width:4px\nstyle 7 stroke:goldenrod,stroke-width:4px\nstyle 8 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:red,stroke-width:2px\nlinkStyle 3 stroke:cyan,stroke-width:2px\nlinkStyle 4 stroke:magenta,stroke-width:2px\nlinkStyle 5 stroke-width:2px\nlinkStyle 6 stroke:cyan,stroke-width:2px\nlinkStyle 7 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"A\"),\n        [\n            {\n                201(\"p\"):\n                201(\"o\")\n            },\n            {\n                15:\n                201(\n                    40018(h'7eb559bbbf6cce26')\n                )\n            }\n        ]\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    82                                  # array(2)\n        d8 c9                           # tag(201) leaf\n            61                          # text(1)\n                41                      # \"A\"\n        82                              # array(2)\n            a1                          # map(1)\n                d8 c9                   # tag(201) leaf\n                    61                  # text(1)\n                        70              # \"p\"\n                d8 c9                   # tag(201) leaf\n                    61                  # text(1)\n                        6f              # \"o\"\n            a1                          # map(1)\n                0f                      # unsigned(15)\n                d8 c9                   # tag(201) leaf\n                    d9 9c52             # tag(40018) salt\n                        48              # bytes(8)\n                            7eb559bbbf6cce26\n---\nNODE"
   },
   {
-   "name": "elide[elide](nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))))",
+   "name": "elide[elide](nodeEnv(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o))))",
    "recipe": {
     "e": {
      "k": "elide",
@@ -8381,7 +8915,7 @@
    "expect": "d8c882d8c9614182582058d63446371d67e5037dec9aebff8b064f16f801c282bcffe542fe6795eea0d3a10fd8c9d99c52487eb559bbbf6cce26\n---\nur:envelope/lftpsohsfplfhdcxhdtbeefgemcaiovwaxkiwpnywmzmluamgwcmyaadsalfrfzmvwfwzeiomdwynbteoybstpsotansgmfdkbrehkrkrsjztodsparknynn\n---\nef41277f2222f9843b0cbe378e0b3fa96c7dfc05586ec9cbae6909a58e6b5da1\n---\n\"A\" [\n    ELIDED [\n        'salt': Salt\n    ]\n]\n---\n\"A\" [ ELIDED [ 'salt': Salt ] ]\n---\nef41277f NODE\n    af1c0809 subj \"A\"\n    87f8161b NODE\n        58d63446 subj ELIDED\n        51912233 ASSERTION\n            618975ce pred 'salt'\n            ac8bac43 obj Salt\n---\nef41277f NODE\n    af1c0809 subj \"A\"\n    87f8161b NODE\n        58d63446 subj ELIDED\n        51912233 ASSERTION\n            618975ce pred 'salt'\n            ac8bac43 obj Salt\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>ef41277f\"))\n    0 -- subj --> 1[\"&quot;A&quot;<br>af1c0809\"]\n    0 --> 2((\"NODE<br>87f8161b\"))\n        2 -- subj --> 3{{\"ELIDED<br>58d63446\"}}\n        2 --> 4([\"ASSERTION<br>51912233\"])\n            4 -- pred --> 5[/\"'salt'<br>618975ce\"/]\n            4 -- obj --> 6[\"Salt<br>ac8bac43\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:red,stroke-width:4px\nstyle 3 stroke:gray,stroke-width:4px\nstyle 4 stroke:green,stroke-width:4px\nstyle 5 stroke:goldenrod,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:red,stroke-width:2px\nlinkStyle 3 stroke-width:2px\nlinkStyle 4 stroke:cyan,stroke-width:2px\nlinkStyle 5 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"A\"),\n        [\n            h'58d63446371d67e5037dec9aebff8b064f16f801c282bcffe542fe6795eea0d3',\n            {\n                15:\n                201(\n                    40018(h'7eb559bbbf6cce26')\n                )\n            }\n        ]\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    82                                  # array(2)\n        d8 c9                           # tag(201) leaf\n            61                          # text(1)\n                41                      # \"A\"\n        82                              # array(2)\n            5820                        # bytes(32)\n                58d63446371d67e5037dec9aebff8b064f16f801c282bcffe542fe6795eea0d3\n            a1                          # map(1)\n                0f                      # unsigned(15)\n                d8 c9                   # tag(201) leaf\n                    d9 9c52             # tag(40018) salt\n                        48              # bytes(8)\n                            7eb559bbbf6cce26\n---\nNODE"
   },
   {
-   "name": "op roundtrip(elide[elide](nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o)))))",
+   "name": "op roundtrip(elide[elide](nodeEnv(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o)))))",
    "recipe": {
     "e": {
      "k": "op",
@@ -8655,7 +9189,7 @@
    "expect": "throw:INVALID_FORMAT"
   },
   {
-   "name": "op addAssertionEnvelope(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o)))",
+   "name": "op addAssertionEnvelope(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o)))",
    "recipe": {
     "e": {
      "k": "op",
@@ -9892,7 +10426,7 @@
      "format"
     ]
    },
-   "expect": "ok:❰\"\"❱"
+   "expect": "ok:\"\""
   },
   {
    "name": "domain hasSignaturesFromThreshold.1.5",

@@ -414,6 +414,21 @@ describe("E1a — format-context summarizer parity with Rust", () => {
     expect(formatted).toBe("Signature(MLDSA44)");
     expect(formatted).not.toContain("MLDSA-44");
   });
+
+  it("renders tag 40000 nested in a leaf through the known-value summarizer (E1a-4)", async () => {
+    // A summarizer receives the tag's *content* (the bare integer), so the
+    // summarizer decodes with `KnownValue.fromUntaggedCbor`, as the
+    // reference's `format_context.rs` calls `KnownValue::from_untagged_cbor`.
+    // `KnownValue.fromCbor` requires the tag and would make every row here
+    // `'<unknown>'`.
+    const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
+    const leaf = Envelope.leaf(
+      cbor([taggedValue(40000, 1), taggedValue(40000, 25), taggedValue(40000, 999)]),
+    );
+    expect(leaf.format({ flat: true })).toBe("['isA', 'value', '999']");
+    const map = Envelope.leaf(cbor(new Map([[taggedValue(40000, 4), "n"]])));
+    expect(map.format({ flat: true })).toBe(`{'note': "n"}`);
+  });
 });
 
 describe("E1f — SSH summarizer parity with Rust tags_registry.rs:196-238", () => {
@@ -476,5 +491,36 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
     );
     const envelope = Envelope.leaf(tagged);
     expect(envelope.format()).toBe("SSHCertificate");
+  });
+});
+
+describe("summary truncation follows the reference (D3 closed)", () => {
+  // `envelope_summary.rs`: `if string.len() > max_length { chars().take(max_length) + "…" }`
+  // — the UTF-8 byte length decides, the cut keeps whole characters.
+  const text = "unicode ✓ ☺ 日本"; // 14 characters, 22 bytes
+  const long = "ünïcödé ünïcödé ünïcödé ünïcödé ünïcödé!"; // 40 characters, 60 bytes
+  it("appends the ellipsis when the byte length exceeds the limit, keeping every character", async () => {
+    const { summary } = await import("../src/format/envelope-summary.js");
+    const e = Envelope.from(text);
+    expect(summary(e, { maxLength: 40 })).toBe('"unicode ✓ ☺ 日本"');
+    expect(summary(e, { maxLength: 14 })).toBe('"unicode ✓ ☺ 日本…"');
+    expect(summary(e, { maxLength: 13 })).toBe('"unicode ✓ ☺ 日…"');
+    expect(summary(e, { maxLength: 12 })).toBe('"unicode ✓ ☺ …"');
+    expect(summary(e, { maxLength: 10 })).toBe('"unicode ✓ …"');
+    expect(summary(Envelope.from(long), { maxLength: 40 })).toBe(`"${long}…"`);
+    // ASCII is unchanged: bytes and characters agree.
+    expect(summary(Envelope.from("Hello, World!"), { maxLength: 5 })).toBe('"Hello…"');
+  });
+  it("cuts by code point, not UTF-16 unit", async () => {
+    const { summary } = await import("../src/format/envelope-summary.js");
+    // Two astral characters (4 bytes, 2 UTF-16 units each): 8 bytes > 1, one character kept whole.
+    expect(summary(Envelope.from("😀😀"), { maxLength: 1 })).toBe('"😀…"');
+  });
+  it("the mermaid label uses the same rule (summary(20))", () => {
+    const line = Envelope.from(text)
+      .mermaidFormat()
+      .split("\n")
+      .find((l) => l.includes("unicode"));
+    expect(line).toContain("unicode ✓ ☺ 日本…");
   });
 });

@@ -140,9 +140,11 @@ export class Response implements ToEnvelope {
     if (this._result.ok) {
       return `id: ${this._result.id.shortDescription()}, result: ${formatFlat(this._result.result)}`;
     } else {
+      // The reference's `summary()` separates the id and the error with a
+      // space (no comma) on the failure branches.
       const idStr =
         this._result.id !== undefined ? this._result.id.shortDescription() : "'Unknown'";
-      return `id: ${idStr}, error: ${formatFlat(this._result.error)}`;
+      return `id: ${idStr} error: ${formatFlat(this._result.error)}`;
     }
   }
 

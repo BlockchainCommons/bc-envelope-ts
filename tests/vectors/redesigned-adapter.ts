@@ -120,6 +120,8 @@ export function redesignedShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "salt": {
         const env = build(e.e);
         const rng = deps.seededRng(e.rng);
+        if (e.range !== undefined)
+          return env.addSalt({ range: { min: e.range[0], max: e.range[1] }, rng });
         return e.len === undefined ? env.addSalt({ rng }) : env.addSalt({ length: e.len, rng });
       }
       case "sskr": {
