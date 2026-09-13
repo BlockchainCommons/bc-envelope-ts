@@ -1969,7 +1969,11 @@ export declare class Expression implements ToEnvelope {
      * TAG_FUNCTION / TAG_PARAMETER format summarizers from firing.
      */
     static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Expression;
-    /** Returns a string representation for display. */
+    /**
+     * The reference's `Display`: the expression's format string, quoted and
+     * escaped (`write!(f, "{:?}", self.envelope.format())`); `JSON.stringify`
+     * produces the same text for the characters a format string contains.
+     */
     toString(): string;
 }
 
@@ -2117,7 +2121,12 @@ declare class Function_2 implements ToEnvelope {
     withParameter(param: ParameterID, value: EnvelopeInput): Expression;
     /** Checks equality based on value (for known) or name (for named). */
     equals(other: Function_2): boolean;
-    /** Returns a string representation for display. */
+    /**
+     * The reference's `Display`: the assigned name or the number for a known
+     * function, the name in quotes for a named one (`add`, `99`, `"greet"`).
+     * The `«…»` form belongs to the format strings, where the format context
+     * prints it on both sides.
+     */
     toString(): string;
 }
 export { Function_2 as Function }
@@ -2486,7 +2495,12 @@ export declare class Parameter implements ToEnvelope {
     toEnvelope(): Envelope;
     /** Checks equality based on value (for known) or name (for named). */
     equals(other: Parameter): boolean;
-    /** Returns a string representation for display. */
+    /**
+     * The reference's `Display`: the assigned name or the number for a known
+     * parameter, the name in quotes for a named one (`lhs`, `77`, `"x"`); a
+     * parameter that carries a value appends `: value`. The `❰…❱` form belongs
+     * to the format strings, where the format context prints it on both sides.
+     */
     toString(): string;
     /** The `_` (blank) parameter with `value`. */
     static blank(value: EnvelopeInput): Parameter;

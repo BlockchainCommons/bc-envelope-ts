@@ -131,6 +131,18 @@ const TOMBSTONES: {
     matches: (r, a, b) =>
       r.e.k === "op" && a === "throw:GENERAL" && b.startsWith("throw:") && b !== a,
   },
+  {
+    // 1.0.0-beta.2 (envelope review D3): text summaries truncate as the
+    // reference does — the UTF-8 byte length decides, the cut keeps whole
+    // characters — so a non-ASCII leaf's `summary` and mermaid label can gain
+    // an ellipsis the baseline (UTF-16 units for both) did not print.
+    id: "T13-summary-bytes",
+    landed: true,
+    // Whatever the recipe (a leaf, or a UR that decodes to one), the only
+    // difference is an ellipsis in a summary or mermaid label.
+    matches: (_r, a, b) =>
+      a !== b && stripTagNames(a).replace(/…/g, "") === stripTagNames(b).replace(/…/g, ""),
+  },
 ];
 
 const DATE = /\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ/;

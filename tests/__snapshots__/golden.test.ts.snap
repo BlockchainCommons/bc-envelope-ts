@@ -52,14 +52,14 @@ exports[`golden: freeze additions > B7: General where the reference has a varian
   "encrypt twice: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
   "encrypt elided: throw:EnvelopeError:AlreadyElided:envelope was elided, so it cannot be compressed or encrypted",
   "decrypt plain: throw:EnvelopeError:NotEncrypted:cannot decrypt an envelope that was not encrypted",
-  "wrong key: throw:EnvelopeError:Components:components error: AEAD error <- CryptoError:AuthenticationFailed:AEAD authentication failed <- Error:invalid tag",
+  "wrong key: throw:EnvelopeError:Components:components error: AEAD error <- CryptoError:AuthenticationFailed:AEAD error <- Error:invalid tag",
   "compress encrypted: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
   "decompress plain: throw:EnvelopeError:NotCompressed:cannot decompress an envelope that was not compressed",
   "decryptSubjectToRecipient non-recipient: throw:EnvelopeError:UnknownRecipient:unknown recipient",
   "decryptSubjectToRecipient no recipients: throw:EnvelopeError:UnknownRecipient:unknown recipient",
   "attachmentPayload on non-attachment: throw:EnvelopeError:InvalidAttachment:invalid attachment",
   "expectAttachment none: throw:EnvelopeError:NonexistentAttachment:nonexistent attachment",
-  "Request.fromEnvelope mismatch: throw:EnvelopeError:Cbor:dcbor error: expected function «"g"», but found «"f"»",
+  "Request.fromEnvelope mismatch: throw:EnvelopeError:Cbor:dcbor error: expected function "g", but found "f"",
 ]
 `;
 
@@ -90,8 +90,8 @@ exports[`golden: freeze additions > B11/B12/B16: format strings 1`] = `
 [
   "Function.known(5): ok:«5»",
   "format(NOTE, { context: "none" }): ok:'4'",
-  "ADD.toString(): ok:«1»",
-  "Response.failure(id).withError("e").summary(): ok:id: c6c7c8c9, error: "e"",
+  "ADD.toString(): ok:add",
+  "Response.failure(id).withError("e").summary(): ok:id: c6c7c8c9 error: "e"",
 ]
 `;
 
@@ -359,7 +359,7 @@ exports[`golden: hand corpus > category domain 1`] = `
   "domain lock.method.99: throw:EnvelopeError:InvalidParameter",
   "domain function.known.-1: throw:EnvelopeError:InvalidParameter",
   "domain function.known.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain parameter.from.empty: ok:❰""❱",
+  "domain parameter.from.empty: ok:""",
   "domain hasSignaturesFromThreshold.1.5: throw:EnvelopeError:InvalidParameter",
   "domain leaf.date: ok:d8c8d8c9c100",
   "domain leaf.undefined: throw:EnvelopeError:InvalidParameter",
@@ -390,16 +390,16 @@ exports[`golden: hand corpus > category wire 1`] = `
 [
   "node(leaf:text:Alice+2): "Alice" [     "knows": "Bob" ]",
   "nodeEnv(leaf:text:Alice; assertion(leaf:text:knows:leaf:text:Bob), assertion(leaf:text:knows:leaf:text:Bob)): "Alice" [     "knows": "Bob" ]",
-  "nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
-  "elide[elide](nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o)))): "A" [     ELIDED [         'salt': Salt     ] ]",
-  "op roundtrip(elide[elide](nodeEnv(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))))): "A" [     ELIDED [         'salt': Salt     ] ]",
+  "nodeEnv(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
+  "elide[elide](nodeEnv(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o)))): "A" [     ELIDED [         'salt': Salt     ] ]",
+  "op roundtrip(elide[elide](nodeEnv(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o))))): "A" [     ELIDED [         'salt': Salt     ] ]",
   "leaf:date: 1970-01-01",
   "leaf:date: 2022-07-11T04:00:00Z",
   "node(leaf:text:event+1): "event" [     "at": 2022-07-11T04:00:00Z ]",
   "recipientDecode lftansfwlrgrdidp… seed=ff00ff00: "Hello." [     'hasRecipient': SealedMessage ]",
   "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion salted): throw:INVALID_FORMAT",
   "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion): throw:INVALID_FORMAT",
-  "op addAssertionEnvelope(leaf:text:A; salt(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
+  "op addAssertionEnvelope(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
   "request:5: request(ARID(c66be27d)) [     'body': «5» [         ❰lhs❱: 1     ] ]",
   "request:6: request(ARID(c66be27d)) [     'body': «6» [         ❰lhs❱: 1     ] ]",
   "request:7: request(ARID(c66be27d)) [     'body': «7» [         ❰lhs❱: 1     ] ]",
@@ -1248,7 +1248,7 @@ exports[`golden: hand corpus > leaf:text:unicode ✓ ☺ 日本 1`] = `
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0["&quot;unicode ✓ ☺ 日本&quot;<br>8d1403ea"]
+0["&quot;unicode ✓ ☺ 日本…&quot;<br>8d1403ea"]
 style 0 stroke:teal,stroke-width:4px"
 `;
 
@@ -1963,75 +1963,77 @@ linkStyle 2 stroke:cyan,stroke-width:2px
 linkStyle 3 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > salt(leaf:text:x) 1`] = `
-""x" [
-    'salt': Salt
-]
----
-f5fca122 NODE
-    5e85370e subj "x"
-    9e15c9cb ASSERTION
-        618975ce pred 'salt'
-        8c4283c2 obj Salt
----
-%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
-graph LR
-0(("NODE<br>f5fca122"))
-    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
-    0 --> 2(["ASSERTION<br>9e15c9cb"])
-        2 -- pred --> 3[/"'salt'<br>618975ce"/]
-        2 -- obj --> 4["Salt<br>8c4283c2"]
-style 0 stroke:red,stroke-width:4px
-style 1 stroke:teal,stroke-width:4px
-style 2 stroke:green,stroke-width:4px
-style 3 stroke:goldenrod,stroke-width:4px
-style 4 stroke:teal,stroke-width:4px
-linkStyle 0 stroke:red,stroke-width:2px
-linkStyle 1 stroke-width:2px
-linkStyle 2 stroke:cyan,stroke-width:2px
-linkStyle 3 stroke:magenta,stroke-width:2px"
-`;
-
-exports[`golden: hand corpus > salt(node(leaf:text:Alice+1)) 1`] = `
+exports[`golden: hand corpus > salt(node(leaf:text:Alice+2)) 1`] = `
 ""Alice" [
-    "knows": "Bob"
+    "age": 30
+    "knows": "Bob" [
+        "knows": "Carol"
+    ]
     'salt': Salt
 ]
 ---
-4368cf06 NODE
+0b96a0cf NODE
     13941b48 subj "Alice"
-    51912233 ASSERTION
-        618975ce pred 'salt'
-        ac8bac43 obj Salt
-    78d666eb ASSERTION
+    0eb5609b ASSERTION
+        5943be12 pred "age"
+        cf972730 obj 30
+    970da8b3 ASSERTION
         db7dd21c pred "knows"
-        13b74194 obj "Bob"
+        15ec830a obj NODE
+            13b74194 subj "Bob"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+    dd412f1d ASSERTION
+        618975ce pred 'salt'
+        7915f200 obj Salt
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0(("NODE<br>4368cf06"))
+0(("NODE<br>0b96a0cf"))
     0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
-    0 --> 2(["ASSERTION<br>51912233"])
-        2 -- pred --> 3[/"'salt'<br>618975ce"/]
-        2 -- obj --> 4["Salt<br>ac8bac43"]
-    0 --> 5(["ASSERTION<br>78d666eb"])
+    0 --> 2(["ASSERTION<br>0eb5609b"])
+        2 -- pred --> 3["&quot;age&quot;<br>5943be12"]
+        2 -- obj --> 4["30<br>cf972730"]
+    0 --> 5(["ASSERTION<br>970da8b3"])
         5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
-        5 -- obj --> 7["&quot;Bob&quot;<br>13b74194"]
+        5 -- obj --> 7(("NODE<br>15ec830a"))
+            7 -- subj --> 8["&quot;Bob&quot;<br>13b74194"]
+            7 --> 9(["ASSERTION<br>4012caf2"])
+                9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
+                9 -- obj --> 11["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 12(["ASSERTION<br>dd412f1d"])
+        12 -- pred --> 13[/"'salt'<br>618975ce"/]
+        12 -- obj --> 14["Salt<br>7915f200"]
 style 0 stroke:red,stroke-width:4px
 style 1 stroke:teal,stroke-width:4px
 style 2 stroke:green,stroke-width:4px
-style 3 stroke:goldenrod,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
 style 4 stroke:teal,stroke-width:4px
 style 5 stroke:green,stroke-width:4px
 style 6 stroke:teal,stroke-width:4px
-style 7 stroke:teal,stroke-width:4px
+style 7 stroke:red,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+style 12 stroke:green,stroke-width:4px
+style 13 stroke:goldenrod,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
 linkStyle 0 stroke:red,stroke-width:2px
 linkStyle 1 stroke-width:2px
 linkStyle 2 stroke:cyan,stroke-width:2px
 linkStyle 3 stroke:magenta,stroke-width:2px
 linkStyle 4 stroke-width:2px
 linkStyle 5 stroke:cyan,stroke-width:2px
-linkStyle 6 stroke:magenta,stroke-width:2px"
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke:red,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px
+linkStyle 11 stroke-width:2px
+linkStyle 12 stroke:cyan,stroke-width:2px
+linkStyle 13 stroke:magenta,stroke-width:2px"
 `;
 
 exports[`golden: hand corpus > salt(node(leaf:text:Alice+4)) 1`] = `
@@ -2113,6 +2115,425 @@ linkStyle 12 stroke:magenta,stroke-width:2px
 linkStyle 13 stroke-width:2px
 linkStyle 14 stroke:cyan,stroke-width:2px
 linkStyle 15 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt(node(wrap(node(leaf:text:Alice+4))+1)) 1`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    "meta": 1 [
+        2: 3
+    ]
+    'salt': Salt
+]
+---
+959c8609 NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    1e25c2cb ASSERTION
+        c96cd5dc pred "meta"
+        a4a4ffdd obj NODE
+            4bf5122f subj 1
+            c2768b34 ASSERTION
+                dbc1b4c9 pred 2
+                084fed08 obj 3
+    611cf332 ASSERTION
+        618975ce pred 'salt'
+        d2a9a38a obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>959c8609"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>1e25c2cb"])
+        16 -- pred --> 17["&quot;meta&quot;<br>c96cd5dc"]
+        16 -- obj --> 18(("NODE<br>a4a4ffdd"))
+            18 -- subj --> 19["1<br>4bf5122f"]
+            18 --> 20(["ASSERTION<br>c2768b34"])
+                20 -- pred --> 21["2<br>dbc1b4c9"]
+                20 -- obj --> 22["3<br>084fed08"]
+    0 --> 23(["ASSERTION<br>611cf332"])
+        23 -- pred --> 24[/"'salt'<br>618975ce"/]
+        23 -- obj --> 25["Salt<br>d2a9a38a"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:teal,stroke-width:4px
+style 18 stroke:red,stroke-width:4px
+style 19 stroke:teal,stroke-width:4px
+style 20 stroke:green,stroke-width:4px
+style 21 stroke:teal,stroke-width:4px
+style 22 stroke:teal,stroke-width:4px
+style 23 stroke:green,stroke-width:4px
+style 24 stroke:goldenrod,stroke-width:4px
+style 25 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px
+linkStyle 18 stroke:red,stroke-width:2px
+linkStyle 19 stroke-width:2px
+linkStyle 20 stroke:cyan,stroke-width:2px
+linkStyle 21 stroke:magenta,stroke-width:2px
+linkStyle 22 stroke-width:2px
+linkStyle 23 stroke:cyan,stroke-width:2px
+linkStyle 24 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:8(node(leaf:text:Alice+1)) 1`] = `
+""Alice" [
+    "knows": "Bob"
+    'salt': Salt
+]
+---
+4368cf06 NODE
+    13941b48 subj "Alice"
+    51912233 ASSERTION
+        618975ce pred 'salt'
+        ac8bac43 obj Salt
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>4368cf06"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>51912233"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>ac8bac43"]
+    0 --> 5(["ASSERTION<br>78d666eb"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:8..=8(leaf:text:x) 1`] = `
+""x" [
+    'salt': Salt
+]
+---
+9d5a1d63 NODE
+    5e85370e subj "x"
+    611cf332 ASSERTION
+        618975ce pred 'salt'
+        d2a9a38a obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>9d5a1d63"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>611cf332"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>d2a9a38a"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:8..=32(node(leaf:text:Alice+1)) 1`] = `
+""Alice" [
+    "knows": "Bob"
+    'salt': Salt
+]
+---
+92d59b8b NODE
+    13941b48 subj "Alice"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+    e11c979c ASSERTION
+        618975ce pred 'salt'
+        16d66451 obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>92d59b8b"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>78d666eb"])
+        2 -- pred --> 3["&quot;knows&quot;<br>db7dd21c"]
+        2 -- obj --> 4["&quot;Bob&quot;<br>13b74194"]
+    0 --> 5(["ASSERTION<br>e11c979c"])
+        5 -- pred --> 6[/"'salt'<br>618975ce"/]
+        5 -- obj --> 7["Salt<br>16d66451"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:goldenrod,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:16(leaf:text:x) 1`] = `
+""x" [
+    'salt': Salt
+]
+---
+f5fca122 NODE
+    5e85370e subj "x"
+    9e15c9cb ASSERTION
+        618975ce pred 'salt'
+        8c4283c2 obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>f5fca122"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>9e15c9cb"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>8c4283c2"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:16..=64(node(leaf:text:Alice+4)) 1`] = `
+""Alice" [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
+    'salt': Salt
+]
+---
+24712189 NODE
+    13941b48 subj "Alice"
+    15ee3bdd ASSERTION
+        618975ce pred 'salt'
+        3ddee5f0 obj Salt
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    78d666eb ASSERTION
+        db7dd21c pred "knows"
+        13b74194 obj "Bob"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>24712189"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>15ee3bdd"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>3ddee5f0"]
+    0 --> 5(["ASSERTION<br>3c3ca1f1"])
+        5 -- pred --> 6[/"'note'<br>0fcd6a39"/]
+        5 -- obj --> 7["&quot;A note&quot;<br>61c8e387"]
+    0 --> 8(["ASSERTION<br>4012caf2"])
+        8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]
+        8 -- obj --> 10["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 11(["ASSERTION<br>581d8efe"])
+        11 -- pred --> 12[/"'isA'<br>2be2d79b"/]
+        11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]
+    0 --> 14(["ASSERTION<br>78d666eb"])
+        14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
+        14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:goldenrod,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:100..=4000(node(leaf:text:Alice+2)) 1`] = `
+""Alice" [
+    "age": 30
+    "knows": "Bob" [
+        "knows": "Carol"
+    ]
+    'salt': Salt
+]
+---
+1cf20611 NODE
+    13941b48 subj "Alice"
+    0eb5609b ASSERTION
+        5943be12 pred "age"
+        cf972730 obj 30
+    970da8b3 ASSERTION
+        db7dd21c pred "knows"
+        15ec830a obj NODE
+            13b74194 subj "Bob"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+    a283782f ASSERTION
+        618975ce pred 'salt'
+        40338f38 obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>1cf20611"))
+    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
+    0 --> 2(["ASSERTION<br>0eb5609b"])
+        2 -- pred --> 3["&quot;age&quot;<br>5943be12"]
+        2 -- obj --> 4["30<br>cf972730"]
+    0 --> 5(["ASSERTION<br>970da8b3"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7(("NODE<br>15ec830a"))
+            7 -- subj --> 8["&quot;Bob&quot;<br>13b74194"]
+            7 --> 9(["ASSERTION<br>4012caf2"])
+                9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
+                9 -- obj --> 11["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 12(["ASSERTION<br>a283782f"])
+        12 -- pred --> 13[/"'salt'<br>618975ce"/]
+        12 -- obj --> 14["Salt<br>40338f38"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:red,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:green,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:teal,stroke-width:4px
+style 12 stroke:green,stroke-width:4px
+style 13 stroke:goldenrod,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke:red,stroke-width:2px
+linkStyle 8 stroke-width:2px
+linkStyle 9 stroke:cyan,stroke-width:2px
+linkStyle 10 stroke:magenta,stroke-width:2px
+linkStyle 11 stroke-width:2px
+linkStyle 12 stroke:cyan,stroke-width:2px
+linkStyle 13 stroke:magenta,stroke-width:2px"
 `;
 
 exports[`golden: hand corpus > sign:ecdsa(node(leaf:text:Alice+4)) 1`] = `

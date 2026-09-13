@@ -270,3 +270,30 @@ describe("Event", () => {
     );
   });
 });
+
+describe("debug renderings follow the reference's Display (D4 closed)", () => {
+  it("Function.toString(): name or number; named in quotes", () => {
+    expect(String(Function.known(1, "add"))).toBe("add");
+    expect(String(Function.known(99))).toBe("99");
+    expect(String(Function.named("greet"))).toBe('"greet"');
+    // The «…» form is the format context's, unchanged.
+    expect(Function.named("greet").toEnvelope().format()).toBe('«"greet"»');
+  });
+  it("Parameter.toString(): name or number; named in quotes; a carried value appended", () => {
+    expect(String(Parameter.known(2, "lhs"))).toBe("lhs");
+    expect(String(Parameter.known(77))).toBe("77");
+    expect(String(Parameter.named("x"))).toBe('"x"');
+    expect(String(Parameter.from("x", "y"))).toBe('"x": y');
+  });
+  it("Expression.toString(): the quoted format string", () => {
+    const e = new Expression(ADD).withParameter(LHS.id, 2);
+    expect(String(e)).toBe(JSON.stringify(e.toEnvelope().format()));
+    expect(String(e).startsWith('"«add»')).toBe(true);
+  });
+  it("Response.summary(): no comma before `error:` on the failure branches", () => {
+    const id = ARID_1;
+    expect(Response.success(id).withResult(42).summary()).toBe("id: c66be27d, result: 42");
+    expect(Response.failure(id).withError("e").summary()).toBe('id: c66be27d error: "e"');
+    expect(Response.earlyFailure().withError("e").summary()).toBe("id: 'Unknown' error: \"e\"");
+  });
+});

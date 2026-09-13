@@ -51,7 +51,7 @@ import {
   TAG_ENVELOPE,
   TAG_LEAF,
 } from "@blockchaincommons/tags";
-import { nextInClosedRangeI32 } from "@blockchaincommons/rand/samplers";
+import { nextInClosedRangeUsize } from "@blockchaincommons/rand/samplers";
 
 // Type imports for extension method declarations
 // These are imported as types only to avoid circular dependencies at runtime
@@ -1081,12 +1081,13 @@ export class Envelope implements DigestProvider {
       const { min, max } = range;
       expectLengthAtLeast("range.min", min, MIN_SALT_SIZE);
       expectLengthAtLeast("range.max", max, min);
-      size = nextInClosedRangeI32(r, min, max);
+      // The reference samples a `RangeInclusive<usize>`: the 64-bit draw.
+      size = nextInClosedRangeUsize(r, min, max);
     } else {
       const count = this.toCbor().toData().length;
       const minSize = Math.max(8, Math.ceil(count * 0.05));
       const maxSize = Math.max(minSize + 8, Math.ceil(count * 0.25));
-      size = nextInClosedRangeI32(r, minSize, maxSize);
+      size = nextInClosedRangeUsize(r, minSize, maxSize);
     }
     return this.addAssertion(SALT, Salt.from(randomBytes(size, { rng: r })));
   }

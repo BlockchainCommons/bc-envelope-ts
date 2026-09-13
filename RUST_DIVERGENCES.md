@@ -22,8 +22,9 @@ pins `bc-envelope = 0.43.0` and replays `tests/vectors/vectors.json` through
 the reference, building each recipe with the reference's own API and
 comparing the outputs — and, for rejections, the **error codes** (a thrown
 reference variant is reported in SCREAMING_SNAKE_CASE, which is what the
-port's `EnvelopeError.code` spells). The current run: **207 vectors — 179
-match, 13 expected divergences, 15 JS-only, 0 mismatches.**
+port's `EnvelopeError.code` spells). The current run: **213 vectors — 185
+match, 13 expected divergences (D1 2, D2 1, D3 1, E1 9), 15 JS-only, 0
+mismatches.**
 
 ## 1. True behavioral divergences
 
@@ -37,37 +38,54 @@ payload bytes. Both sides decompress each other's output.
 
 ### D2. Registry names in format strings (1 vector)
 
-The TypeScript known-values registry names codepoints the reference's format
-context does not (the bundled JSON registries): `'Self'` for 706 where the
-reference prints `'706'`. Every codepoint both know prints identically.
+The reference's global known-values store registers 102 of its 104
+constants — `VALUE` (25) and `SELF` (706) are missing from its list
+(known-values D4, an upstream omission) — so `'Self'` prints for 706 here
+and `'706'` there. Every codepoint both know prints identically; the
+harness allows exactly these two names and nothing else.
 
-### D3. Summary truncation counts characters (1 vector)
+### D3. Diagnostic line breaking counts bytes in the reference (1 vector)
 
-Leaf summaries (`summary`, `mermaidFormat` labels) and the diagnostic
-line-breaking threshold count **characters** in TypeScript and **bytes** in
-the reference, so a non-ASCII text leaf can be truncated or wrapped
-differently: `"unicode ✓ ☺ 日本"` is cut to `"unicode ✓ ☺ 日本…"` by the
-reference and shown whole here. ASCII text is identical.
+dcbor's diagnostic notation breaks a group over several lines when its
+strings exceed 20 **bytes** in the reference (`dcbor-rust diag.rs`,
+`total_strings_len` sums `str::len()`) and 20 **UTF-16 units** here
+(`dcbor-ts diag.ts`, `.length`), so `"unicode ✓ ☺ 日本"` (14 characters,
+22 bytes) prints `201("…")` on one line here and over three lines there.
+That is the dcbor package's item; the envelope only passes the value
+through. (The summary half of this vector — the reference decides
+truncation by UTF-8 length and cuts by characters — matches since
+1.0.0-beta.2, see *Resolved*.) ASCII text is identical.
 
 ### D4. Renderings the port keeps (not vectored)
 
-- `Function.toString()` / `Parameter.toString()` render the id (`«1»`,
-  `❰2❱`) where the reference's `Display` renders the *name* (`add`, `lhs`).
-  The format strings — what crosses between implementations — print the
-  name through the format context on both sides; only the debug rendering
-  differs.
-- `Response.summary()` separates the id and the error with `, ` where the
-  reference has a space (`id: c66be27d, error: "e"` vs `id: c66be27d error:
-  "e"`).
 - Error *messages* mirror the reference's wording except one typo:
   `AmbiguousAttachment` reads `ambiguous attachment` here and `abiguous
   attachment` there. Codes are what the harness compares.
+- `Expression.fromEnvelope` reports a function mismatch as `expected
+  function add, but found sub` where the reference formats the `Debug` of
+  its enum (`Expected function Known(1, Some("add")), but found …`); the
+  code is `Cbor` on both sides.
 
 ### Resolved
 
 Validating against the reference closed these; the pinned vectors and the
-frozen baseline (`tests/differential.test.ts`, tombstones T5–T10 and T12)
-record each flip:
+frozen baseline (`tests/differential.test.ts`, tombstones T5–T10, T12 and
+T13) record each flip:
+
+- **Text summaries** (1.0.0-beta.2) truncate as the reference does: the
+  UTF-8 byte length decides (`string.len() > max_length`), the cut keeps
+  `max_length` whole characters (`chars().take`), so a non-ASCII text can
+  gain an `…` without losing a character — executed: `summary(14)` of
+  `"unicode ✓ ☺ 日本"` is `"unicode ✓ ☺ 日本…"` on both sides, and the
+  mermaid label (`summary(20)`) matches. The port counted UTF-16 units for
+  both steps.
+- **Debug renderings** (1.0.0-beta.2): `Function.toString()` /
+  `Parameter.toString()` print the reference's `Display` — the name or the
+  number, the name in quotes for a named one (`add`, `99`, `"greet"`) — not
+  `«1»` / `❰2❱`, which the format context prints inside format strings on
+  both sides; `Expression.toString()` is the quoted format string (the
+  reference's `{:?}` of `format()`); `Response.summary()` writes `id: X
+  error: E` on its failure branches, as the reference does.
 
 - **Sealed content key** (`recipient`): the port sealed the 32 raw key
   bytes; the reference seals the key's tagged CBOR (37 bytes). Recipient
@@ -103,7 +121,9 @@ record each flip:
 
 Inputs the reference's types make impossible, and what the port does with
 them. Each is a `domain` vector (15, counted as JS-only by the harness) or a
-golden entry; every rejection is an `EnvelopeError`.
+golden entry; every rejection is an `EnvelopeError` except where the table
+says otherwise (an unencodable value reaches dcbor first and is its
+`CborError`).
 
 | Input | Outcome |
 |---|---|

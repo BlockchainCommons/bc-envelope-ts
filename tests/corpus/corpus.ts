@@ -136,6 +136,15 @@ export const HAND: E[] = [
   { k: "salt", e: aliceMore, rng: RNG_1 },
   { k: "salt", e: text("x"), rng: RNG_2, len: 16 },
   { k: "salt", e: alice, rng: RNG_1, len: 8 },
+  // Seeded salt *lengths*: the reference's `RangeInclusive<usize>` draw
+  // (N1 in the rand divergence review); ranges wide enough to tell the
+  // 64-bit draw from the 32-bit one.
+  { k: "salt", e: nested, rng: RNG_1 },
+  { k: "salt", e: deep, rng: RNG_2 },
+  { k: "salt", e: alice, rng: RNG_1, range: [8, 32] },
+  { k: "salt", e: aliceMore, rng: RNG_2, range: [16, 64] },
+  { k: "salt", e: nested, rng: RNG_1, range: [100, 4000] },
+  { k: "salt", e: text("x"), rng: RNG_2, range: [8, 8] },
   { k: "sskr", e: aliceMore, key: KEY, spec: { gt: 1, groups: [{ mt: 2, mc: 3 }] }, rng: RNG_1 },
   {
     k: "sskr",

@@ -228,9 +228,14 @@ export class Function implements ToEnvelope {
     }
   }
 
-  /** Returns a string representation for display. */
+  /**
+   * The reference's `Display`: the assigned name or the number for a known
+   * function, the name in quotes for a named one (`add`, `99`, `"greet"`).
+   * The `«…»` form belongs to the format strings, where the format context
+   * prints it on both sides.
+   */
   toString(): string {
-    return this._variant === "known" ? `«${this._value}»` : `«"${this._name}"»`;
+    return this.name;
   }
 }
 
@@ -451,9 +456,14 @@ export class Parameter implements ToEnvelope {
     }
   }
 
-  /** Returns a string representation for display. */
+  /**
+   * The reference's `Display`: the assigned name or the number for a known
+   * parameter, the name in quotes for a named one (`lhs`, `77`, `"x"`); a
+   * parameter that carries a value appends `: value`. The `❰…❱` form belongs
+   * to the format strings, where the format context prints it on both sides.
+   */
   toString(): string {
-    const idStr = this._variant === "known" ? `❰${this._value}❱` : `❰"${this._name}"❱`;
+    const idStr = this.name;
     if (this._paramValue !== undefined) {
       return `${idStr}: ${this._paramValue.asText()}`;
     }
@@ -778,12 +788,13 @@ export class Expression implements ToEnvelope {
     return expr;
   }
 
-  /** Returns a string representation for display. */
+  /**
+   * The reference's `Display`: the expression's format string, quoted and
+   * escaped (`write!(f, "{:?}", self.envelope.format())`); `JSON.stringify`
+   * produces the same text for the characters a format string contains.
+   */
   toString(): string {
-    const params = Array.from(this._parameters.values())
-      .map((p) => p.toString())
-      .join(", ");
-    return `${this._function.toString()} [${params}]`;
+    return JSON.stringify(this.toEnvelope().format());
   }
 }
 

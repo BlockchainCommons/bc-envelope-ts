@@ -1,15 +1,6 @@
 # Migrating to the redesigned `@blockchaincommons/envelope`
 
-The redesign keeps every wire byte and every format string. Envelopes, digests,
-CBOR, URs, signatures, encrypted and compressed payloads produced before it
-decode and verify after it, and vice versa; this was proven against a frozen
-pre-redesign bundle (`tests/differential.test.ts`, four enumerated
-tombstones, all of them fixes towards the Rust reference) and against
-`bc-envelope-rust` 0.43.0 (`tests/rust-validation`, 137 of 150 vectors
-byte-identical, the rest classified in `RUST_DIVERGENCES.md`).
-
-What changed is the API. The sections below go subpath by subpath; the
-first one, on the package layout, matters to everyone.
+`@blockchaincommons/envelope` is the redesigned successor to `@bcts/envelope`.
 
 ## 0. Wire and error parity with the reference
 
@@ -271,6 +262,7 @@ are unchanged.
 | `hex(e)` / `hexOpt(e, annotate, context)` / `cborBytes(e)` | `hex(e, { annotate?, context? })` (annotated by default) / `e.toCbor().toData()` |
 | `diagnostic(e)` / `diagnosticAnnotated(e, context)` | `diagnostic(e, { annotate?, context? })` |
 | `summary(e, maxLength)` / `summaryWithContext(e, maxLength, context)` | `summary(e, { maxLength?, context? })` |
+| — | Since 1.0.0-beta.2 the truncation rule is the reference's: the text's UTF-8 byte length decides, the cut keeps `maxLength` whole characters (a non-ASCII text can gain an `…` without losing a character). `Function`/`Parameter.toString()` print the reference's `Display` (`add`, `99`, `"greet"`; the `«…»`/`❰…❱` forms stay in format strings), `Expression.toString()` is the quoted format string, and `Response.summary()` writes `id: X error: E` on failure, as the reference does. |
 | `FormatContextOpt` `{ type: "none" \| "global" \| "custom", context }` and `formatContextNone()` / `formatContextGlobal()` / `formatContextCustom(c)` | `FormatContextOpt = FormatContext \| "global" \| "none"` |
 | `new FormatContext(tags, knownValues)`; `tags()` / `knownValues()` methods; `registerTag(v, n)` | `new FormatContext({ tags?, knownValues?, functions?, parameters? })`; `tags` / `knownValues` / `functions` / `parameters` getters; `context.tags.register(Tag.from(v, n))` |
 | `globalFormatContext()` / `GLOBAL_FORMAT_CONTEXT.get()` / `withFormatContextMut(fn)` / `registerTags()` | `getGlobalFormatContext()` / `withFormatContext(fn)`; the global context registers every tag on first use |

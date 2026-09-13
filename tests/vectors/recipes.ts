@@ -46,7 +46,8 @@ export type E =
   | { k: "encrypt"; e: E; key: string; subject?: boolean; nonce?: string }
   | { k: "compress"; e: E; subject?: boolean }
   | { k: "sign"; e: E; seed: string; scheme: Scheme; note?: string }
-  | { k: "salt"; e: E; rng: Seed; len?: number }
+  /** `addSalt`: fixed `len`, a `range` (`[min, max]`, the reference's `RangeInclusive<usize>`), or proportional. */
+  | { k: "salt"; e: E; rng: Seed; len?: number; range?: [number, number] }
   | {
       k: "sskr";
       e: E;
@@ -107,6 +108,9 @@ export type Op =
 /** Recipe kinds (and ops) the frozen baseline bundle has no equivalent for. */
 export function isBaselineSupported(e: E): boolean {
   if (e.k === "domain") return false;
+  // The frozen bundle's `addSaltInRange` takes no generator, and its
+  // proportional salt drew the length through the 32-bit sampler.
+  if (e.k === "salt" && (e.range !== undefined || e.len === undefined)) return false;
   // The frozen bundle has no `{ nonce }` option.
   if (e.k === "encrypt" && e.nonce !== undefined) return false;
   if (e.k === "op")
@@ -251,7 +255,7 @@ export function recipeName(r: Recipe): string {
       case "sign":
         return `sign:${e.scheme}(${short(e.e)})`;
       case "salt":
-        return `salt(${short(e.e)})`;
+        return `salt${e.len !== undefined ? `:${e.len}` : e.range ? `:${e.range[0]}..=${e.range[1]}` : ""}(${short(e.e)})`;
       case "sskr":
         return `sskr:${e.spec.gt}/${e.spec.groups.map((g) => `${g.mt}of${g.mc}`).join(",")}(${short(e.e)})`;
       case "attach":
