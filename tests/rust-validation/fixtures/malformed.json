@@ -1,0 +1,98 @@
+{
+ "count": 1,
+ "vectors": [
+  {
+   "name": "position:1.5 (unparsable: not a u64)",
+   "recipe": {
+    "e": {
+     "k": "position",
+     "e": {
+      "k": "node",
+      "subject": {
+       "k": "leaf",
+       "v": {
+        "t": "text",
+        "v": "Alice"
+       }
+      },
+      "assertions": [
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Bob"
+         }
+        }
+       ],
+       [
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "knows"
+         }
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Carol"
+         }
+        }
+       ],
+       [
+        {
+         "k": "kv",
+         "v": 1
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "Person"
+         }
+        }
+       ],
+       [
+        {
+         "k": "kv",
+         "v": 4
+        },
+        {
+         "k": "leaf",
+         "v": {
+          "t": "text",
+          "v": "A note"
+         }
+        }
+       ]
+      ]
+     },
+     "pos": "1.5"
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c886d8c965416c696365a104d8c96641206e6f7465a1d8c9656b6e6f7773d8c9654361726f6ca117d8c903a101d8c966506572736f6ea1d8c9656b6e6f7773d8c963426f62\n---\nur:envelope/lntpsoihfpjziniaihoyaatpsoiyfpcxjtjljyihoytpsoihjejtjlktjktpsoihfxhsjpjljzoychtpsoaxoyadtpsoiygdihjpjkjljtoytpsoihjejtjlktjktpsoiafwjlidbkkkuotl\n---\ne414898478b061071ecfda8dc8e177df23100f4b84f7344f7ddde415e09251e2\n---\n\"Alice\" [\n    'isA': \"Person\"\n    \"knows\": \"Bob\"\n    \"knows\": \"Carol\"\n    'note': \"A note\"\n    'position': 3\n]\n---\n\"Alice\" [ 'isA': \"Person\", \"knows\": \"Bob\", \"knows\": \"Carol\", 'note': \"A note\", 'position': 3 ]\n---\ne4148984 NODE\n    13941b48 subj \"Alice\"\n    3c3ca1f1 ASSERTION\n        0fcd6a39 pred 'note'\n        61c8e387 obj \"A note\"\n    4012caf2 ASSERTION\n        db7dd21c pred \"knows\"\n        afb8122e obj \"Carol\"\n    41a182ac ASSERTION\n        9c0ff971 pred 'position'\n        084fed08 obj 3\n    581d8efe ASSERTION\n        2be2d79b pred 'isA'\n        bd52917f obj \"Person\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\ne4148984 NODE\n    13941b48 subj \"Alice\"\n    3c3ca1f1 ASSERTION\n        0fcd6a39 pred 'note'\n        61c8e387 obj \"A note\"\n    4012caf2 ASSERTION\n        db7dd21c pred \"knows\"\n        afb8122e obj \"Carol\"\n    41a182ac ASSERTION\n        9c0ff971 pred 'position'\n        084fed08 obj 3\n    581d8efe ASSERTION\n        2be2d79b pred 'isA'\n        bd52917f obj \"Person\"\n    78d666eb ASSERTION\n        db7dd21c pred \"knows\"\n        13b74194 obj \"Bob\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>e4148984\"))\n    0 -- subj --> 1[\"&quot;Alice&quot;<br>13941b48\"]\n    0 --> 2([\"ASSERTION<br>3c3ca1f1\"])\n        2 -- pred --> 3[/\"'note'<br>0fcd6a39\"/]\n        2 -- obj --> 4[\"&quot;A note&quot;<br>61c8e387\"]\n    0 --> 5([\"ASSERTION<br>4012caf2\"])\n        5 -- pred --> 6[\"&quot;knows&quot;<br>db7dd21c\"]\n        5 -- obj --> 7[\"&quot;Carol&quot;<br>afb8122e\"]\n    0 --> 8([\"ASSERTION<br>41a182ac\"])\n        8 -- pred --> 9[/\"'position'<br>9c0ff971\"/]\n        8 -- obj --> 10[\"3<br>084fed08\"]\n    0 --> 11([\"ASSERTION<br>581d8efe\"])\n        11 -- pred --> 12[/\"'isA'<br>2be2d79b\"/]\n        11 -- obj --> 13[\"&quot;Person&quot;<br>bd52917f\"]\n    0 --> 14([\"ASSERTION<br>78d666eb\"])\n        14 -- pred --> 15[\"&quot;knows&quot;<br>db7dd21c\"]\n        14 -- obj --> 16[\"&quot;Bob&quot;<br>13b74194\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:teal,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nstyle 5 stroke:green,stroke-width:4px\nstyle 6 stroke:teal,stroke-width:4px\nstyle 7 stroke:teal,stroke-width:4px\nstyle 8 stroke:green,stroke-width:4px\nstyle 9 stroke:goldenrod,stroke-width:4px\nstyle 10 stroke:teal,stroke-width:4px\nstyle 11 stroke:green,stroke-width:4px\nstyle 12 stroke:goldenrod,stroke-width:4px\nstyle 13 stroke:teal,stroke-width:4px\nstyle 14 stroke:green,stroke-width:4px\nstyle 15 stroke:teal,stroke-width:4px\nstyle 16 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\nlinkStyle 4 stroke-width:2px\nlinkStyle 5 stroke:cyan,stroke-width:2px\nlinkStyle 6 stroke:magenta,stroke-width:2px\nlinkStyle 7 stroke-width:2px\nlinkStyle 8 stroke:cyan,stroke-width:2px\nlinkStyle 9 stroke:magenta,stroke-width:2px\nlinkStyle 10 stroke-width:2px\nlinkStyle 11 stroke:cyan,stroke-width:2px\nlinkStyle 12 stroke:magenta,stroke-width:2px\nlinkStyle 13 stroke-width:2px\nlinkStyle 14 stroke:cyan,stroke-width:2px\nlinkStyle 15 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        201(\"Alice\"),\n        {\n            4:\n            201(\"A note\")\n        },\n        {\n            201(\"knows\"):\n            201(\"Carol\")\n        },\n        {\n            23:\n            201(3)\n        },\n        {\n            1:\n            201(\"Person\")\n        },\n        {\n            201(\"knows\"):\n            201(\"Bob\")\n        }\n    ]\n)\n---\nd8 c8                               # tag(200) envelope\n    86                              # array(6)\n        d8 c9                       # tag(201) leaf\n            65                      # text(5)\n                416c696365          # \"Alice\"\n        a1                          # map(1)\n            04                      # unsigned(4)\n            d8 c9                   # tag(201) leaf\n                66                  # text(6)\n                    41206e6f7465    # \"A note\"\n        a1                          # map(1)\n            d8 c9                   # tag(201) leaf\n                65                  # text(5)\n                    6b6e6f7773      # \"knows\"\n            d8 c9                   # tag(201) leaf\n                65                  # text(5)\n                    4361726f6c      # \"Carol\"\n        a1                          # map(1)\n            17                      # unsigned(23)\n            d8 c9                   # tag(201) leaf\n                03                  # unsigned(3)\n        a1                          # map(1)\n            01                      # unsigned(1)\n            d8 c9                   # tag(201) leaf\n                66                  # text(6)\n                    506572736f6e    # \"Person\"\n        a1                          # map(1)\n            d8 c9                   # tag(201) leaf\n                65                  # text(5)\n                    6b6e6f7773      # \"knows\"\n            d8 c9                   # tag(201) leaf\n                63                  # text(3)\n                    426f62          # \"Bob\"\n---\nNODE"
+  }
+ ]
+}

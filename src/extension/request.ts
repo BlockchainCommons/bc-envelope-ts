@@ -18,12 +18,20 @@
 
 import { type ARID } from "@blockchaincommons/components";
 import { TAG_REQUEST } from "@blockchaincommons/tags";
-import { taggedValue, CborDate } from "@blockchaincommons/dcbor";
+import { taggedValue, CborDate, expectText } from "@blockchaincommons/dcbor";
 import { BODY, NOTE, DATE } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
 import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
-import { Expression, Function, type FunctionID, type ParameterID } from "./expression";
+import { EnvelopeError } from "../base/error";
+import { cborErrorAt } from "../base/foreign-errors.js";
+import {
+  Expression,
+  Function,
+  type FunctionID,
+  type ParameterID,
+  type Parameter,
+} from "./expression";
 import { decodeTaggedId } from "./tagged-id";
 import { formatFlat } from "../format/notation.js";
 
@@ -51,9 +59,9 @@ export class Request implements ToEnvelope {
   private readonly _body: Expression;
   private readonly _id: ARID;
   private readonly _note: string;
-  private readonly _date: Date | undefined;
+  private readonly _date: CborDate | undefined;
 
-  private constructor(body: Expression, id: ARID, note = "", date?: Date) {
+  private constructor(body: Expression, id: ARID, note = "", date?: CborDate) {
     this._body = body;
     this._id = id;
     this._note = note;
@@ -61,7 +69,7 @@ export class Request implements ToEnvelope {
   }
 
   /**
-   * A request for `func` (a `Function`, a known-function number, a name, or
+   * A request for `func` (a `Function`, a known-function id, a name, or
    * a ready `Expression`) identified by `id`.
    */
   static from(func: Function | Expression | FunctionID, id: ARID): Request {
@@ -82,7 +90,7 @@ export class Request implements ToEnvelope {
   /**
    * Adds a parameter to the request.
    */
-  withParameter(param: ParameterID, value: EnvelopeInput): Request {
+  withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Request {
     // Builders return a new request; the receiver is unchanged.
     return new Request(this._body.withParameter(param, value), this._id, this._note, this._date);
   }
@@ -95,10 +103,17 @@ export class Request implements ToEnvelope {
   }
 
   /**
-   * Adds a date to the request.
+   * Adds a date to the request: a `CborDate` is kept as it is (the
+   * reference's `Date`, exact to the nanosecond); a JavaScript `Date`
+   * converts through `CborDate.fromDate`.
    */
-  withDate(date: Date): Request {
-    return new Request(this._body, this._id, this._note, date);
+  withDate(date: Date | CborDate): Request {
+    return new Request(
+      this._body,
+      this._id,
+      this._note,
+      date instanceof Date ? CborDate.fromDate(date) : date,
+    );
   }
 
   /**
@@ -123,9 +138,15 @@ export class Request implements ToEnvelope {
   }
 
   /**
-   * Returns the date attached to the request, if any.
+   * The date attached to the request as a JavaScript `Date` (millisecond
+   * precision), if any; `cborDate` is the exact value.
    */
   get date(): Date | undefined {
+    return this._date?.toDate();
+  }
+
+  /** The date attached to the request, if any: the stored `CborDate`, exact as decoded or given. */
+  get cborDate(): CborDate | undefined {
     return this._date;
   }
 
@@ -150,14 +171,10 @@ export class Request implements ToEnvelope {
    * and assertions include the request's body, note (if not empty), and date (if present).
    */
   toEnvelope(): Envelope {
-    // Create the tagged ARID as the subject
-    // Wrap the **tagged** ARID inside the request tag — mirrors the reference
-    // `CBOR::to_tagged_value(TAG_REQUEST, request.id)`, which goes
-    // through the `From<ARID> for CBOR` impl that returns the tagged
-    // form. Earlier the TS port stored an untagged ARID byte string,
-    // so format() rendered the request subject as `Bytes(32)` instead
-    // of `ARID(<short>)` — observable in the GSTP byte-shape pins.
-    const taggedArid = taggedValue(TAG_REQUEST, this._id.toCbor());
+    // The subject is the tagged ARID inside the request tag, as the
+    // reference's `CBOR::to_tagged_value(TAG_REQUEST, request.id)` builds it;
+    // the outer tag is the bare number, as the reference's constant is.
+    const taggedArid = taggedValue(TAG_REQUEST.value, this._id.toCbor());
 
     let envelope = Envelope.leaf(taggedArid).addAssertion(BODY, this._body.toEnvelope());
 
@@ -166,31 +183,43 @@ export class Request implements ToEnvelope {
     }
 
     if (this._date !== undefined) {
-      // Pass a tagged-CBOR Date (tag 1); mirrors the reference
-      // `Envelope::add_assertion(DATE, self.date)` which dispatches via
-      // `Date → CBOR` (tag 1). The earlier port stored the ISO 8601
-      // string here, producing a different CBOR object and digest.
-      envelope = envelope.addAssertion(DATE, CborDate.fromDate(this._date));
+      // The stored date's own tag-1 encoding, as the reference's
+      // `add_optional_assertion(DATE, self.date)` dispatches through `Date → CBOR`.
+      envelope = envelope.addAssertion(DATE, this._date);
     }
 
     return envelope;
   }
 
   /**
-   * Creates a request from an envelope.
+   * Reads a request from an envelope (the reference's
+   * `Request::try_from((envelope, expected_function))`): the `'body'`
+   * object as an expression, the subject as `TAG_REQUEST(ARID)`, the
+   * `'note'` and `'date'` objects by subject extraction.
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError `NonexistentPredicate` / `AmbiguousPredicate` when the body is
+   *   not exactly one; `Cbor` (`dcbor error: <reason>`) when the body is not an
+   *   expression or is not `expectedFunction`; `NotLeaf` / `Cbor` when the subject is not
+   *   `TAG_REQUEST(ARID)`; `Cbor` / `InvalidFormat` when a `'note'` is not text or a
+   *   `'date'` is not a tag-1 date
    */
   static fromEnvelope(envelope: Envelope, expectedFunction?: Function): Request {
-    // `NonexistentPredicate` / `AmbiguousPredicate` when the body is not exactly one.
-    const body = Expression.fromEnvelope(envelope.objectForPredicate(BODY), expectedFunction);
+    const bodyEnvelope = envelope.objectForPredicate(BODY);
+    let body: Expression;
+    try {
+      body = Expression.fromEnvelope(bodyEnvelope, expectedFunction);
+    } catch (error) {
+      // The reference's `?` into `Error::Cbor`: `dcbor error: ` before the dcbor text.
+      if (EnvelopeError.isEnvelopeError(error)) throw cborErrorAt(error);
+      throw error;
+    }
 
-    // The subject is TAG_REQUEST(ARID); `NotLeaf` / `Cbor` when it is not.
     const id = decodeTaggedId(envelope, TAG_REQUEST.value);
 
-    // A `'note'` must be text and a `'date'` a tag-1 date when present (`Cbor` otherwise).
-    const note = envelope.optionalObjectForPredicate(NOTE)?.expectString() ?? "";
-    const date = envelope.optionalObjectForPredicate(DATE)?.expectDate();
+    const note = envelope.objectForPredicateOr(NOTE, expectText, "");
+    const date = envelope.optionalObjectForPredicateAs(DATE, (cbor) =>
+      CborDate.fromTaggedCbor(cbor),
+    );
 
     return new Request(body, id, note, date);
   }
@@ -203,13 +232,23 @@ export class Request implements ToEnvelope {
   }
 
   /**
-   * Checks equality with another request.
+   * Checks equality with another request: the id, the note, the exact
+   * date and the body envelope must all be equal (the reference's derived
+   * `PartialEq`).
    */
   equals(other: Request): boolean {
     return (
       this._id.equals(other._id) &&
       this._note === other._note &&
-      this._date?.getTime() === other._date?.getTime()
+      datesEqual(this._date, other._date) &&
+      this._body.function.equals(other._body.function) &&
+      this._body.toEnvelope().digest().equals(other._body.toEnvelope().digest())
     );
   }
+}
+
+/** Both absent, or both present and equal to the nanosecond. */
+export function datesEqual(a: CborDate | undefined, b: CborDate | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.equals(b);
 }

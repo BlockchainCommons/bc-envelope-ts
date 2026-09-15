@@ -1,5 +1,5 @@
-import { Envelope } from "../src/index.js";
-import { SigningPrivateKey } from "@blockchaincommons/components";
+import { Envelope, EnvelopeError } from "../src/index.js";
+import { PrivateKeyBase, SigningPrivateKey, type Verifier } from "@blockchaincommons/components";
 import { SignatureMetadata } from "../src/extension/signature.js";
 import { NOTE, SIGNED } from "@blockchaincommons/known-values";
 import "../src/all.js";
@@ -159,6 +159,73 @@ describe("Signature Extension", () => {
 
       original.wrap();
       expect(original.hasSignatureFrom(alice.publicKey())).toBe(true);
+    });
+  });
+
+  describe("Verifier failures", () => {
+    it("propagate a verifier's own error unchanged, on bare and metadata signatures", () => {
+      // The reference calls `key.verify` outside any mapping: only a
+      // signature object that is not a `Signature` gives a signature-type code.
+      const alice = SigningPrivateKey.random();
+      const boom = new Error("verifier failed");
+      const throwing: Verifier = {
+        verify: () => {
+          throw boom;
+        },
+      };
+      const bare = Envelope.from("Secret").addSignature(alice);
+      expect(() => bare.hasSignatureFrom(throwing)).toThrow(boom);
+      const metadata = SignatureMetadata.from().withAssertion(NOTE, "Signed by Alice");
+      const withMetadata = Envelope.from("Secret").addSignature(alice, { metadata });
+      expect(() => withMetadata.hasSignatureFrom(throwing)).toThrow(boom);
+      // A verifier that returns `false` is not a failure.
+      const denying: Verifier = { verify: () => false };
+      expect(bare.hasSignatureFrom(denying)).toBe(false);
+      expect(withMetadata.hasSignatureFrom(denying)).toBe(false);
+    });
+
+    it("map a signature object that is not a Signature to the signature-type codes", () => {
+      const alice = SigningPrivateKey.random();
+      const bare = Envelope.from("Secret").addAssertion(SIGNED, "not a signature");
+      expect(() => bare.hasSignatureFrom(alice.publicKey())).toThrow(EnvelopeError);
+      try {
+        bare.hasSignatureFrom(alice.publicKey());
+      } catch (e) {
+        expect((e as EnvelopeError).code).toBe("InvalidSignatureType");
+      }
+      const inner = Envelope.from("Secret").addAssertion(
+        SIGNED,
+        Envelope.from("not a signature").addAssertion(NOTE, "n").wrap(),
+      );
+      try {
+        inner.hasSignatureFrom(alice.publicKey());
+      } catch (e) {
+        expect((e as EnvelopeError).code).toBe("InvalidInnerSignatureType");
+      }
+    });
+  });
+
+  describe("Signer failures", () => {
+    it("an SSH key signed without its options is Components with components' message", () => {
+      // The reference's `sign_with_options(...).unwrap()` panics there.
+      const key = PrivateKeyBase.from(new Uint8Array(32)).sshSigningPrivateKey(
+        { kind: "ed25519" },
+        "alice@example.com",
+      );
+      let error: unknown;
+      try {
+        Envelope.from("Secret").addSignature(key);
+      } catch (e) {
+        error = e;
+      }
+      expect(EnvelopeError.isEnvelopeError(error)).toBe(true);
+      if (EnvelopeError.isEnvelopeError(error)) {
+        expect(error.code).toBe("Components");
+        expect(error.message).toBe(
+          "components error: invalid data: Missing namespace and hash algorithm for SSH signing",
+        );
+        expect(error.cause?.name).toBe("ComponentsError");
+      }
     });
   });
 });

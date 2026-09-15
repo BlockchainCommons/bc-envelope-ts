@@ -55,6 +55,13 @@ import "@blockchaincommons/envelope/all";
 doc.sign(alice).verifySignatureFrom(alice.publicKeys()).format();
 ```
 
+Formatting names tags and known values through a global format context.
+Call `registerTags()` (from `/format` or `/all`) once at startup, as the
+reference calls `bc_envelope::register_tags()`, so requests, functions,
+parameters and known values print by name (`request(ARID(…))`, `«add»`,
+`'isA'`) instead of by tag number; the context is created on first use from a
+snapshot of the tag and known-value stores, so register before formatting.
+
 Subpaths: `/all`, `/format`, `/expression`, `/attachment`, `/edge`, `/proof`,
 `/recipient`, `/secret`, `/signature`, `/sskr`, `/types`, `/seal`.
 
@@ -66,13 +73,14 @@ Runnable examples live in the [`examples/`](https://github.com/BlockchainCommons
 
 ### Version History
 
+- **1.0.0-beta.3 (September 15, 2026)** - Validated against `bc-envelope-rust` 0.43.0, error messages included: format-context registration (`registerTags()`), byte-order sorts, decode error identity, subject extraction, `u64` ids and positions, exact request and event dates, SSH-agent locking (`lockWith` / `unlockWith`).
 - **1.0.0-beta.2 (September 12, 2026)** - Text summaries truncate as the reference does (UTF-8 length decides, whole characters kept); `Function`/`Parameter`/`Expression` `toString()` and `Response.summary()` print the reference's `Display` text.
 - **1.0.0-beta.1 (September 9, 2026)** - Initial beta implementation.
 
 ### Roadmap
 
 - Continued testing and auditing on the path from beta to a stable **1.0.0** release.
-- Continued parity with the Rust reference implementation as it evolves (see [`RUST_DIVERGENCES.md`](./RUST_DIVERGENCES.md)).
+- Continued parity with the Rust reference implementation as it evolves: every release replays the vectors through the reference (see [`tests/rust-validation/README.md`](./tests/rust-validation/README.md)).
 
 ### Dependencies
 

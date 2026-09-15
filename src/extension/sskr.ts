@@ -11,7 +11,7 @@
 // specified threshold required to reconstruct the original envelope.
 
 import { SskrShare } from "@blockchaincommons/components/sskr";
-import { Secret, type Spec } from "@blockchaincommons/sskr";
+import { Secret, SskrError, type Spec } from "@blockchaincommons/sskr";
 import type { RngOptions } from "@blockchaincommons/rand";
 import { SSKR_SHARE } from "@blockchaincommons/known-values";
 
@@ -27,8 +27,13 @@ const addSskrShare = (envelope: Envelope, share: SskrShare): Envelope => {
 /**
  * Splits `contentKey` into SSKR shares per `spec` and returns one copy of
  * the envelope per share, each carrying its share as an `sskrShare`
- * assertion, grouped as the spec groups them. `sskrJoin` recovers the
- * envelope from a quorum.
+ * assertion, grouped as the spec groups them (the reference's `sskr_split`
+ * / `sskr_split_using`). `sskrJoin` recovers the envelope from a quorum.
+ *
+ * @throws EnvelopeError `Sskr` (`sskr error: <message>`, `cause` the
+ *   `SskrError`) when sskr rejects the secret or the spec, as the reference's
+ *   `?` into `Error::SSKR` (a group with a zero member threshold:
+ *   `sskr error: SSKR Shamir error: invalid threshold`)
  */
 export function sskrSplit(
   envelope: Envelope,
@@ -36,12 +41,14 @@ export function sskrSplit(
   contentKey: SymmetricKey,
   { rng }: RngOptions = {},
 ): Envelope[][] {
-  const masterSecret = Secret.from(contentKey.bytes);
-  const shareGroups: SskrShare[][] = SskrShare.generate(
-    spec,
-    masterSecret,
-    rng === undefined ? {} : { rng },
-  );
+  let shareGroups: SskrShare[][];
+  try {
+    const masterSecret = Secret.from(contentKey.bytes);
+    shareGroups = SskrShare.generate(spec, masterSecret, rng === undefined ? {} : { rng });
+  } catch (error) {
+    if (SskrError.isSskrError(error)) throw EnvelopeError.sskr(error.message, error);
+    throw error;
+  }
 
   // Create envelope copies with SSKR share assertions
   const result: Envelope[][] = [];

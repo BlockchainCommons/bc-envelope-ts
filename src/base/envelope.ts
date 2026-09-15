@@ -2,6 +2,7 @@ import {
   type Cbor,
   cbor as toCborValue,
   CborMap,
+  CborError,
   isNumber,
   asArray,
   asMap,
@@ -11,6 +12,8 @@ import {
   expectText,
   expectBoolean,
   expectBytes,
+  expectFloat,
+  expectUnsigned,
   isNull,
   decodeCbor,
   encodeCbor,
@@ -21,10 +24,13 @@ import {
   asTaggedValue,
   type CborCodec,
   type Tag,
-  expectTaggedContent,
+  tagsForValues,
+  validateTag,
+  extractTaggedContent,
   CborDate,
 } from "@blockchaincommons/dcbor";
 import { EnvelopeError } from "./error";
+import { cborErrorAt, cborErrorOf, viaComponents } from "./foreign-errors";
 import type { ToEnvelope, EnvelopeInput } from "./envelope-encodable";
 import { KnownValue, UNIT, POSITION, SALT } from "@blockchaincommons/known-values";
 import { Digest, type DigestProvider } from "./digest";
@@ -51,7 +57,6 @@ import {
   TAG_ENVELOPE,
   TAG_LEAF,
 } from "@blockchaincommons/tags";
-import { nextInClosedRangeUsize } from "@blockchaincommons/rand/samplers";
 
 // Type imports for extension method declarations
 // These are imported as types only to avoid circular dependencies at runtime
@@ -238,8 +243,10 @@ export class Envelope implements DigestProvider {
       return subject;
     }
 
-    // Handle KnownValue specially to create knownValue envelopes
-    if (subject instanceof KnownValue) {
+    // A known value from any copy of the known-values package (the brand,
+    // not `instanceof`) builds the known-value case, as the reference's
+    // `EnvelopeEncodable for KnownValue` does.
+    if (KnownValue.isKnownValue(subject)) {
       return Envelope.knownValue(subject);
     }
 
@@ -346,12 +353,11 @@ export class Envelope implements DigestProvider {
       throw EnvelopeError.invalidParameter("assertions", "a non-empty array");
     }
 
-    // Sort assertions by digest
-    const sortedAssertions = [...uncheckedAssertions].sort((a, b) => {
-      const aHex = a.digest().toHex();
-      const bHex = b.digest().toHex();
-      return aHex.localeCompare(bHex);
-    });
+    // Sorted by digest bytes, as the reference's `sort_by_key(|a| a.digest())`
+    // orders them (`Digest` compares its 32 bytes lexicographically).
+    const sortedAssertions = [...uncheckedAssertions].sort((a, b) =>
+      compareDigests(a.digest(), b.digest()),
+    );
 
     // Calculate digest from subject and all assertions
     const digests = [subject.digest(), ...sortedAssertions.map((a) => a.digest())];
@@ -412,7 +418,7 @@ export class Envelope implements DigestProvider {
    */
   static knownValue(value: KnownValue | number | bigint): Envelope {
     let knownValue: KnownValue;
-    if (value instanceof KnownValue) {
+    if (KnownValue.isKnownValue(value)) {
       knownValue = value;
     } else {
       try {
@@ -703,12 +709,11 @@ export class Envelope implements DigestProvider {
     return taggedValue(TAG_ENVELOPE, this.untaggedCbor());
   }
 
-  /** Tagged-CBOR codec; `decode` also accepts the untagged form. */
+  /** Tagged-CBOR codec; `decode` requires tag 200 (`fromCbor`), like every codec in the stack. */
   static get codec(): CborCodec<Envelope> {
     return (ENVELOPE_CODEC ??= {
       tags: [TAG_ENVELOPE],
       encode: (e) => e.toCbor(),
-      // Tagged-only, like every codec in the stack (`decodeURWith` re-tags a UR body).
       decode: (c) => Envelope.fromCbor(c),
     });
   }
@@ -724,145 +729,130 @@ export class Envelope implements DigestProvider {
   }
 
   /**
-   * Decodes an envelope from its tagged CBOR (tag 200).
+   * Decodes an envelope from its tagged CBOR (tag 200): the reference's
+   * `TryFrom<CBOR>` / `from_tagged_cbor`.
    *
-   * @throws {EnvelopeError} If the CBOR is not a tagged envelope
+   * @throws EnvelopeError with code `Cbor` whose message is the dcbor
+   *   Display and whose `cause` is the `CborError`: `WrongType` for an
+   *   untagged value, `WrongTag` for another tag (the expected tag named as
+   *   the global tags store names it), else what `fromUntaggedCbor` reports.
    */
   static fromCbor(cbor: Cbor): Envelope {
-    // Only the tag check is wrapped here; the structure's own errors pass through.
     let untagged: Cbor;
     try {
-      untagged = expectTaggedContent(cbor, TAG_ENVELOPE.value);
+      validateTag(cbor, tagsForValues([TAG_ENVELOPE.value]));
+      untagged = extractTaggedContent(cbor);
     } catch (error) {
-      const got = asTaggedValue(cbor)?.[0].value;
-      throw EnvelopeError.cbor(
-        `expected CBOR tag envelope (${TAG_ENVELOPE.value}), but got ${got === undefined ? "an untagged value" : String(got)}`,
-        asError(error),
-      );
+      throw EnvelopeError.cborDecode(cborErrorOf(error));
     }
     return Envelope.fromUntaggedCbor(untagged);
   }
 
   /**
-   * Decodes an envelope from tagged CBOR bytes.
+   * Decodes an envelope from tagged CBOR bytes: the reference's
+   * `try_from_cbor_data`.
    *
-   * @throws {EnvelopeError} If the data is not valid CBOR or not an envelope
+   * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+   *   of the byte-level failure (`early end of CBOR data`, `the decoded CBOR
+   *   had 1 extra bytes at the end`, `a CBOR numeric value was encoded in
+   *   non-canonical form`, …) and whose `cause` is the `CborError`; then as
+   *   `fromCbor`.
    */
   static fromBytes(data: Uint8Array): Envelope {
-    // Only the CBOR decode is wrapped here (T1); `fromCbor` reports the rest.
     let cbor: Cbor;
     try {
       cbor = decodeCbor(data);
     } catch (error) {
-      throw EnvelopeError.cbor("invalid envelope", asError(error));
+      throw EnvelopeError.cborDecode(cborErrorOf(error));
     }
     return Envelope.fromCbor(cbor);
   }
 
   /**
-   * Creates an envelope from untagged CBOR.
+   * Decodes an envelope from its untagged CBOR (the content of tag 200): the
+   * reference's `from_untagged_cbor`. A tag-24 or tag-201 value is a leaf, a
+   * tag-200 value a wrapped envelope, tag 40002 an encrypted message, tag
+   * 40003 a compressed value, a 32-byte string an elided envelope, an array
+   * a node, a single-element map an assertion and an unsigned integer a
+   * known value.
    *
-   * Every failure is `Cbor` (the reference decodes through `dcbor`, whose
-   * error is what `try_from_cbor_data` returns); the message names the
-   * structural fault (`node must have at least two elements`, `assertion
-   * must be a map with exactly one element`, …) and `cause` keeps the
-   * original.
-   *
-   * @param cbor - The untagged CBOR value
-   * @returns A new envelope
-   *
-   * @throws EnvelopeError with code `Cbor`.
+   * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+   *   the reference returns and whose `cause` is the `CborError`: the dcbor
+   *   error of a malformed component as it is, else `Custom` with the
+   *   reference's text (`unknown envelope tag: <n>`, `invalid digest size:
+   *   expected 32, got <n>`, `node must have at least two elements`,
+   *   `invalid format`, `assertion must be a map with exactly one element`,
+   *   `a digest was expected but not found`, `invalid envelope`). A failure
+   *   inside an assertion's key or value nests as `dcbor error: <message>`.
    */
   static fromUntaggedCbor(cbor: Cbor): Envelope {
     try {
       return Envelope.decodeUntagged(cbor);
     } catch (error) {
-      if (EnvelopeError.isEnvelopeError(error)) {
-        if (error.code === "Cbor") throw error;
-        throw EnvelopeError.cbor(
-          error.details.code === "InvalidParameter" ? error.message : error.details.message,
-          error,
-        );
-      }
-      throw EnvelopeError.cbor("invalid envelope", asError(error));
+      // A nested decoder failure is already in this form; an envelope error
+      // met on the way is the reference's `.map_err(|e| e.to_string())`.
+      if (EnvelopeError.isEnvelopeError(error) && error.code === "Cbor") throw error;
+      throw EnvelopeError.cborDecode(cborErrorOf(error));
     }
   }
 
   private static decodeUntagged(cbor: Cbor): Envelope {
-    // Check if it's a tagged value
     const tagged = asTaggedValue(cbor);
     if (tagged !== undefined) {
       const [tag, item] = tagged;
       switch (tag.value) {
         case TAG_LEAF.value:
         case TAG_ENCODED_CBOR.value:
-          // Leaf envelope
           return Envelope.leaf(item);
-        case TAG_ENVELOPE.value: {
-          // Wrapped envelope
-          const envelope = Envelope.fromUntaggedCbor(item);
-          return Envelope.wrap(envelope);
-        }
+        case TAG_ENVELOPE.value:
+          return Envelope.wrap(Envelope.fromUntaggedCbor(item));
         case TAG_COMPRESSED.value:
-          // components' decoder (`[checksum, decompressedSize, compressedData, ?digest]`).
-          return Envelope.compressed(
-            decodeComponent(() => Compressed.fromCbor(cbor), "invalid compressed envelope"),
-          );
+          // components' decoder (`[checksum, decompressedSize, compressedData, ?digest]`);
+          // a value without a digest is `a digest was expected but not found`.
+          return Envelope.compressed(Compressed.codec.decodeUntagged(item));
         case TAG_ENCRYPTED.value:
           // components' decoder (`[ciphertext, nonce, auth, ?aad]`, the aad being the digest).
-          return Envelope.encrypted(
-            decodeComponent(() => EncryptedMessage.fromCbor(cbor), "invalid encrypted envelope"),
-          );
+          return Envelope.encrypted(EncryptedMessage.codec.decodeUntagged(item));
         default:
-          throw EnvelopeError.cbor(`unknown envelope tag: ${tag.value}`);
+          throw CborError.custom(`unknown envelope tag: ${String(tag.value)}`);
       }
     }
 
-    // Check if it's a byte string (elided)
+    // A byte string is an elided envelope: components' `Digest.from` sets the size.
     const bytes = asBytes(cbor);
     if (bytes !== undefined) {
-      if (bytes.length !== 32) {
-        throw EnvelopeError.cbor(`invalid digest size: expected 32, got ${bytes.length}`);
-      }
       return Envelope.elided(Digest.from(bytes));
     }
 
-    // Check if it's an array (node)
+    // An array is a node: the subject, then at least one assertion.
     const array = asArray(cbor);
     if (array !== undefined) {
       if (array.length < 2) {
-        throw EnvelopeError.cbor("node must have at least two elements");
+        throw CborError.custom("node must have at least two elements");
       }
-      const subjectCbor = array[0];
-      if (subjectCbor === undefined) {
-        throw EnvelopeError.cbor("node subject is missing");
-      }
+      const [subjectCbor, ...assertionCbors] = array;
       const subject = Envelope.fromUntaggedCbor(subjectCbor);
-      const assertions: Envelope[] = [];
-      for (let i = 1; i < array.length; i++) {
-        const assertionCbor = array[i];
-        if (assertionCbor === undefined) {
-          throw EnvelopeError.cbor(`node assertion at index ${i} is missing`);
-        }
-        assertions.push(Envelope.fromUntaggedCbor(assertionCbor));
-      }
+      const assertions = assertionCbors.map((a) => Envelope.fromUntaggedCbor(a));
       return Envelope.node(subject, assertions);
     }
 
-    // A map is an assertion
+    // A map is an assertion; its own failure renders through the reference's
+    // `Assertion::try_from(cbor).map_err(|e| e.to_string())`.
     const map = asMap(cbor);
     if (map !== undefined) {
-      const assertion = decodeComponent(() => Assertion.fromCborMap(map), "invalid assertion");
-      return Envelope.fromAssertion(assertion);
+      try {
+        return Envelope.fromAssertion(Assertion.fromCborMap(map));
+      } catch (error) {
+        throw CborError.custom(error instanceof Error ? error.message : String(error));
+      }
     }
 
-    // An unsigned integer is a known value
+    // An unsigned integer is a known value.
     if (cbor.type === MajorType.Unsigned) {
-      const knownValue = decodeComponent(() => new KnownValue(cbor.value), "invalid known value");
-      return Envelope.knownValue(knownValue);
+      return Envelope.knownValue(new KnownValue(cbor.value));
     }
 
-    throw EnvelopeError.cbor("invalid envelope");
+    throw CborError.custom("invalid envelope");
   }
 
   /**
@@ -1054,42 +1044,44 @@ export class Envelope implements DigestProvider {
    * cannot be correlated with another envelope of the same content.
    *
    * By default the salt length is proportional to the envelope's size
-   * (5–25 %, at least 8 bytes); give `length`, a `range`, or the exact
-   * `salt` instead. `rng` overrides the secure default.
+   * (5–25 %, at least 8 bytes; the reference's `add_salt_using`); give
+   * `length` (`add_salt_with_len_using`), a `range`
+   * (`add_salt_in_range_using`), or the exact `salt` (`add_salt_instance`)
+   * instead. `rng` overrides the secure default. The salt itself comes from
+   * components' `Salt`, whose checks the reference's `Salt::new_*` make.
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError with code `InvalidParameter` for a length or bound
+   *   that is not a non-negative integer; `Components` (the components
+   *   message, e.g. `data too short: salt expected at least 8, got 7`) for a
+   *   length below 8 or a bound the reference rejects.
    */
   addSalt({ salt, length, range, rng }: SaltOptions = {}): Envelope {
     if (salt !== undefined) {
-      // The reference's `add_salt_instance` takes any `Salt`; components' `Salt.from` sets the floor.
-      const bytes = salt instanceof Salt ? salt.bytes : salt;
-      const instance = decodeParameter(
-        () => Salt.from(bytes),
-        "salt",
-        `at least ${MIN_SALT_SIZE} bytes`,
-        bytes.length,
-      );
-      return this.addAssertion(SALT, instance);
+      // The reference's `add_salt_instance` takes any `Salt`, whatever its length.
+      return this.addAssertion(SALT, salt instanceof Salt ? salt : Salt.from(salt));
     }
+    const options: RngOptions = rng === undefined ? {} : { rng };
     if (length !== undefined) {
-      expectLengthAtLeast("length", length, MIN_SALT_SIZE);
-      return this.addAssertion(SALT, Salt.from(randomBytes(length, { rng: rng ?? secureRng() })));
+      expectCount("length", length);
+      return this.addAssertion(
+        SALT,
+        viaComponents(() => Salt.random({ length, ...options })),
+      );
     }
-    const r = rng ?? secureRng();
-    let size: number;
     if (range !== undefined) {
       const { min, max } = range;
-      expectLengthAtLeast("range.min", min, MIN_SALT_SIZE);
-      expectLengthAtLeast("range.max", max, min);
-      // The reference samples a `RangeInclusive<usize>`: the 64-bit draw.
-      size = nextInClosedRangeUsize(r, min, max);
-    } else {
-      const count = this.toCbor().toData().length;
-      const minSize = Math.max(8, Math.ceil(count * 0.05));
-      const maxSize = Math.max(minSize + 8, Math.ceil(count * 0.25));
-      size = nextInClosedRangeUsize(r, minSize, maxSize);
+      expectCount("range.min", min);
+      expectCount("range.max", max);
+      return this.addAssertion(
+        SALT,
+        viaComponents(() => Salt.randomInRange(min, max, options)),
+      );
     }
-    return this.addAssertion(SALT, Salt.from(randomBytes(size, { rng: r })));
+    const size = this.toCbor().toData().length;
+    return this.addAssertion(
+      SALT,
+      viaComponents(() => Salt.forSize(size, options)),
+    );
   }
 
   /**
@@ -1172,32 +1164,28 @@ export class Envelope implements DigestProvider {
     return [];
   }
 
-  /** `true` when the envelope is the boolean leaf `false`. */
+  /** The subject extracted with `decoder` (`extract_subject`), or `undefined` when it cannot be. */
+  private trySubject<T>(decoder: CborDecoder<T>): T | undefined {
+    try {
+      return extractSubject(this, decoder);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** `true` when the subject is the boolean `false` (the reference's `is_false`: subject extraction, so a node whose subject is `false` qualifies). */
   isFalse(): boolean {
-    try {
-      return this.expectBoolean() === false;
-    } catch {
-      return false;
-    }
+    return this.trySubject(expectBoolean) === false;
   }
 
-  /** `true` when the envelope is the boolean leaf `true`. */
+  /** `true` when the subject is the boolean `true` (the reference's `is_true`). */
   isTrue(): boolean {
-    try {
-      return this.expectBoolean() === true;
-    } catch {
-      return false;
-    }
+    return this.trySubject(expectBoolean) === true;
   }
 
-  /** `true` when the envelope is a boolean leaf. */
+  /** `true` when the subject is a boolean (the reference's `is_bool`). */
   isBool(): boolean {
-    try {
-      const value = this.expectBoolean();
-      return typeof value === "boolean";
-    } catch {
-      return false;
-    }
+    return this.trySubject(expectBoolean) !== undefined;
   }
 
   /** `true` when the envelope is a number leaf. */
@@ -1230,14 +1218,9 @@ export class Envelope implements DigestProvider {
     return this.subject().isNaN();
   }
 
-  /** `true` when the envelope is the `null` leaf. */
+  /** `true` when the subject is `null` (the reference's `is_null`: subject extraction). */
   isNull(): boolean {
-    try {
-      this.expectNull();
-      return true;
-    } catch (_error) {
-      return false;
-    }
+    return this.trySubject(expectNullCbor) === null;
   }
 
   /** A copy of the subject's bytes, or `undefined` when it is not a byte-string leaf. */
@@ -1617,14 +1600,15 @@ export class Envelope implements DigestProvider {
   }
 
   /**
-   * Adds a `'position'` assertion with the given ordinal.
+   * Adds a `'position'` assertion with the given ordinal (the reference's
+   * `set_position(usize)`): a non-negative safe integer `number`, or a
+   * `bigint` in `0 ..= 2⁶⁴ − 1` for the exact form.
    *
-   * @throws EnvelopeError with code `InvalidFormat`.
+   * @throws EnvelopeError with code `InvalidParameter` for any other value;
+   *   `InvalidFormat` when the envelope already has several positions.
    */
-  setPosition(position: number): Envelope {
-    if (!Number.isSafeInteger(position) || position < 0) {
-      throw EnvelopeError.invalidParameter("position", "a non-negative integer", position);
-    }
+  setPosition(position: number | bigint): Envelope {
+    expectU64("position", position);
     // Find all POSITION assertions
     const positionAssertions = this.assertionsWithPredicate(POSITION);
 
@@ -1642,16 +1626,21 @@ export class Envelope implements DigestProvider {
     return baseEnvelope.addAssertion(POSITION, position);
   }
 
-  /** The value of the `'position'` assertion, or `undefined`. */
-  position(): number {
-    // Find the POSITION assertion in the envelope
+  /**
+   * The value of the `'position'` assertion (the reference's `position()`,
+   * `extract_subject::<usize>()`): a `number` when at most `2⁵³ − 1`, a
+   * `bigint` otherwise. A negative integer wraps to `2⁶⁴ + n`, as the
+   * reference's `usize::try_from(CBOR)` wraps it.
+   *
+   * @throws EnvelopeError with code `NonexistentPredicate` /
+   *   `AmbiguousPredicate` when there is not exactly one position; `Cbor`
+   *   (`dcbor error: <Display>`) when its object is not an integer in range.
+   */
+  position(): number | bigint {
     const positionEnvelope = this.objectForPredicate(POSITION);
-
-    const positionValue = positionEnvelope.expectNumber();
-    if (!Number.isSafeInteger(positionValue) || positionValue < 0) {
-      throw EnvelopeError.cbor("position is not an unsigned integer");
-    }
-    return positionValue;
+    return positionEnvelope.expectSubject((cbor) =>
+      expectUnsigned(cbor, { width: 64, wrapNegative: true }),
+    );
   }
 
   /**
@@ -1840,11 +1829,6 @@ export class Envelope implements DigestProvider {
   /** Elides everything whose digest is in `target`, with `action` (elide, compress or encrypt). */
   private elideRemovingWith(target: Set<Digest>, action: ObscureAction): Envelope {
     return elideSetWithAction(this, target, false, action);
-  }
-
-  /** Elides everything whose digest is not in `target` (revealing mode) with `action`. */
-  elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope {
-    return elideSetWithAction(this, target, true, action);
   }
 
   /** Elides everything whose digest is not in `target`, with `action` (elide, compress or encrypt). */
@@ -2152,11 +2136,9 @@ export class Envelope implements DigestProvider {
   }
 
   /**
-   * Add the tryLeaf method to Envelope prototype.
+   * The leaf's CBOR: the reference's `try_leaf()`.
    *
-   * This extracts the leaf CBOR value from an envelope.
-   *
-   * @throws EnvelopeError with code `NotLeaf`.
+   * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf.
    */
   expectLeaf(): Cbor {
     const c = this.case;
@@ -2166,37 +2148,69 @@ export class Envelope implements DigestProvider {
     return c.cbor;
   }
 
-  /** The subject's text; `NotLeaf` / `Cbor` when it is not a text leaf. */
+  /**
+   * The leaf's text: the reference's `String::try_from(envelope)`.
+   *
+   * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+   *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+   *   is not text.
+   */
   expectString(): string {
-    return extractString(this);
+    return decodeLeaf(this, expectText);
   }
 
-  /** The subject's number; `NotLeaf` / `Cbor` when it is not a number leaf. */
+  /**
+   * The leaf's number as dcbor's `expectFloat` reads it: the reference's
+   * `f64::try_from(envelope)`. An integer the `f64` cannot represent exactly
+   * is rejected (`OutOfRange`), as the reference rejects it.
+   *
+   * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+   *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+   *   is not a representable number.
+   */
   expectNumber(): number {
-    return extractNumber(this);
+    return decodeLeaf(this, expectFloat);
   }
 
-  /** The subject's boolean; `NotLeaf` / `Cbor` when it is not a boolean leaf. */
+  /**
+   * The leaf's boolean: the reference's `bool::try_from(envelope)`.
+   *
+   * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+   */
   expectBoolean(): boolean {
-    return extractBoolean(this);
+    return decodeLeaf(this, expectBoolean);
   }
 
-  /** A copy of the subject's bytes; `NotLeaf` / `Cbor` when it is not a byte-string leaf. */
+  /**
+   * A copy of the leaf's bytes: the reference's `ByteString::try_from(envelope)`.
+   *
+   * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+   */
   expectBytes(): Uint8Array<ArrayBuffer> {
-    return extractBytes(this);
+    return new Uint8Array(decodeLeaf(this, expectBytes));
   }
 
-  /** `null`; `NotLeaf` / `Cbor` when the subject is not the `null` leaf. */
+  /**
+   * `null` when the leaf is the `null` value.
+   *
+   * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+   */
   expectNull(): null {
-    return extractNull(this);
+    return decodeLeaf(this, expectNullCbor);
   }
 
-  /** The subject's tag-1 date as a `Date`; `NotLeaf` / `Cbor` when it is not a date leaf. */
+  /**
+   * The subject's tag-1 date as a `Date` (millisecond precision): the
+   * reference's `extract_subject::<Date>()` viewed as a `Date`; use
+   * `expectSubject(CborDate.fromTaggedCbor)` for the exact value.
+   *
+   * @throws EnvelopeError as `expectSubject`.
+   */
   expectDate(): Date {
     return this.expectSubject((cbor) => CborDate.fromTaggedCbor(cbor).toDate());
   }
 
-  /** `extractSubject` as a method. */
+  /** `extractSubject` as a method: the reference's `extract_subject::<T>()`. */
   expectSubject<T>(decoder: CborDecoder<T>): T {
     return extractSubject(this, decoder);
   }
@@ -2230,10 +2244,10 @@ export class Envelope implements DigestProvider {
 
   /**
    * A copy with the subject encrypted by `key` (ChaCha20-Poly1305 over the
-   * subject's CBOR, the digest as AAD); `AlreadyEncrypted` / `AlreadyElided`
-   * when it cannot be.
+   * subject's CBOR, the digest as AAD): the reference's `encrypt_subject`.
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError with code `AlreadyEncrypted` when the subject is
+   *   encrypted or compressed; `AlreadyElided` when it is elided.
    */
   encryptSubject(key: SymmetricKey, options: EncryptOptions = {}): Envelope {
     const c = this.case;
@@ -2283,9 +2297,14 @@ export class Envelope implements DigestProvider {
   }
 
   /**
-   * A copy with the subject decrypted by `key`; `NotEncrypted` / `Components` on failure.
+   * A copy with the subject decrypted by `key` (the reference's
+   * `decrypt_subject`).
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError with code `NotEncrypted` when the subject is not
+   *   encrypted; `Components` (`components error: <Display>`) when the key
+   *   does not open it; `Cbor` (`dcbor error: <Display>`) when the plaintext
+   *   is not an envelope; `MissingDigest` / `InvalidDigest` on a digest
+   *   mismatch.
    */
   decryptSubject(key: SymmetricKey): Envelope {
     const subjectCase = this.subject().case;
@@ -2295,14 +2314,20 @@ export class Envelope implements DigestProvider {
     }
 
     const message = subjectCase.message;
+    // components' `SymmetricKey::decrypt`: a wrong key is `Components` with its message.
+    const decryptedData = viaComponents(() => key.decrypt(message));
     const subjectDigest = message.aadDigest();
 
     if (subjectDigest === null) {
       throw EnvelopeError.missingDigest();
     }
 
-    const decryptedData = decryptWithDigest(key, message);
-    const resultSubject = Envelope.fromBytes(decryptedData);
+    let resultSubject: Envelope;
+    try {
+      resultSubject = Envelope.fromBytes(decryptedData);
+    } catch (error) {
+      throw fromDecoderResult(error);
+    }
 
     if (!resultSubject.digest().equals(subjectDigest)) {
       throw EnvelopeError.invalidDigest();
@@ -2340,9 +2365,11 @@ export class Envelope implements DigestProvider {
   }
 
   /**
-   * A copy compressed (deflate over its CBOR); this envelope when already compressed.
+   * A copy compressed (deflate over its CBOR): the reference's `compress`;
+   * this envelope when already compressed.
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError with code `AlreadyEncrypted` when the envelope is
+   *   encrypted; `AlreadyElided` when it is elided.
    */
   compress(): Envelope {
     const c = this.case;
@@ -2369,9 +2396,12 @@ export class Envelope implements DigestProvider {
   }
 
   /**
-   * A copy decompressed; this envelope when it is not compressed.
+   * A copy decompressed (the reference's `decompress`).
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError with code `NotCompressed` when the envelope is not
+   *   compressed; `Components` (`components error: <Display>`) for a corrupt
+   *   stream; `Cbor` (`dcbor error: <Display>`) when the data is not an
+   *   envelope; `MissingDigest` / `InvalidDigest` on a digest mismatch.
    */
   decompress(): Envelope {
     const c = this.case;
@@ -2390,14 +2420,15 @@ export class Envelope implements DigestProvider {
       throw EnvelopeError.invalidDigest();
     }
 
-    // `Compressed.decompress` verifies the CRC32 checksum itself.
-    let decompressedData: Uint8Array;
+    // components' `Compressed::decompress` verifies the checksum: a corrupt
+    // stream is `Components` with its message.
+    const decompressedData = viaComponents(() => compressed.decompress());
+    let envelope: Envelope;
     try {
-      decompressedData = compressed.decompress();
+      envelope = Envelope.fromBytes(decompressedData);
     } catch (error) {
-      throw EnvelopeError.components("decompression failed", asError(error));
+      throw fromDecoderResult(error);
     }
-    const envelope = Envelope.fromBytes(decompressedData);
 
     if (!envelope.digest().equals(digest)) {
       throw EnvelopeError.invalidDigest();
@@ -2669,17 +2700,15 @@ export interface AddAssertionOptions {
   salt?: boolean;
 }
 
-const MIN_SALT_SIZE = 8;
-
 /** Options for `Envelope.addSalt`. */
 export interface SaltOptions {
-  /** Use exactly this salt (at least 8 bytes). */
+  /** Use exactly this salt, whatever its length. */
   salt?: Salt | Uint8Array;
-  /** Random salt of exactly this many bytes (at least 8). */
+  /** Random salt of exactly this many bytes (the reference requires at least 8). */
   length?: number;
-  /** Random salt of a length in this inclusive range. */
+  /** Random salt of a length in this inclusive range (the reference requires `min` of at least 8 and `max` of at least `min`). */
   range?: {
-    /** Smallest length (at least 8). */
+    /** Smallest length. */
     min: number;
     /** Largest length. */
     max: number;
@@ -2725,7 +2754,7 @@ function elideSetWithAction(
     if (action === "elide") {
       return envelope.elide();
     } else if (typeof action === "object") {
-      return encryptWholeEnvelope(envelope, action.encrypt);
+      return encryptEnvelope(envelope, action.encrypt);
     } else if (action === "compress") {
       return envelope.compress();
     }
@@ -2820,137 +2849,45 @@ function walkUnelideWithMap(envelope: Envelope, envelopeMap: Map<string, Envelop
   return envelope;
 }
 
+/** dcbor's `null` check as a decoder: `null` for the `null` value, `WrongType` otherwise. */
+const expectNullCbor = (cbor: Cbor): null => {
+  if (isNull(cbor)) return null;
+  throw CborError.wrongType();
+};
+
 /**
- * Extracts a string value from an envelope.
- *
- * @param envelope - The envelope to extract from
- * @returns The string value
- * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
+ * `try_leaf()?` then a dcbor `TryFrom<CBOR>`: the reference's
+ * `impl_envelope_decodable!` route (`String::try_from(envelope)` and the
+ * others). A non-leaf is `NotLeaf`; a leaf the decoder rejects is `Cbor`
+ * `dcbor error: <Display>` with the `CborError` as cause.
  */
-export function extractString(envelope: Envelope): string {
+function decodeLeaf<T>(envelope: Envelope, decoder: CborDecoder<T>): T {
   const cbor = envelope.expectLeaf();
   try {
-    return expectText(cbor);
+    return decoder(cbor);
   } catch (error) {
-    throw EnvelopeError.cbor(
-      "envelope does not contain a string",
-      error instanceof Error ? error : undefined,
-    );
+    throw cborErrorAt(error);
   }
-}
-
-/**
- * Extracts a number value from an envelope.
- *
- * @param envelope - The envelope to extract from
- * @returns The number value
- * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
- */
-export function extractNumber(envelope: Envelope): number {
-  const cbor = envelope.expectLeaf();
-
-  // Handle unsigned, negative, and simple (float) types
-  if ("type" in cbor) {
-    switch (cbor.type) {
-      case 0: // MajorType.Unsigned
-        return typeof cbor.value === "bigint" ? Number(cbor.value) : cbor.value;
-      case 1: {
-        // MajorType.Negative
-        // Negative values are stored as magnitude, convert back
-        const magnitude = typeof cbor.value === "bigint" ? Number(cbor.value) : cbor.value;
-        return -magnitude - 1;
-      }
-      case 7: // MajorType.Simple
-        if (
-          typeof cbor.value === "object" &&
-          cbor.value !== null &&
-          "type" in cbor.value &&
-          cbor.value.type === "Float"
-        ) {
-          return cbor.value.value;
-        }
-        break;
-      case 2: // MajorType.ByteString
-      case 3: // MajorType.TextString
-      case 4: // MajorType.Array
-      case 5: // MajorType.Map
-      case 6: // MajorType.Tag
-        // These CBOR types don't represent numbers
-        break;
-    }
-  }
-
-  throw EnvelopeError.cbor("envelope does not contain a number");
-}
-
-/**
- * Extracts a boolean value from an envelope.
- *
- * @param envelope - The envelope to extract from
- * @returns The boolean value
- * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
- */
-export function extractBoolean(envelope: Envelope): boolean {
-  const cbor = envelope.expectLeaf();
-  try {
-    return expectBoolean(cbor);
-  } catch (error) {
-    throw EnvelopeError.cbor(
-      "envelope does not contain a boolean",
-      error instanceof Error ? error : undefined,
-    );
-  }
-}
-
-/**
- * Extracts a byte array value from an envelope.
- *
- * @param envelope - The envelope to extract from
- * @returns The byte array value
- * @throws {EnvelopeError} If the envelope is not a leaf or cannot be converted
- */
-export function extractBytes(envelope: Envelope): Uint8Array<ArrayBuffer> {
-  const cbor = envelope.expectLeaf();
-  try {
-    // a copy: the leaf's bytes must not change under the cached digest
-    return new Uint8Array(expectBytes(cbor));
-  } catch (error) {
-    throw EnvelopeError.cbor(
-      "envelope does not contain bytes",
-      error instanceof Error ? error : undefined,
-    );
-  }
-}
-
-/**
- * Extracts null from an envelope.
- *
- * @param envelope - The envelope to extract from
- * @throws {EnvelopeError} If the envelope is not a leaf containing null
- */
-export function extractNull(envelope: Envelope): null {
-  const cbor = envelope.expectLeaf();
-  if (isNull(cbor)) {
-    return null;
-  }
-  throw EnvelopeError.cbor("envelope does not contain null");
 }
 
 /** Type for CBOR decoder functions */
 export type CborDecoder<T> = (cbor: Cbor) => T;
 
 /**
- * Extracts the subject of an envelope as type T using a decoder function.
+ * Extracts the subject of an envelope as `T` with a decoder function: the
+ * reference's `extract_subject::<T>()`, where `T` is the type your decoder
+ * returns.
  *
- * This is the TypeScript equivalent of the reference's `TryFrom<Envelope>` trait bound.
- * Since TypeScript doesn't have trait bounds on generics, we pass a decoder
- * function explicitly.
- *
- * Handles all envelope case types:
- * - leaf: decodes the CBOR value
- * - knownValue: converts to tagged CBOR then decodes
- * - wrapped: recurses into the inner envelope
- * - node: recurses on the subject
+ * - A leaf: `decoder(cbor)`; a failure is `Cbor` (`dcbor error: <Display>`,
+ *   cause the `CborError`).
+ * - A node: its subject.
+ * - A wrapped, known-value, elided, encrypted or compressed subject: the
+ *   case's own value (the inner `Envelope`, the `KnownValue` with its name,
+ *   the `Digest`, the `EncryptedMessage`, the `Compressed`) exactly when
+ *   the decoder, applied to that value's tagged CBOR, returns an instance of
+ *   that class; otherwise `InvalidFormat`. This is the reference's `TypeId`
+ *   check with the decoder's result type standing in for `T`.
+ * - An assertion: always `InvalidFormat` (no `T` satisfies the reference's bound).
  *
  * @example
  * ```typescript
@@ -2958,56 +2895,51 @@ export type CborDecoder<T> = (cbor: Cbor) => T;
  * const extracted = envelope.expectSubject(EncryptedKey.fromTaggedCbor);
  * ```
  *
- * @param decoder - Function to decode CBOR to type T
- * @returns The decoded value of type T
- * @throws {EnvelopeError} If the envelope case is unsupported or decoding fails
+ * @throws EnvelopeError with code `Cbor` or `InvalidFormat` as above.
  */
 export function extractSubject<T>(envelope: Envelope, decoder: CborDecoder<T>): T {
-  const subject = envelope.subject();
-  const c = subject.case;
-
+  const c = envelope.case;
   switch (c.type) {
+    case "node":
+      return extractSubject(c.subject, decoder);
     case "leaf":
       try {
         return decoder(c.cbor);
       } catch (error) {
-        throw EnvelopeError.cbor(
-          "failed to decode subject",
-          error instanceof Error ? error : undefined,
-        );
+        throw cborErrorAt(error);
       }
-    case "knownValue":
-      try {
-        return decoder(c.value.toCbor());
-      } catch (error) {
-        throw EnvelopeError.cbor(
-          "failed to decode subject",
-          error instanceof Error ? error : undefined,
-        );
-      }
-    case "wrapped":
-      // The reference yields the wrapped envelope only when `T` is `Envelope`;
-      // a CBOR decoder cannot take it, so it is `InvalidFormat` (use `unwrap()`).
-      throw EnvelopeError.invalidFormat();
-    case "node":
-      return extractSubject(c.subject, decoder);
     case "assertion":
-      try {
-        return decoder(c.assertion.toCbor());
-      } catch {
-        throw EnvelopeError.invalidFormat();
-      }
+      throw EnvelopeError.invalidFormat();
+    case "wrapped":
+      return ownValue(c.envelope, decoder, (x) => x instanceof Envelope);
+    case "knownValue":
+      return ownValue(c.value, decoder, (x) => KnownValue.isKnownValue(x));
     case "elided":
-      try {
-        return decoder(c.digest.toCbor());
-      } catch {
-        throw EnvelopeError.invalidFormat();
-      }
+      return ownValue(c.digest, decoder, (x) => x instanceof Digest);
     case "encrypted":
-      throw EnvelopeError.invalidFormat();
+      return ownValue(c.message, decoder, (x) => x instanceof EncryptedMessage);
     case "compressed":
-      throw EnvelopeError.invalidFormat();
+      return ownValue(c.value, decoder, (x) => x instanceof Compressed);
   }
+}
+
+/**
+ * The case's own value when `decoder` returns its type (`extract_type::<T,
+ * U>`: `T == U` gives the value itself, anything else `InvalidFormat`).
+ */
+function ownValue<T, U extends { toCbor(): Cbor }>(
+  own: U,
+  decoder: CborDecoder<T>,
+  isOwnType: (decoded: unknown) => boolean,
+): T {
+  let decoded: unknown;
+  try {
+    decoded = decoder(own.toCbor());
+  } catch {
+    throw EnvelopeError.invalidFormat();
+  }
+  if (!isOwnType(decoded)) throw EnvelopeError.invalidFormat();
+  return own as unknown as T;
 }
 
 /**
@@ -3122,54 +3054,18 @@ function encryptWithDigest(
 }
 
 /**
- * Decrypts an {@link EncryptedMessage} using the AAD bytes the message
- * already carries. The AAD must parse as a CBOR-encoded tagged
- * `Digest`; the recovered digest is what callers compare against
- * `Envelope::digest()`.
+ * The whole envelope encrypted as one message (its tagged CBOR, its digest
+ * as AAD), with no check on its case: the reference's `ObscureAction::Encrypt`
+ * arm of `elide_set_with_action`, which encrypts an already encrypted or
+ * elided target too. `encryptSubject` is the checked route.
  */
-function decryptWithDigest(key: SymmetricKey, message: EncryptedMessage): Uint8Array {
-  const digest = message.aadDigest();
-  if (digest === null) {
-    throw EnvelopeError.missingDigest();
-  }
-  const aad = message.aad;
-  try {
-    const ct = message.ciphertext;
-    const tag = message.authenticationTag.bytes;
-    const sealed = new Uint8Array(ct.length + tag.length);
-    sealed.set(ct, 0);
-    sealed.set(tag, ct.length);
-    return chacha20Poly1305.decrypt(key.bytes, message.nonce.bytes, sealed, { aad });
-  } catch (error) {
-    // The reference reports the AEAD failure as `Components(Crypto(…))`.
-    throw EnvelopeError.components("AEAD error", asError(error));
-  }
-}
-
-/**
- * Encrypts an entire envelope as a unit, matching the reference's
- * ObscureAction::Encrypt behavior in elide_set_with_action.
- * Unlike encryptSubject which only encrypts a node's subject,
- * this encrypts the entire envelope's tagged CBOR.
- *
- * @throws EnvelopeError with code `General`.
- */
-export function encryptWholeEnvelope(
+function encryptEnvelope(
   envelope: Envelope,
   key: SymmetricKey,
   options: EncryptOptions = {},
 ): Envelope {
-  const c = envelope.case;
-  if (c.type === "encrypted") {
-    throw EnvelopeError.alreadyEncrypted();
-  }
-  if (c.type === "elided") {
-    throw EnvelopeError.alreadyElided();
-  }
-  const cbor = envelope.toCbor();
-  const encodedCbor = encodeCbor(cbor);
-  const digest = envelope.digest();
-  const encryptedMessage = encryptWithDigest(key, encodedCbor, digest, options);
+  const encodedCbor = encodeCbor(envelope.toCbor());
+  const encryptedMessage = encryptWithDigest(key, encodedCbor, envelope.digest(), options);
   return Envelope.fromCase({ type: "encrypted", message: encryptedMessage });
 }
 
@@ -3304,15 +3200,16 @@ export class Assertion implements DigestProvider {
    *
    * @param cbor - The CBOR value to convert
    * @returns A new Assertion instance
-   * @throws {EnvelopeError} If the CBOR is not a valid assertion
+   * @throws EnvelopeError with code `InvalidAssertion` when the CBOR is not
+   *   a single-element map; `Cbor` (`dcbor error: <Display>`) when the key
+   *   or the value is not an envelope
    */
   static fromCbor(cbor: Cbor): Assertion {
-    // Check if cbor is a Map
-    if (!(cbor instanceof CborMap)) {
+    const map = asMap(cbor);
+    if (map === undefined) {
       throw EnvelopeError.invalidAssertion();
     }
-
-    return Assertion.fromCborMap(cbor);
+    return Assertion.fromCborMap(map);
   }
 
   /**
@@ -3324,7 +3221,9 @@ export class Assertion implements DigestProvider {
    *
    * @param map - The CBOR map to convert
    * @returns A new Assertion instance
-   * @throws {EnvelopeError} If the map doesn't have exactly one entry
+   * @throws EnvelopeError with code `InvalidAssertion` when the map does not
+   *   have exactly one entry; `Cbor` (`dcbor error: <Display>`) when the key
+   *   or the value is not an envelope
    */
   static fromCborMap(map: CborMap): Assertion {
     if (map.size !== 1) {
@@ -3338,9 +3237,16 @@ export class Assertion implements DigestProvider {
     }
     const [predicateCbor, objectCbor] = firstEntry;
 
-    const predicate = Envelope.fromUntaggedCbor(predicateCbor);
-
-    const object = Envelope.fromUntaggedCbor(objectCbor);
+    // The reference's `?` on `from_untagged_cbor`: a decoder failure becomes
+    // `Cbor` in the `dcbor error: <Display>` form.
+    let predicate: Envelope;
+    let object: Envelope;
+    try {
+      predicate = Envelope.fromUntaggedCbor(predicateCbor);
+      object = Envelope.fromUntaggedCbor(objectCbor);
+    } catch (error) {
+      throw fromDecoderResult(error);
+    }
 
     return new Assertion(predicate, object);
   }
@@ -3356,36 +3262,50 @@ export class Assertion implements DigestProvider {
 }
 
 /**
- * Runs a components / dcbor decoder inside the envelope decode path; a
- * failure is reported as `Cbor` with the original as `cause`, as the
- * reference's `?` on a `dcbor::Error` does.
+ * The `?` on a decoder's result inside an operation: a `Cbor` error in the
+ * decoder's form (the bare dcbor Display) becomes the internal form
+ * `dcbor error: <Display>` with the same cause, as the reference's
+ * `From<dcbor::Error> for Error`. Anything else is returned as it is.
  */
-function decodeComponent<T>(decode: () => T, message: string): T {
-  try {
-    return decode();
-  } catch (error) {
-    if (EnvelopeError.isEnvelopeError(error)) throw error;
-    throw EnvelopeError.cbor(message, asError(error));
+function fromDecoderResult(error: unknown): unknown {
+  if (EnvelopeError.isEnvelopeError(error) && error.code === "Cbor") {
+    return EnvelopeError.cbor(error.message, cborErrorOf(error.cause ?? error));
+  }
+  return error;
+}
+
+/** Digest bytes compared lexicographically, as the reference's `Ord for Digest`. */
+function compareDigests(a: Digest, b: Digest): number {
+  const x = a.bytes;
+  const y = b.bytes;
+  const n = Math.min(x.length, y.length);
+  for (let i = 0; i < n; i++) {
+    const d = x[i] - y[i];
+    if (d !== 0) return d;
+  }
+  return x.length - y.length;
+}
+
+const U64_MAX = 0xffffffffffffffffn;
+
+/** `InvalidParameter` unless `value` is a non-negative safe integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`. */
+function expectU64(parameter: string, value: number | bigint): void {
+  const ok =
+    typeof value === "bigint"
+      ? value >= 0n && value <= U64_MAX
+      : Number.isSafeInteger(value) && value >= 0;
+  if (!ok) {
+    throw EnvelopeError.invalidParameter(
+      parameter,
+      "an integer in [0, 9007199254740991] or a bigint in [0, 18446744073709551615]",
+      value,
+    );
   }
 }
 
-/** Runs a components constructor on caller input; a rejection is `InvalidParameter`. */
-function decodeParameter<T>(
-  build: () => T,
-  parameter: string,
-  expected: string,
-  value: unknown,
-): T {
-  try {
-    return build();
-  } catch (error) {
-    throw EnvelopeError.invalidParameter(parameter, expected, value, asError(error));
-  }
-}
-
-/** `InvalidParameter` unless `value` is an integer of at least `min`. */
-function expectLengthAtLeast(parameter: string, value: number, min: number): void {
-  if (!Number.isSafeInteger(value) || value < min) {
-    throw EnvelopeError.invalidParameter(parameter, `an integer of at least ${min}`, value);
+/** `InvalidParameter` unless `value` is a non-negative safe integer (the reference's `usize`). */
+function expectCount(parameter: string, value: number): void {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw EnvelopeError.invalidParameter(parameter, "a non-negative integer", value);
   }
 }

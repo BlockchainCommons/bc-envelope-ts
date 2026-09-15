@@ -1,21 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`golden: freeze additions > B1: the sealed content key is 32 raw bytes 1`] = `
+exports[`golden: behaviour snapshots > Date and undefined inputs 1`] = `
 [
-  "recipients()[0].decrypt(bob).length: ok:37",
-  "decryptSubjectToRecipient(bob): ok:"Hello." [ 'hasRecipient': SealedMessage ]",
+  "from(new Date(0)): ok:d8c8d8c9c100",
+  "from(undefined): throw:EnvelopeError:InvalidParameter:value must be an encodable value (undefined is not)",
 ]
 `;
 
-exports[`golden: freeze additions > B2: duplicate assertions are appended 1`] = `
-[
-  "assertions: 1, digest 8955db5e (a1 8955db5e)",
-  "addOptionalAssertionEnvelope(dup): 1",
-  "format: "Alice" [ "knows": "Bob" ]",
-]
-`;
-
-exports[`golden: freeze additions > B3: a node whose subject is obscured 1`] = `
+exports[`golden: behaviour snapshots > a node whose subject is obscured 1`] = `
 [
   "format: "A" [ ELIDED [ 'salt': Salt ] ]",
   "isSubjectObscured true, isSubjectElided true",
@@ -24,78 +16,7 @@ exports[`golden: freeze additions > B3: a node whose subject is obscured 1`] = `
 ]
 `;
 
-exports[`golden: freeze additions > B4: Date and undefined inputs 1`] = `
-[
-  "from(new Date(0)): ok:d8c8d8c9c100",
-  "from(undefined): throw:EnvelopeError:InvalidParameter:value must be an encodable value (undefined is not)",
-]
-`;
-
-exports[`golden: freeze additions > B5: mutability 1`] = `
-[
-  "assertions().push → throw:TypeError:Cannot add property 1, object is not extensible; count 1, digest same true, cbor same true",
-  "case frozen true, case.assertions is assertions() true",
-  "asBytes()[0] = 0xff → toCbor d8c8d8c943010203",
-  "digest().bytes[0] ^= 0xff → digest unchanged true (components' Digest.bytes is already a copy)",
-]
-`;
-
-exports[`golden: freeze additions > B6: salt bypasses the assertion check 1`] = `
-[
-  "construct: throw:EnvelopeError:InvalidFormat:invalid format",
-  "fromBytes: throw:EnvelopeError:InvalidFormat:invalid format",
-]
-`;
-
-exports[`golden: freeze additions > B7: General where the reference has a variant 1`] = `
-[
-  "encrypt twice: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
-  "encrypt elided: throw:EnvelopeError:AlreadyElided:envelope was elided, so it cannot be compressed or encrypted",
-  "decrypt plain: throw:EnvelopeError:NotEncrypted:cannot decrypt an envelope that was not encrypted",
-  "wrong key: throw:EnvelopeError:Components:components error: AEAD error <- CryptoError:AuthenticationFailed:AEAD error <- Error:invalid tag",
-  "compress encrypted: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
-  "decompress plain: throw:EnvelopeError:NotCompressed:cannot decompress an envelope that was not compressed",
-  "decryptSubjectToRecipient non-recipient: throw:EnvelopeError:UnknownRecipient:unknown recipient",
-  "decryptSubjectToRecipient no recipients: throw:EnvelopeError:UnknownRecipient:unknown recipient",
-  "attachmentPayload on non-attachment: throw:EnvelopeError:InvalidAttachment:invalid attachment",
-  "expectAttachment none: throw:EnvelopeError:NonexistentAttachment:nonexistent attachment",
-  "Request.fromEnvelope mismatch: throw:EnvelopeError:Cbor:dcbor error: expected function "g", but found "f"",
-]
-`;
-
-exports[`golden: freeze additions > B8: decode error wrapping 1`] = `
-[
-  "fromCbor(200([1])): throw:EnvelopeError:Cbor:dcbor error: node must have at least two elements",
-  "fromBytes(ff00): throw:EnvelopeError:Cbor:dcbor error: invalid envelope <- CborError:UnsupportedHeaderValue:unsupported value in CBOR header",
-  "fromCbor(201(42)): throw:EnvelopeError:Cbor:dcbor error: expected CBOR tag envelope (200), but got 201 <- CborError:WrongTag:expected CBOR tag 200, but got 201",
-]
-`;
-
-exports[`golden: freeze additions > B9: an obscured recipient 1`] = `
-[
-  "format: ENCRYPTED [ 'hasRecipient': SealedMessage ELIDED ]",
-  "recipients(): ok:1",
-  "decryptSubjectToRecipient(carol): ok:"Hello." [ 'hasRecipient': SealedMessage ELIDED ]",
-]
-`;
-
-exports[`golden: freeze additions > B10: empty verifier lists 1`] = `
-[
-  "hasSignaturesFrom([]): ok:false",
-  "verifySignaturesFrom([]): throw:EnvelopeError:UnverifiedSignature:could not verify a signature",
-]
-`;
-
-exports[`golden: freeze additions > B11/B12/B16: format strings 1`] = `
-[
-  "Function.known(5): ok:«5»",
-  "format(NOTE, { context: "none" }): ok:'4'",
-  "ADD.toString(): ok:add",
-  "Response.failure(id).withError("e").summary(): ok:id: c6c7c8c9 error: "e"",
-]
-`;
-
-exports[`golden: freeze additions > B13/B14/B15/B17: acceptance 1`] = `
+exports[`golden: behaviour snapshots > acceptance 1`] = `
 [
   "Request.fromEnvelope(e).toEnvelope() digest equals: ok:false",
   "wrapped expectSubject(expectText): throw:EnvelopeError:InvalidFormat:invalid format",
@@ -106,16 +27,95 @@ exports[`golden: freeze additions > B13/B14/B15/B17: acceptance 1`] = `
 ]
 `;
 
-exports[`golden: freeze additions > §3: the JS input domain 1`] = `
+exports[`golden: behaviour snapshots > an obscured recipient 1`] = `
+[
+  "format: ENCRYPTED [ 'hasRecipient': SealedMessage ELIDED ]",
+  "recipients(): ok:1",
+  "decryptSubjectToRecipient(carol): ok:"Hello." [ 'hasRecipient': SealedMessage ELIDED ]",
+]
+`;
+
+exports[`golden: behaviour snapshots > decode error identity 1`] = `
+[
+  "fromCbor(200([1])): throw:EnvelopeError:Cbor:node must have at least two elements <- CborError:Custom:node must have at least two elements",
+  "fromBytes(ff00): throw:EnvelopeError:Cbor:unsupported value in CBOR header <- CborError:UnsupportedHeaderValue:unsupported value in CBOR header",
+  "fromCbor(201(42)): throw:EnvelopeError:Cbor:expected CBOR tag envelope, but got 201 <- CborError:WrongTag:expected CBOR tag envelope, but got 201",
+]
+`;
+
+exports[`golden: behaviour snapshots > duplicate assertions are deduplicated by digest 1`] = `
+[
+  "assertions: 1, digest 8955db5e (a1 8955db5e)",
+  "addOptionalAssertionEnvelope(dup): 1",
+  "format: "Alice" [ "knows": "Bob" ]",
+]
+`;
+
+exports[`golden: behaviour snapshots > empty verifier lists 1`] = `
+[
+  "hasSignaturesFrom([]): ok:false",
+  "verifySignaturesFrom([]): throw:EnvelopeError:UnverifiedSignature:could not verify a signature",
+]
+`;
+
+exports[`golden: behaviour snapshots > format strings 1`] = `
+[
+  "Function.known(5): ok:«5»",
+  "format(NOTE, { context: "none" }): ok:''note''",
+  "ADD.toString(): ok:add",
+  "Response.failure(id).withError("e").summary(): ok:id: c6c7c8c9 error: "e"",
+]
+`;
+
+exports[`golden: behaviour snapshots > mutability 1`] = `
+[
+  "assertions().push → throw:TypeError:Cannot add property 1, object is not extensible; count 1, digest same true, cbor same true",
+  "case frozen true, case.assertions is assertions() true",
+  "asBytes()[0] = 0xff → toCbor d8c8d8c943010203",
+  "digest().bytes[0] ^= 0xff → digest unchanged true (components' Digest.bytes is already a copy)",
+]
+`;
+
+exports[`golden: behaviour snapshots > the JavaScript input domain 1`] = `
 [
   "node(s, []): throw:EnvelopeError:InvalidParameter:assertions must be a non-empty array",
-  "knownValue(-1): throw:EnvelopeError:InvalidParameter:value must be an unsigned 64-bit integer, got -1 <- RangeError:KnownValue must be an unsigned 64-bit integer, got -1",
-  "setPosition(1.5): throw:EnvelopeError:InvalidParameter:position must be a non-negative integer, got 1.5",
+  "knownValue(-1): throw:EnvelopeError:InvalidParameter:value must be an unsigned 64-bit integer, got -1 <- KnownValuesError:InvalidParameter:value must be an integer in [0, 9007199254740991] or a bigint in [0, 1",
+  "setPosition(1.5): throw:EnvelopeError:InvalidParameter:position must be an integer in [0, 9007199254740991] or a bigint in [0",
   "digests(1.5).size: throw:EnvelopeError:InvalidParameter:levelLimit must be a non-negative integer, got 1.5",
-  "addSalt({ length: 1.5 }): throw:EnvelopeError:InvalidParameter:length must be an integer of at least 8, got 1.5",
-  "addSalt({ length: NaN }): throw:EnvelopeError:InvalidParameter:length must be an integer of at least 8, got NaN",
+  "addSalt({ length: 1.5 }): throw:EnvelopeError:InvalidParameter:length must be a non-negative integer, got 1.5",
+  "addSalt({ length: NaN }): throw:EnvelopeError:InvalidParameter:length must be a non-negative integer, got NaN",
   "lock(e, 99, pw): throw:EnvelopeError:InvalidParameter:method must be a KeyDerivationMethod, got 99",
   "EnvelopeError has a private constructor: function",
+]
+`;
+
+exports[`golden: behaviour snapshots > the assertion check runs before salting 1`] = `
+[
+  "construct: throw:EnvelopeError:InvalidFormat:invalid format",
+  "fromBytes: throw:EnvelopeError:InvalidFormat:invalid format",
+]
+`;
+
+exports[`golden: behaviour snapshots > the reference's error variant at every operation 1`] = `
+[
+  "encrypt twice: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
+  "encrypt elided: throw:EnvelopeError:AlreadyElided:envelope was elided, so it cannot be compressed or encrypted",
+  "decrypt plain: throw:EnvelopeError:NotEncrypted:cannot decrypt an envelope that was not encrypted",
+  "wrong key: throw:EnvelopeError:Components:components error: cryptographic operation failed: AEAD error <- ComponentsError:Crypto:cryptographic operation failed: AEAD error <- CryptoError:AuthenticationFailed:AEAD error <- Error:invalid tag",
+  "compress encrypted: throw:EnvelopeError:AlreadyEncrypted:envelope was already encrypted or compressed, so it cannot be encrypte",
+  "decompress plain: throw:EnvelopeError:NotCompressed:cannot decompress an envelope that was not compressed",
+  "decryptSubjectToRecipient non-recipient: throw:EnvelopeError:UnknownRecipient:unknown recipient",
+  "decryptSubjectToRecipient no recipients: throw:EnvelopeError:UnknownRecipient:unknown recipient",
+  "attachmentPayload on non-attachment: throw:EnvelopeError:InvalidAttachment:invalid attachment",
+  "expectAttachment none: throw:EnvelopeError:NonexistentAttachment:nonexistent attachment",
+  "Request.fromEnvelope mismatch: throw:EnvelopeError:Cbor:dcbor error: Expected function Named(Dynamic("g")), but found Named(Dy <- CborError:Custom:Expected function Named(Dynamic("g")), but found Named(Dynamic("f"))",
+]
+`;
+
+exports[`golden: behaviour snapshots > the sealed content key is the key's tagged CBOR 1`] = `
+[
+  "recipients()[0].decrypt(bob).length: ok:37",
+  "decryptSubjectToRecipient(bob): ok:"Hello." [ 'hasRecipient': SealedMessage ]",
 ]
 `;
 
@@ -155,6 +155,59 @@ style 1 stroke:teal,stroke-width:4px
 style 2 stroke:teal,stroke-width:4px
 linkStyle 0 stroke:cyan,stroke-width:2px
 linkStyle 1 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > attach:(leaf:text:x) 1`] = `
+""x" [
+    'attachment': {
+        "p"
+    } [
+        'vendor': ""
+    ]
+]
+---
+b2da681d NODE
+    5e85370e subj "x"
+    272eaf4a ASSERTION
+        6d446f10 pred 'attachment'
+        8a23549b obj NODE
+            55bfe7b6 subj WRAPPED
+                7978f506 cont "p"
+            ccedc82d ASSERTION
+                682461bf pred 'vendor'
+                8d33f520 obj ""
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>b2da681d"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>272eaf4a"])
+        2 -- pred --> 3[/"'attachment'<br>6d446f10"/]
+        2 -- obj --> 4(("NODE<br>8a23549b"))
+            4 -- subj --> 5[/"WRAPPED<br>55bfe7b6"\\]
+                5 -- cont --> 6["&quot;p&quot;<br>7978f506"]
+            4 --> 7(["ASSERTION<br>ccedc82d"])
+                7 -- pred --> 8[/"'vendor'<br>682461bf"/]
+                7 -- obj --> 9["&quot;&quot;<br>8d33f520"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:blue,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:goldenrod,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke:blue,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px"
 `;
 
 exports[`golden: hand corpus > attach:com.example(node(leaf:text:Alice+4)) 1`] = `
@@ -348,40 +401,72 @@ linkStyle 12 stroke:magenta,stroke-width:2px"
 
 exports[`golden: hand corpus > category domain 1`] = `
 [
-  "domain node.emptyAssertions: throw:EnvelopeError:InvalidParameter",
-  "domain knownValue.-1: throw:EnvelopeError:InvalidParameter",
-  "domain knownValue.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain setPosition.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain setPosition.-1: throw:EnvelopeError:InvalidParameter",
-  "domain digests.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain addSalt.length.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain addSalt.length.NaN: throw:EnvelopeError:InvalidParameter",
-  "domain lock.method.99: throw:EnvelopeError:InvalidParameter",
-  "domain function.known.-1: throw:EnvelopeError:InvalidParameter",
-  "domain function.known.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain parameter.from.empty: ok:""",
-  "domain hasSignaturesFromThreshold.1.5: throw:EnvelopeError:InvalidParameter",
-  "domain leaf.date: ok:d8c8d8c9c100",
-  "domain leaf.undefined: throw:EnvelopeError:InvalidParameter",
+  "domain node.emptyAssertions (J4): throw:InvalidParameter",
+  "domain knownValue.-1 (J2): throw:InvalidParameter",
+  "domain knownValue.1.5 (J1): throw:InvalidParameter",
+  "domain knownValue.NaN (J1): throw:InvalidParameter",
+  "domain knownValue.2^53 (J2): throw:InvalidParameter",
+  "domain knownValue.2n**64n (J2): throw:InvalidParameter",
+  "domain setPosition.1.5 (J1): throw:InvalidParameter",
+  "domain setPosition.-1 (J2): throw:InvalidParameter",
+  "domain setPosition.NaN (J1): throw:InvalidParameter",
+  "domain setPosition.2^53 (J2): throw:InvalidParameter",
+  "domain digests.1.5 (J1): throw:InvalidParameter",
+  "domain digests.-1 (J2): throw:InvalidParameter",
+  "domain addSalt.length.1.5 (J1): throw:InvalidParameter",
+  "domain addSalt.length.NaN (J1): throw:InvalidParameter",
+  "domain addSalt.length.-1 (J2): throw:InvalidParameter",
+  "domain addSalt.length.2^32 (J2): throw:Components[InvalidData]",
+  "domain addSalt.range.min.8.5 (J1): throw:InvalidParameter",
+  "domain lock.method.99 (J2): throw:InvalidParameter",
+  "domain lock.method.sshAgent (J4): throw:Components[InvalidData]",
+  "domain addSecret.method.sshAgent (J4): throw:Components[InvalidData]",
+  "domain function.known.-1 (J2): throw:InvalidParameter",
+  "domain function.known.1.5 (J1): throw:InvalidParameter",
+  "domain function.known.2^53 (J2): throw:InvalidParameter",
+  "domain function.known.2n**64n (J2): throw:InvalidParameter",
+  "domain parameter.from.1.5 (J1): throw:InvalidParameter",
+  "domain parameter.known.-1 (J2): throw:InvalidParameter",
+  "domain hasSignaturesFromThreshold.1.5 (J1): throw:InvalidParameter",
+  "domain hasSignaturesFromThreshold.NaN (J1): throw:InvalidParameter",
+  "domain hasSignaturesFromThreshold.-1 (J2): throw:InvalidParameter",
+  "domain leaf.undefined (J3): throw:InvalidParameter",
+  "domain leaf.dateNaN (J3): throw:InvalidParameter",
+  "domain leaf.symbol (J3): throw:Custom",
+  "domain leaf.function (J3): throw:Custom",
+  "domain expectSubject.foreignClass (J3): throw:InvalidFormat",
 ]
 `;
 
 exports[`golden: hand corpus > category reject 1`] = `
 [
-  "op encryptSubject(encryptSubject(leaf:text:Hello.)): throw:ALREADY_ENCRYPTED",
-  "op encryptSubject(elide[elide](leaf:text:Hello.)): throw:ALREADY_ELIDED",
-  "op decryptSubject(leaf:text:Hello.): throw:NOT_ENCRYPTED",
-  "op decryptSubject(encryptSubject(leaf:text:Hello.)): throw:COMPONENTS",
-  "op compress(encryptSubject(leaf:text:Hello.)): throw:ALREADY_ENCRYPTED",
-  "op compress(elide[elide](leaf:text:Hello.)): throw:ALREADY_ELIDED",
-  "op decompress(leaf:text:Hello.): throw:NOT_COMPRESSED",
-  "op decryptToRecipient(recipient(leaf:text:Hello.); to=59f2293a): throw:UNKNOWN_RECIPIENT",
-  "op decryptToRecipient(encryptSubject(leaf:text:Hello.); to=ff00ff00): throw:UNKNOWN_RECIPIENT",
-  "op decryptToRecipient(leaf:text:Hello.; to=ff00ff00): throw:UNKNOWN_RECIPIENT",
-  "op attachmentPayload(leaf:text:Hello.): throw:INVALID_ATTACHMENT",
-  "op expectAttachment(leaf:text:Hello.): throw:NONEXISTENT_ATTACHMENT",
-  "op requestFrom(request:f; fn=g): throw:CBOR",
-  "op verify(node(leaf:text:Hello.+1)): throw:INVALID_INNER_SIGNATURE_TYPE",
+  "op encryptSubject(encryptSubject(leaf:text:Hello.)): throw:AlreadyEncrypted",
+  "op encryptSubject(elide[elide](leaf:text:Hello.)): throw:AlreadyElided",
+  "op decryptSubject(leaf:text:Hello.): throw:NotEncrypted",
+  "op decryptSubject(encryptSubject(leaf:text:Hello.)): throw:Components[Crypto]",
+  "op compress(encryptSubject(leaf:text:Hello.)): throw:AlreadyEncrypted",
+  "op compress(elide[elide](leaf:text:Hello.)): throw:AlreadyElided",
+  "op decompress(leaf:text:Hello.): throw:NotCompressed",
+  "op decompress(leaf:cbor:d99c43841a3bea90): throw:NotCompressed",
+  "op decryptToRecipient(recipient(leaf:text:Hello.); to=59f2293a): throw:UnknownRecipient",
+  "op decryptToRecipient(encryptSubject(leaf:text:Hello.); to=ff00ff00): throw:UnknownRecipient",
+  "op decryptToRecipient(leaf:text:Hello.; to=ff00ff00): throw:UnknownRecipient",
+  "op decryptToRecipient(node(encryptSubject(leaf:text:Hello.)+1); to=ff00ff00): throw:Cbor[WrongType]",
+  "op recipients(node(encryptSubject(leaf:text:Hello.)+1)): throw:Cbor[WrongType]",
+  "op recipients(node(encryptSubject(leaf:text:Hello.)+1)): count=0",
+  "op unlock(node(encryptSubject(leaf:text:Hello.)+1); secret=70617373): throw:Cbor[WrongType]",
+  "op unlock(node(encryptSubject(leaf:text:Hello.)+1); secret=70617373): throw:UnknownSecret",
+  "op unlock(lock:hkdf(leaf:text:x); secret=00): throw:UnknownSecret",
+  "op sskrJoin(node(encryptSubject(leaf:text:Hello.)+1)): throw:Cbor[WrongType]",
+  "op sskrJoin(encryptSubject(leaf:text:Hello.)): throw:InvalidShares",
+  "op attachmentPayload(leaf:text:Hello.): throw:InvalidAttachment",
+  "op expectAttachment(leaf:text:Hello.): throw:NonexistentAttachment",
+  "op requestFrom(request:f; fn=g): throw:Cbor[Custom]",
+  "op verify(node(leaf:text:Hello.+1)): throw:InvalidInnerSignatureType",
+  "op verify(node(leaf:text:Hello.+1)): throw:InvalidSignatureType",
+  "op verify(node(leaf:text:Hello.+1)): throw:InvalidSignatureType",
+  "op verify(sign:ed25519(leaf:text:Hello.)): throw:UnverifiedSignature",
+  "op verify(sign:ed25519(leaf:text:Hello.); pub=ffffffff): throw:UnverifiedSignature",
   "op decryptToRecipient(recipient(leaf:text:Hello.); to=ff00ff00): "Hello." [     'hasRecipient': SealedMessage ]",
 ]
 `;
@@ -396,25 +481,35 @@ exports[`golden: hand corpus > category wire 1`] = `
   "leaf:date: 1970-01-01",
   "leaf:date: 2022-07-11T04:00:00Z",
   "node(leaf:text:event+1): "event" [     "at": 2022-07-11T04:00:00Z ]",
-  "recipientDecode lftansfwlrgrdidp… seed=ff00ff00: "Hello." [     'hasRecipient': SealedMessage ]",
-  "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion salted): throw:INVALID_FORMAT",
-  "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion): throw:INVALID_FORMAT",
+  "recipientDecode lftansfwlrhdcxke… seed=ff00ff00: throw:Decoder",
+  "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion salted): throw:InvalidFormat",
+  "op addAssertionEnvelope(leaf:text:A; leaf:text:not-an-assertion): throw:InvalidFormat",
   "op addAssertionEnvelope(leaf:text:A; salt:8(assertion(leaf:text:p:leaf:text:o))): "A" [     {         "p": "o"     } [         'salt': Salt     ] ]",
-  "request:5: request(ARID(c66be27d)) [     'body': «5» [         ❰lhs❱: 1     ] ]",
-  "request:6: request(ARID(c66be27d)) [     'body': «6» [         ❰lhs❱: 1     ] ]",
-  "request:7: request(ARID(c66be27d)) [     'body': «7» [         ❰lhs❱: 1     ] ]",
-  "request:8: request(ARID(c66be27d)) [     'body': «8» [         ❰lhs❱: 1     ] ]",
-  "request:9: request(ARID(c66be27d)) [     'body': «9» [         ❰lhs❱: 1     ] ]",
-  "request:10: request(ARID(c66be27d)) [     'body': «10» [         ❰lhs❱: 1     ] ]",
-  "request:11: request(ARID(c66be27d)) [     'body': «11» [         ❰lhs❱: 1     ] ]",
-  "request:12: request(ARID(c66be27d)) [     'body': «12» [         ❰lhs❱: 1     ] ]",
-  "request:13: request(ARID(c66be27d)) [     'body': «13» [         ❰lhs❱: 1     ] ]",
-  "request:14: request(ARID(c66be27d)) [     'body': «14» [         ❰lhs❱: 1     ] ]",
-  "request:15: request(ARID(c66be27d)) [     'body': «15» [         ❰lhs❱: 1     ] ]",
-  "encryptSubject(leaf:text:Hello.): ENCRYPTED",
-  "encrypt(leaf:text:Hello.): ENCRYPTED",
-  "encryptSubject(node(leaf:text:Alice+1)): ENCRYPTED [     "knows": "Bob" ]",
+  "request:5[2]: request(ARID(c66be27d)) [     'body': «5» [         ❰lhs❱: 1     ] ]",
+  "request:6[2]: request(ARID(c66be27d)) [     'body': «6» [         ❰lhs❱: 1     ] ]",
+  "request:7[2]: request(ARID(c66be27d)) [     'body': «7» [         ❰lhs❱: 1     ] ]",
+  "request:8[2]: request(ARID(c66be27d)) [     'body': «8» [         ❰lhs❱: 1     ] ]",
+  "request:9[2]: request(ARID(c66be27d)) [     'body': «9» [         ❰lhs❱: 1     ] ]",
+  "request:10[2]: request(ARID(c66be27d)) [     'body': «10» [         ❰lhs❱: 1     ] ]",
+  "request:11[2]: request(ARID(c66be27d)) [     'body': «11» [         ❰lhs❱: 1     ] ]",
+  "request:12[2]: request(ARID(c66be27d)) [     'body': «12» [         ❰lhs❱: 1     ] ]",
+  "request:13[2]: request(ARID(c66be27d)) [     'body': «13» [         ❰lhs❱: 1     ] ]",
+  "request:14[2]: request(ARID(c66be27d)) [     'body': «14» [         ❰lhs❱: 1     ] ]",
+  "request:15[2]: request(ARID(c66be27d)) [     'body': «15» [         ❰lhs❱: 1     ] ]",
+  "encryptSubject:nonce(leaf:text:Hello.): ENCRYPTED",
+  "encrypt:nonce(leaf:text:Hello.): ENCRYPTED",
+  "encryptSubject:nonce(node(leaf:text:Alice+1)): ENCRYPTED [     "knows": "Bob" ]",
   "op encryptSubject(node(leaf:text:Alice+1)): ENCRYPTED [     'isA': "Bob" ]",
+  "recipient:exact(leaf:text:Hello.): d8c882d99c42844bed54c2b1e91b48fe22a00e4c0b0b0b0b0b0b0b0b0b0b0b0b50326a4c05aac5f8bb00e2ba3301deee5d5825d99c4158208cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59a105d8c9d99c5382d99c428358252218e02c616c947feed0b7fe678b4dd2760953e504c4c3b557ff372f868bb18d39340803c84c0c0c0c0c0c0c0c0c0c0c0c0c50b169f9a9a022fdc8e37b6d0584c92259d99c4b5820f1bd7a7e118ea461eba95126a3efef543ebb78439d1574bedcbe7d89174cf025 --- ur:envelope/lftansfwlrgrweghsapawlcwfdzecpnbbagsbdbdbdbdbdbdbdbdbdbdbdbdgdeyimgsahpkskyarkaevordeoaduewyhlhddatansfphdcxlksojzuyktbykovsecbygebsldeninbdfptkwebtwzdpadglwetbgltnwdmwhlhkoyahtpsotansgulftansfwlshddacpcsvtdwhsjzmwlbwytirlzeiolugttdkoasguvwaasssrrehgzmemdllnlupalgeseeayaxspgsbnbnbnbnbnbnbnbnbnbnbnbngdpainytptnbcpzcspvlkgjnahlrsocphktansgrhdcxwnryknkbbymnoxhswmptgydsotwswsghfmrkksfxntbzjyrnuornkildchgswtdabdhfwssf --- dc2856251ab9cd336be70bcd14612211d13f7d424d3a246dd0702b8a7636bd2e --- ENCRYPTED [     'hasRecipient': SealedMessage ] --- ENCRYPTED [ 'hasRecipient': SealedMessage ] --- dc285625 NODE     8cc96cdb subj ENCRYPTED     e861088c ASSERTION         943a35d1 pred 'hasRecipient'         b2fc29a0 obj SealedMessage --- dc285625 NODE     8cc96cdb subj ENCRYPTED     e861088c ASSERTION         943a35d1 pred 'hasRecipient'         b2fc29a0 obj SealedMessage --- %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%% graph LR 0(("NODE<br>dc285625"))     0 -- subj --> 1>"ENCRYPTED<br>8cc96cdb"]     0 --> 2(["ASSERTION<br>e861088c"])         2 -- pred --> 3[/"'hasRecipient'<br>943a35d1"/]         2 -- obj --> 4["SealedMessage<br>b2fc29a0"] style 0 stroke:red,stroke-width:4px style 1 stroke:coral,stroke-width:4px style 2 stroke:green,stroke-width:4px style 3 stroke:goldenrod,stroke-width:4px style 4 stroke:teal,stroke-width:4px linkStyle 0 stroke:red,stroke-width:2px linkStyle 1 stroke-width:2px linkStyle 2 stroke:cyan,stroke-width:2px linkStyle 3 stroke:magenta,stroke-width:2px --- 200(     [         40002(             [                 h'ed54c2b1e91b48fe22a00e',                 h'0b0b0b0b0b0b0b0b0b0b0b0b',                 h'326a4c05aac5f8bb00e2ba3301deee5d',                 h'd99c4158208cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59'             ]         ),         {             5:             201(                 40019(                     [                         40002(                             [                                 h'2218e02c616c947feed0b7fe678b4dd2760953e504c4c3b557ff372f868bb18d39340803c8',                                 h'0c0c0c0c0c0c0c0c0c0c0c0c',                                 h'b169f9a9a022fdc8e37b6d0584c92259'                             ]                         ),                         40011(                             h'f1bd7a7e118ea461eba95126a3efef543ebb78439d1574bedcbe7d89174cf025'                         )                     ]                 )             )         }     ] ) --- d8 c8                                   # tag(200) envelope     82                                  # array(2)         d9 9c42                         # tag(40002) encrypted             84                          # array(4)                 4b                      # bytes(11)                     ed54c2b1e91b48fe22a00e                 4c                      # bytes(12)                     0b0b0b0b0b0b0b0b0b0b0b0b                 50                      # bytes(16)                     326a4c05aac5f8bb00e2ba3301deee5d                 5825                    # bytes(37)                     d99c4158208cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59         a1                              # map(1)             05                          # unsigned(5)             d8 c9                       # tag(201) leaf                 d9 9c53                 # tag(40019) crypto-sealed                     82                  # array(2)                         d9 9c42         # tag(40002) encrypted                             83          # array(3)                                 5825    # bytes(37)                                     2218e02c616c947feed0b7fe678b4dd2760953e504c4c3b557ff372f868bb18d39340803c8                                 4c      # bytes(12)                                     0c0c0c0c0c0c0c0c0c0c0c0c                                 50      # bytes(16)                                     b169f9a9a022fdc8e37b6d0584c92259                         d9 9c4b         # tag(40011) agreement-public-key                             5820        # bytes(32)                                 f1bd7a7e118ea461eba95126a3efef543ebb78439d1574bedcbe7d89174cf025 --- NODE --- key=0707070707070707070707070707070707070707070707070707070707070707",
+  "recipient:mlkem512:exact(node(leaf:text:Alice+4)): d8c886d99c42844aed54c2b1ea1241fb2daa4c0b0b0b0b0b0b0b0b0b0b0b0b5014c5a6983ed03195762aed1ec8c655235825d99c41582013941b487c1ddebce827b6ec3f46d982938acdc7e3b6a140db36062d9519dd2fa105d8c9d99c5382d99c42835825c45d351a926a937dbfe21dc4cec27582bcb06d4d194d5d2338d425c414a36ff067bb788b1b4c0c0c0c0c0c0c0c0c0c0c0c0c5087a02290c9a983df7ff2d553ea213979d99ca68219020059030012f851e103e2e5fbbd67357a8d793de44f2294bd4db37e463c393bc7b1ec77d7bc2333a6811ba25b9c47de9e4e5bc45ec856287840ec03515345d997c41cede9cabcad52973f8daae4ba6f97611517dae169c5800d82c4c0661bedd711d2a2775d3e12bdd754928da7bb3a4328d9ecee8665a7b3f73749881ee807eb62beb387d174ffad1f4269721832534021f48160930d1c7cf25987668f4ee2feace439622e4c3a3fb8d8ff634f11967226a0bf97def1b33c4e96af7f51121ffd9a769709b057bbbe9c31ce5f0c50be4157e1bfa2814308321eb9bab37753efa6e1ec87587e326fe5cff6da57e781f93fdb4bf69110e3a8bb94d639c94356eac3ec0e8b484e606f8c56d4a4454a32965cabbdee1cacbd7b164cf56644e055167d4881c8aee40bca3fcae32344b8f8f5de1fbce2670cb6ba69a851568b65dc21fe57d07f2ee86f9bcb6328323833ff15da297f72a98abe61753fe52edaa04500f250a06835f02780e8cedad1befb1c90e5f10d6d5bc97e86a3523ba9fa8742a16a0f0f894d1c077a3be1ab1b10298b292768d3eee1b3db9b3c8f9688c927c68b14052340dbef1cbd964778a3efe9fb139351ea92abfb317458adc83ea03e04c16494cfbe05d2102a9479e05f66d6929155807f281afd35cf4bd819e4517851dd0d9278714855a7ee25633e3ed6255991bd56c8ec6cb05a48062cef8c25489e97a0a783d263acb4d5f336d006f315d542569d337f95455313f03a41ad504c5f9a5cc45925c251fd8df1d2af6fe9da50abcdf4a5a61219171c6c374d1f66be0761a365fcc52bcd595382a85d82d89ffc0c40ddb1ebcfc009f84bb391a9eccb8993dd5716cd7ffd916a94da5089f29412a930c17146f88162edad784dbb6442894c7c2d200cdd075080a53b43cb8af15905aa325c6c1f279e1d305da4a32c9d667b21bbbf2279eba033fa61c9daab9368f9ea82dc7485342d66d14ee1d4fbebec514c195033ac5fdfe8f3494d83f10a358cee5e390d90fa35cb4add9e167807797934adb9325617dfe194158bfc49e1b23b422c572eae069e453690cc0363ac4d2dcaa6bba0aaa104d8c96641206e6f7465a1d8c9656b6e6f7773d8c9654361726f6ca101d8c966506572736f6ea1d8c9656b6e6f7773d8c963426f62 --- ur:envelope/lntansfwlrgeweghsapawdbgfpzodppkgsbdbdbdbdbdbdbdbdbdbdbdbdgdbbskolmkfmtiehmdkodrweckspswgocnhddatansfphdcxbwmwcwfdkecauerfvsdirpwpfhfgtalfmulesnstvlrpoyfzuyenamdpmdcfutdloyahtpsotansgulftansfwlshddasshleccymoimmukirsvocasstosakplfrfpfjngtcfgthlcnettydassbbotjlwtiorkkslucwgsbnbnbnbnbnbnbnbnbnbnbnbngdltnbcpmhsoptlsurlbwztlguwdcleskktansollfcfaoaehkaxaebgyagyvyaxvovwzoryioecknlgkkfsvegwcpmwrygtqdkbfgfnesfrstpawpkttsrfcneoollycwoehpnsfluennglhpsshysphfdeksfzwpaxgygufetamssscewewlsgrfpmgmmsfhlgpkverdjlmshsbzchtnvyinsklabtlfssrtiycwwetsbytdoekthlfmbgrytsghmolgosrkftfxdetawpwylnihosqdylemgalockvsatwmidrnqdltttjyzmpmctfwinjpcseygufzclwklyhnmubtcekewzhkltiymyglvozepsveesiddmgsftfhrotpzmiagwbymtjpdsnbrsmsuewnqdfnglmtpelbgybgctzcnykomsaspfhgrkrnnsehtohebngdrnfphgvyrsoelyfxayeyckrhrdqdktguwsolvywplthdkbeyjlvwtkyntnhgvdlyytfhuygrynmebevlpdrkmwtbessofxhfwdsrwpbalufdglhnjllkhftyoxfegeeymthhpyrywycepsrykgcmgsykiyfyvtgocmkifdlyspplvebdsgfhsgvlcnfyroyaykuectrfvoiobnrprdinpdgyhfluihuoclzehgtilbdmvsjlndsbiadeeyeteozmbztndtlbjpptlernhskpfhvwdmtnnbfeaewzgdnbisecwtdilavstotnttrnzocemhvwwnbtjnhpsokblnotgmfrptzsltfwoyimbsbsldgtceatknfrvypycwbedtludtdiistewyvyqduyndfnmymtlosodiswlubbahcnfzuywscerymtflksotwswlzobwmugywdmopyzoehjyhdpmspfmnbfmaaseiemwtkrnahtdbedrmwkkvtheiytbmomegolalbdecyzcectkgrtpcfvegyksgyutbtmoksjsfdgooswydaiafmfmtbdahkmeryhfspwpjzpfhtfdamdwwslkdafdnnmsnboslstdiapsqztlwfentiamwfbztlfwhfnteolbmdfegubwwtftfppmgdgshenyhhsshkdasagyzclgwntdpejlwltngdpysnwkonolbgcfchcejzemgtctiyrnathsotihztskdnsnhkgulfpdhllftpneztbnfzutpawmtkrtasyagrqdmeptwpsbldmuuthgcmsnlbzcmeimmwtngdldwzmwbgptdysejsfgyalyidwepmksgtrkiefwldgskedpcxbnutatgdlaonfrfxsblewnhkahpkeyhhjzctdinncadyhloxotdwntiykgclrkrscpkkwmnbeozshssotnpymuisytwdlfuojylpeedpiyttglvytyzowmwpgygscfgdeopsheurvswfgagtlswnbkeclkwyhyesbtmhzsecsbgeutnncmksatkkkkeepmrheyhfchurvymwbzluztgavyprfrfwdwhgdmplamnnfeenmhsfaxiapsgtdpsgolrknbpkoyaatpsoiyfpcxjtjljyihoytpsoihjejtjlktjktpsoihfxhsjpjljzoyadtpsoiygdihjpjkjljtoytpsoihjejtjlktjktpsoiafwjlidtskeonya --- 27ccd1ec8e7d517d8e508a828b1880574b2c7c1686675d320f5a449db117d846 --- ENCRYPTED [     'isA': "Person"     "knows": "Bob"     "knows": "Carol"     'hasRecipient': SealedMessage(MLKEM512)     'note': "A note" ] --- ENCRYPTED [ 'isA': "Person", "knows": "Bob", "knows": "Carol", 'hasRecipient': SealedMessage(MLKEM512), 'note': "A note" ] --- 27ccd1ec NODE     13941b48 subj ENCRYPTED     222ac203 ASSERTION         943a35d1 pred 'hasRecipient'         f0a697e7 obj SealedMessage(MLKEM512)     3c3ca1f1 ASSERTION         0fcd6a39 pred 'note'         61c8e387 obj "A note"     4012caf2 ASSERTION         db7dd21c pred "knows"         afb8122e obj "Carol"     581d8efe ASSERTION         2be2d79b pred 'isA'         bd52917f obj "Person"     78d666eb ASSERTION         db7dd21c pred "knows"         13b74194 obj "Bob" --- 27ccd1ec NODE     13941b48 subj ENCRYPTED     222ac203 ASSERTION         943a35d1 pred 'hasRecipient'         f0a697e7 obj SealedMessage(MLKEM512)     3c3ca1f1 ASSERTION         0fcd6a39 pred 'note'         61c8e387 obj "A note"     4012caf2 ASSERTION         db7dd21c pred "knows"         afb8122e obj "Carol"     581d8efe ASSERTION         2be2d79b pred 'isA'         bd52917f obj "Person"     78d666eb ASSERTION         db7dd21c pred "knows"         13b74194 obj "Bob" --- %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%% graph LR 0(("NODE<br>27ccd1ec"))     0 -- subj --> 1>"ENCRYPTED<br>13941b48"]     0 --> 2(["ASSERTION<br>222ac203"])         2 -- pred --> 3[/"'hasRecipient'<br>943a35d1"/]         2 -- obj --> 4["SealedMessage(MLKEM512)<br>f0a697e7"]     0 --> 5(["ASSERTION<br>3c3ca1f1"])         5 -- pred --> 6[/"'note'<br>0fcd6a39"/]         5 -- obj --> 7["&quot;A note&quot;<br>61c8e387"]     0 --> 8(["ASSERTION<br>4012caf2"])         8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]         8 -- obj --> 10["&quot;Carol&quot;<br>afb8122e"]     0 --> 11(["ASSERTION<br>581d8efe"])         11 -- pred --> 12[/"'isA'<br>2be2d79b"/]         11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]     0 --> 14(["ASSERTION<br>78d666eb"])         14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]         14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"] style 0 stroke:red,stroke-width:4px style 1 stroke:coral,stroke-width:4px style 2 stroke:green,stroke-width:4px style 3 stroke:goldenrod,stroke-width:4px style 4 stroke:teal,stroke-width:4px style 5 stroke:green,stroke-width:4px style 6 stroke:goldenrod,stroke-width:4px style 7 stroke:teal,stroke-width:4px style 8 stroke:green,stroke-width:4px style 9 stroke:teal,stroke-width:4px style 10 stroke:teal,stroke-width:4px style 11 stroke:green,stroke-width:4px style 12 stroke:goldenrod,stroke-width:4px style 13 stroke:teal,stroke-width:4px style 14 stroke:green,stroke-width:4px style 15 stroke:teal,stroke-width:4px style 16 stroke:teal,stroke-width:4px linkStyle 0 stroke:red,stroke-width:2px linkStyle 1 stroke-width:2px linkStyle 2 stroke:cyan,stroke-width:2px linkStyle 3 stroke:magenta,stroke-width:2px linkStyle 4 stroke-width:2px linkStyle 5 stroke:cyan,stroke-width:2px linkStyle 6 stroke:magenta,stroke-width:2px linkStyle 7 stroke-width:2px linkStyle 8 stroke:cyan,stroke-width:2px linkStyle 9 stroke:magenta,stroke-width:2px linkStyle 10 stroke-width:2px linkStyle 11 stroke:cyan,stroke-width:2px linkStyle 12 stroke:magenta,stroke-width:2px linkStyle 13 stroke-width:2px linkStyle 14 stroke:cyan,stroke-width:2px linkStyle 15 stroke:magenta,stroke-width:2px --- 200(     [         40002(             [                 h'ed54c2b1ea1241fb2daa',                 h'0b0b0b0b0b0b0b0b0b0b0b0b',                 h'14c5a6983ed03195762aed1ec8c65523',                 h'd99c41582013941b487c1ddebce827b6ec3f46d982938acdc7e3b6a140db36062d9519dd2f'             ]         ),         {             5:             201(                 40019(                     [                         40002(                             [                                 h'c45d351a926a937dbfe21dc4cec27582bcb06d4d194d5d2338d425c414a36ff067bb788b1b',                                 h'0c0c0c0c0c0c0c0c0c0c0c0c',                                 h'87a02290c9a983df7ff2d553ea213979'                             ]                         ),                         40102(                             [                                 512,                                 h'12f851e103e2e5fbbd67357a8d793de44f2294bd4db37e463c393bc7b1ec77d7bc2333a6811ba25b9c47de9e4e5bc45ec856287840ec03515345d997c41cede9cabcad52973f8daae4ba6f97611517dae169c5800d82c4c0661bedd711d2a2775d3e12bdd754928da7bb3a4328d9ecee8665a7b3f73749881ee807eb62beb387d174ffad1f4269721832534021f48160930d1c7cf25987668f4ee2feace439622e4c3a3fb8d8ff634f11967226a0bf97def1b33c4e96af7f51121ffd9a769709b057bbbe9c31ce5f0c50be4157e1bfa2814308321eb9bab37753efa6e1ec87587e326fe5cff6da57e781f93fdb4bf69110e3a8bb94d639c94356eac3ec0e8b484e606f8c56d4a4454a32965cabbdee1cacbd7b164cf56644e055167d4881c8aee40bca3fcae32344b8f8f5de1fbce2670cb6ba69a851568b65dc21fe57d07f2ee86f9bcb6328323833ff15da297f72a98abe61753fe52edaa04500f250a06835f02780e8cedad1befb1c90e5f10d6d5bc97e86a3523ba9fa8742a16a0f0f894d1c077a3be1ab1b10298b292768d3eee1b3db9b3c8f9688c927c68b14052340dbef1cbd964778a3efe9fb139351ea92abfb317458adc83ea03e04c16494cfbe05d2102a9479e05f66d6929155807f281afd35cf4bd819e4517851dd0d9278714855a7ee25633e3ed6255991bd56c8ec6cb05a48062cef8c25489e97a0a783d263acb4d5f336d006f315d542569d337f95455313f03a41ad504c5f9a5cc45925c251fd8df1d2af6fe9da50abcdf4a5a61219171c6c374d1f66be0761a365fcc52bcd595382a85d82d89ffc0c40ddb1ebcfc009f84bb391a9eccb8993dd5716cd7ffd916a94da5089f29412a930c17146f88162edad784dbb6442894c7c2d200cdd075080a53b43cb8af15905aa325c6c1f279e1d305da4a32c9d667b21bbbf2279eba033fa61c9daab9368f9ea82dc7485342d66d14ee1d4fbebec514c195033ac5fdfe8f3494d83f10a358cee5e390d90fa35cb4add9e167807797934adb9325617dfe194158bfc49e1b23b422c572eae069e453690cc0363ac4d2dcaa6bba0aa'                             ]                         )                     ]                 )             )         },         {             4:             201("A note")         },         {             201("knows"):             201("Carol")         },         {             1:             201("Person")         },         {             201("knows"):             201("Bob")         }     ] ) --- d8 c8                                   # tag(200) envelope     86                                  # array(6)         d9 9c42                         # tag(40002) encrypted             84                          # array(4)                 4a                      # bytes(10)                     ed54c2b1ea1241fb2daa                 4c                      # bytes(12)                     0b0b0b0b0b0b0b0b0b0b0b0b                 50                      # bytes(16)                     14c5a6983ed03195762aed1ec8c65523                 5825                    # bytes(37)                     d99c41582013941b487c1ddebce827b6ec3f46d982938acdc7e3b6a140db36062d9519dd2f         a1                              # map(1)             05                          # unsigned(5)             d8 c9                       # tag(201) leaf                 d9 9c53                 # tag(40019) crypto-sealed                     82                  # array(2)                         d9 9c42         # tag(40002) encrypted                             83          # array(3)                                 5825    # bytes(37)                                     c45d351a926a937dbfe21dc4cec27582bcb06d4d194d5d2338d425c414a36ff067bb788b1b                                 4c      # bytes(12)                                     0c0c0c0c0c0c0c0c0c0c0c0c                                 50      # bytes(16)                                     87a02290c9a983df7ff2d553ea213979                         d9 9ca6         # tag(40102) mlkem-ciphertext                             82          # array(2)                                 190200  # unsigned(512)                                 590300  # bytes(768)                                     12f851e103e2e5fbbd67357a8d793de44f2294bd4db37e463c393bc7b1ec77d7bc2333a6811ba25b9c47de9e4e5bc45ec856287840ec03515345d997c41cede9cabcad52973f8daae4ba6f97611517dae169c5800d82c4c0661bedd711d2a2775d3e12bdd754928da7bb3a4328d9ecee8665a7b3f73749881ee807eb62beb387d174ffad1f4269721832534021f48160930d1c7cf25987668f4ee2feace439622e4c3a3fb8d8ff634f11967226a0bf97def1b33c4e96af7f51121ffd9a769709b057bbbe9c31ce5f0c50be4157e1bfa2814308321eb9bab37753efa6e1ec87587e326fe5cff6da57e781f93fdb4bf69110e3a8bb94d639c94356eac3ec0e8b484e606f8c56d4a4454a32965cabbdee1cacbd7b164cf56644e055167d4881c8aee40bca3fcae32344b8f8f5de1fbce2670cb6ba69a851568b65dc21fe57d07f2ee86f9bcb6328323833ff15da297f72a98abe61753fe52edaa04500f250a06835f02780e8cedad1befb1c90e5f10d6d5bc97e86a3523ba9fa8742a16a0f0f894d1c077a3be1ab1b10298b292768d3eee1b3db9b3c8f9688c927c68b14052340dbef1cbd964778a3efe9fb139351ea92abfb317458adc83ea03e04c16494cfbe05d2102a9479e05f66d6929155807f281afd35cf4bd819e4517851dd0d9278714855a7ee25633e3ed6255991bd56c8ec6cb05a48062cef8c25489e97a0a783d263acb4d5f336d006f315d542569d337f95455313f03a41ad504c5f9a5cc45925c251fd8df1d2af6fe9da50abcdf4a5a61219171c6c374d1f66be0761a365fcc52bcd595382a85d82d89ffc0c40ddb1ebcfc009f84bb391a9eccb8993dd5716cd7ffd916a94da5089f29412a930c17146f88162edad784dbb6442894c7c2d200cdd075080a53b43cb8af15905aa325c6c1f279e1d305da4a32c9d667b21bbbf2279eba033fa61c9daab9368f9ea82dc7485342d66d14ee1d4fbebec514c195033ac5fdfe8f3494d83f10a358cee5e390d90fa35cb4add9e167807797934adb9325617dfe194158bfc49e1b23b422c572eae069e453690cc0363ac4d2dcaa6bba0aa         a1                              # map(1)             04                          # unsigned(4)             d8 c9                       # tag(201) leaf                 66                      # text(6)                     41206e6f7465        # "A note"         a1                              # map(1)             d8 c9                       # tag(201) leaf                 65                      # text(5)                     6b6e6f7773          # "knows"             d8 c9                       # tag(201) leaf                 65                      # text(5)                     4361726f6c          # "Carol"         a1                              # map(1)             01                          # unsigned(1)             d8 c9                       # tag(201) leaf                 66                      # text(6)                     506572736f6e        # "Person"         a1                              # map(1)             d8 c9                       # tag(201) leaf                 65                      # text(5)                     6b6e6f7773          # "knows"             d8 c9                       # tag(201) leaf                 63                      # text(3)                     426f62              # "Bob" --- NODE --- key=0707070707070707070707070707070707070707070707070707070707070707 --- priv=d99ca4821902005906605adc756f508f9f873a82781e5da9cd2cb74cc26a87df5a9700c86d27227d841381224a54a8f5c3ff6020ac04770ba24103215e00026fef16b1c643c77e723dbd8702c7832bd1c31f1808c190837a7dbc5d57f175aee88f9ba73df409af0b3c58ab770163a22865c5cf70ebc6150804fd8b4ed4c5762a82694a389cf594722ba61876d512fb373bd1cc8dd73380a4153b2dab285ca1420462c59e18b0c5b6089870486589b4993b43adf481944470192c17061ab7717a1109b98c3f04023b89495f630d9e999797c0a58287b89c84a0bf27840936c75f7cb15ad308fcf224c9175f08f358b8f93125a44992f60b565a0593c044c712b5e9935f2915237d5b9c5dc89d03d7ccd74102cf8288d8caa1d4b8992fc85464a52c7b0903bba6b04ff2933f214fcf3aa3f1e7929fc17014c705e090a3272624af1793263a018420b66f229bff662e87aa197f1b6f08e82fe23100dc1a4fce1512985a6a0b835bdeaa060f443ad1734b24dc9f95e6aeaf945211d50fbd6122ecc13b761828027995307358d7002e03f94a28935c0b93936c67324a73a81f1017c0f4524fc93918cc79ca67727e46c8d3d477936cb0041b0073873e43411300770e2a80acf7518565a2242a202801aa65343833a733226e28895f70be7e20c5d6fb5e6662bdb6d5224a22b6a00b8720873d6fc7afe4059225a37c39f37a7d895975d195af6b3d726b23f8232c7f7c492a479ea8489ee7607181db30a88218761c1630196127182c9036ce9f868712c337246521f3ab2a414768afb94265a89af322924568178b40129f4327ca938a59b55c811617d606acc09132d5602a7bb7936fe28b8e725de8d3a8430561568b3834fb8c9bb600a5a748a999b8d390277cb13ac0cc40c1fa9879eacb6292cb19f93620eb345817025fd48896c0485778639f49ccf17660320a08f92554522aaca944acef0b5a71577696c8478d64bb9ba33a00b59a3aac106260bd84d352f2b6915f8202f47ab5e64388c3754ca5526487059df19064375b65f6d14c4de92e78976b8a6b6df104402e7044c0f75752b7938559b96a34cf7aab233f79cbb12a73ede33c409b523ed2b00ec71fabb50e36f106ee58cefb8941c2b81b397a4b2f1c1df0a8511e3a541df37255776478b52717e68cff07b60c23513df07fdc1c3f203925e4ec842ad1781d245c539a3b7215c321e7b94fcbb6bb904942d55b7a67675411b4eb36988b382491a6ab15d70251aac4437235902b1116686283cb769f7994ca495474e7a8140b08a3bbafd6d0b13a1349abb43ffac26d194caf59f811dbb9ac0d637fdbd30abb3645d709be6909d0528c26a3996645d37db1405659153359a9673cd1adc6dba314916ed454869bfb72ac98ce0cbac9078361f4b6c6aef5311ee6545f09ac325c106e94ba323b718c8c822f1b4577e39bf6db84420907c74382e3187715b835f126c9c0e45ec859009af809706985b1fb4427f3c2bcb11fa8b1568b6a4cf73793f4381c4ef6c790033331c8926aa9291f21460a634bef4abb98e3915af3b81065280485a0271bb8a83a434adba7ebcb23f039588c08c7cd440b4db36d84771221f409512cbfd7030399c1a5ded6b38722496de25d182527e027cd4fc01be9fac3cf481982b9b4d7896edaac92d8f7348c1701961078dbd48be7ec13b3433b1b3ca8fcb521f90790e41918190926e0dcaed0081a3b9c085ad2ba442b55db871909f9856cba0d7faa72fd13ce1573499ca40b58acb723a9cd5f0835e6b430801a4043109e53e8b50f659b42ac34f2847ad91978fcc7922db40934a052bb95857eb76ebee46e43383ba6138e2162a1f76904a146451349cb92ac855049928419843dc4471efb4aca60890621711af36dd1dc0964bc75987b7ce2177bef656b79e230a05c18c6514b62d33c6c59af7366a7ff5aac0235145990884ee0849a4836a7f737c113979fe08aa5a52683004bd2538b771b70c9e79860d89b7802294f8131f986a8a21666f446601881130277cd7558aa7fb04db4ea1e872244519101f20363e5a9307cf26b3775a10f157f8bb9ad722922a8b4950beb3d35a74de26415bb709f4aa55159d67efcd506e13a4f3ec12ab72a596dc7cb28223d72f1c67543c96eb3363459608909b7ea2c261b154d6fb7a26f24a05e40dfba363f71ab9bef6df3718c5d0c9c32ed8403fdd69046b9f1fe8e00f2cca76bab35281c998e2f15a6a10e104db3fa110bf3e42657a94a81ec6b4d784406518684c556472008a67932f7c682125b50cb72e8216f6906358fdaf28d354553 --- pub=d99ca582190200590320b12a73ede33c409b523ed2b00ec71fabb50e36f106ee58cefb8941c2b81b397a4b2f1c1df0a8511e3a541df37255776478b52717e68cff07b60c23513df07fdc1c3f203925e4ec842ad1781d245c539a3b7215c321e7b94fcbb6bb904942d55b7a67675411b4eb36988b382491a6ab15d70251aac4437235902b1116686283cb769f7994ca495474e7a8140b08a3bbafd6d0b13a1349abb43ffac26d194caf59f811dbb9ac0d637fdbd30abb3645d709be6909d0528c26a3996645d37db1405659153359a9673cd1adc6dba314916ed454869bfb72ac98ce0cbac9078361f4b6c6aef5311ee6545f09ac325c106e94ba323b718c8c822f1b4577e39bf6db84420907c74382e3187715b835f126c9c0e45ec859009af809706985b1fb4427f3c2bcb11fa8b1568b6a4cf73793f4381c4ef6c790033331c8926aa9291f21460a634bef4abb98e3915af3b81065280485a0271bb8a83a434adba7ebcb23f039588c08c7cd440b4db36d84771221f409512cbfd7030399c1a5ded6b38722496de25d182527e027cd4fc01be9fac3cf481982b9b4d7896edaac92d8f7348c1701961078dbd48be7ec13b3433b1b3ca8fcb521f90790e41918190926e0dcaed0081a3b9c085ad2ba442b55db871909f9856cba0d7faa72fd13ce1573499ca40b58acb723a9cd5f0835e6b430801a4043109e53e8b50f659b42ac34f2847ad91978fcc7922db40934a052bb95857eb76ebee46e43383ba6138e2162a1f76904a146451349cb92ac855049928419843dc4471efb4aca60890621711af36dd1dc0964bc75987b7ce2177bef656b79e230a05c18c6514b62d33c6c59af7366a7ff5aac0235145990884ee0849a4836a7f737c113979fe08aa5a52683004bd2538b771b70c9e79860d89b7802294f8131f986a8a21666f446601881130277cd7558aa7fb04db4ea1e872244519101f20363e5a9307cf26b3775a10f157f8bb9ad722922a8b4950beb3d35a74de26415bb709f4aa55159d67efcd506e13a4f3ec12ab72a596dc7cb28223d72f1c67543c96eb3363459608909b7ea2c261b154d6fb7a26f24a05e40dfba363f71ab9bef6df3718c5d0c9c32ed8403fdd69046b9f1fe8e00f2cc",
+  "recipient:lowOrder:exact(leaf:text:Hello.): ENCRYPTED [     'hasRecipient': SealedMessage ]",
+  "seal:exact(node(leaf:text:Alice+4)): d8c882d99c42845891573d2df69b82e2253d2b06c9c0b57acc1761218782d77d1afd81b924c664f39d91013157b2a842c63b69b1d157c35e3e355ed4dab7a801783a3f83c241e3dee1de8c7e59500eda7eaa0e93624e953c29a11fed4744af700480ee8ef4db29a8eeef10fba38a44f648315157c7872e6ffa51ed2bae9e0157b233010f43159ba2d0a3c599a5d21f522e5febf73ae6c12527f14c518684c556472008a67932f750da4f14b23f2a2959102e13633a2a51325825d99c415820eb3bc7aa9b03f89b2b7ad971766d3d2981c27003efc331313278fd57b5e5c746a105d8c9d99c5382d99c42835825535684b6f2820cbd08243653cded767ba86a1af72b085baf8229bc80a7d92afa3c03252d024c0b0b0b0b0b0b0b0b0b0b0b0b50618c7b54f709eddb3fdac3cc5e53e7d6d99c4b582036f550603c62f7013eb1b373b774c0b9a1cdec3eea681d18cfa077c7be254734 --- ur:envelope/lftansfwlrhdmehgfsdpynndlfvodafsdnamsortreknsfchhsclltlftskicyzclyrhdkswiewfntmeadehhgprpdfwswfrinpatthgsrhyfmechytytnrlpdadksftfhlssafpvluevyuelkkbhkgdbatnkbpkbamuidglmdfndtoyctweflfypejoaalawymnwkuydtpdwywsbezootlefyynfdehgyhgstltdmjlzsgywednplnnadhgpreoadbsfxbzndoetiotsknlontdctgmdmhewmylftvasedadiwngsgylnlrskhfflcxayolkkeyylgdtngwbbprfhdrdthkbedmbwiaftdrgyeyhddatansfphdcxwmfrstpkndaxyanddnkntajskojnfsdtlysajoaxwssreheheykszchgrevwstfgoyahtpsotansgulftansfwlshddaguhflrrpwzlfbnryaydkengusnwekokgpdimcyyldnayhppelfdtrflaostadrzsfnaxdadpaogsbdbdbdbdbdbdbdbdbdbdbdbdgdhslkkgghylasweuyfhtnsrsfhyguvdtbtansgrhdcxenykgdhnfnidyladfmpaqdjkrljyrtrhoysnwpfmwdiscacstknbktstrndafleesfrpfnbz --- 66d1b4cfa4711e9eb5bc0b07645960c4bf50c3d14f7ada269e5775c47508343e --- ENCRYPTED [     'hasRecipient': SealedMessage ] --- ENCRYPTED [ 'hasRecipient': SealedMessage ] --- 66d1b4cf NODE     eb3bc7aa subj ENCRYPTED     9f069bf7 ASSERTION         943a35d1 pred 'hasRecipient'         87c67d5b obj SealedMessage --- 66d1b4cf NODE     eb3bc7aa subj ENCRYPTED     9f069bf7 ASSERTION         943a35d1 pred 'hasRecipient'         87c67d5b obj SealedMessage --- %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%% graph LR 0(("NODE<br>66d1b4cf"))     0 -- subj --> 1>"ENCRYPTED<br>eb3bc7aa"]     0 --> 2(["ASSERTION<br>9f069bf7"])         2 -- pred --> 3[/"'hasRecipient'<br>943a35d1"/]         2 -- obj --> 4["SealedMessage<br>87c67d5b"] style 0 stroke:red,stroke-width:4px style 1 stroke:coral,stroke-width:4px style 2 stroke:green,stroke-width:4px style 3 stroke:goldenrod,stroke-width:4px style 4 stroke:teal,stroke-width:4px linkStyle 0 stroke:red,stroke-width:2px linkStyle 1 stroke-width:2px linkStyle 2 stroke:cyan,stroke-width:2px linkStyle 3 stroke:magenta,stroke-width:2px --- 200(     [         40002(             [                 h'573d2df69b82e2253d2b06c9c0b57acc1761218782d77d1afd81b924c664f39d91013157b2a842c63b69b1d157c35e3e355ed4dab7a801783a3f83c241e3dee1de8c7e59500eda7eaa0e93624e953c29a11fed4744af700480ee8ef4db29a8eeef10fba38a44f648315157c7872e6ffa51ed2bae9e0157b233010f43159ba2d0a3c599a5d21f522e5febf73ae6c12527f1',                 h'518684c556472008a67932f7',                 h'da4f14b23f2a2959102e13633a2a5132',                 h'd99c415820eb3bc7aa9b03f89b2b7ad971766d3d2981c27003efc331313278fd57b5e5c746'             ]         ),         {             5:             201(                 40019(                     [                         40002(                             [                                 h'535684b6f2820cbd08243653cded767ba86a1af72b085baf8229bc80a7d92afa3c03252d02',                                 h'0b0b0b0b0b0b0b0b0b0b0b0b',                                 h'618c7b54f709eddb3fdac3cc5e53e7d6'                             ]                         ),                         40011(                             h'36f550603c62f7013eb1b373b774c0b9a1cdec3eea681d18cfa077c7be254734'                         )                     ]                 )             )         }     ] ) --- d8 c8                                   # tag(200) envelope     82                                  # array(2)         d9 9c42                         # tag(40002) encrypted             84                          # array(4)                 5891                    # bytes(145)                     573d2df69b82e2253d2b06c9c0b57acc1761218782d77d1afd81b924c664f39d91013157b2a842c63b69b1d157c35e3e355ed4dab7a801783a3f83c241e3dee1de8c7e59500eda7eaa0e93624e953c29a11fed4744af700480ee8ef4db29a8eeef10fba38a44f648315157c7872e6ffa51ed2bae9e0157b233010f43159ba2d0a3c599a5d21f522e5febf73ae6c12527f1                 4c                      # bytes(12)                     518684c556472008a67932f7                 50                      # bytes(16)                     da4f14b23f2a2959102e13633a2a5132                 5825                    # bytes(37)                     d99c415820eb3bc7aa9b03f89b2b7ad971766d3d2981c27003efc331313278fd57b5e5c746         a1                              # map(1)             05                          # unsigned(5)             d8 c9                       # tag(201) leaf                 d9 9c53                 # tag(40019) crypto-sealed                     82                  # array(2)                         d9 9c42         # tag(40002) encrypted                             83          # array(3)                                 5825    # bytes(37)                                     535684b6f2820cbd08243653cded767ba86a1af72b085baf8229bc80a7d92afa3c03252d02                                 4c      # bytes(12)                                     0b0b0b0b0b0b0b0b0b0b0b0b                                 50      # bytes(16)                                     618c7b54f709eddb3fdac3cc5e53e7d6                         d9 9c4b         # tag(40011) agreement-public-key                             5820        # bytes(32)                                 36f550603c62f7013eb1b373b774c0b9a1cdec3eea681d18cfa077c7be254734 --- NODE --- unseal=ok",
+  "elide[encrypt](node(leaf:text:s+1)): "s" [     "p": ENCRYPTED ]",
+  "elide[encrypt](node(leaf:text:s+1)): "s" [     "p": ENCRYPTED ]",
+  "elide[encrypt](node(leaf:text:s+1)): "s" [     "p": ENCRYPTED ]",
+  "elide[compress](node(leaf:text:s+1)): throw:AlreadyEncrypted",
+  "elide[compress](node(leaf:text:s+1)): throw:AlreadyElided",
+  "op walkDecrypt(elide[encrypt](node(leaf:text:s+1))): "s" [     "p": ENCRYPTED ]",
 ]
 `;
 
@@ -510,28 +605,23 @@ linkStyle 12 stroke:magenta,stroke-width:2px"
 
 exports[`golden: hand corpus > decode rejections 1`] = `
 [
-  "decode:d8c8d8c96648656c: "Hello."",
-  "decode:d8c882d8c965416c: "Alice" [     "knows": "Bob" ]",
-  "decode:d8c885d8c965416c: "Alice" [     'isA': "Person"     "knows": "Bob"     "knows": "Carol"     'note': "A note" ]",
+  "decode:d8c8d8c96648656c6c6f2e: "Hello."",
+  "decode:d8c882d8c965416c696365a1: "Alice" [     "knows": "Bob" ]",
+  "decode:d8c885d8c965416c696365a1: "Alice" [     'isA': "Person"     "knows": "Bob"     "knows": "Carol"     'note': "A note" ]",
   "decode:d8c801: 'isA'",
-  "decode:d8c8d8c882d8c965: {     "Alice" [         "knows": "Bob"     ] }",
-  "decode:d8c8a1d8c9656b6e: "knows": "Bob"",
-  "decode:d8c885d8c965416c: "Alice" [     'isA': "Person"     "knows": "Carol"     "knows": ELIDED     'note': "A note" ]",
-  "decode:d8c882d8c885d8c9: {     "Alice" [         'isA': "Person"         "knows": "Bob"         "knows": "Carol"         'note': "A note"     ] } [     'signed': Signature(Ed25519) ]",
-  "decode:d8c8d99c43841a3b: COMPRESSED",
-  "decode:d8c8a2d8c96161d8: throw:CBOR",
-  "decode:d8c8581f00000000: throw:CBOR",
-  "decode:d8c9d8c965416c69: throw:CBOR",
-  "decode:d8c880: throw:CBOR",
-  "decode:d8c881d8c965416c: throw:CBOR",
-  "decode:d8c8d8c965416c69: throw:CBOR",
-  "decode:d8c8f6: throw:CBOR",
+  "decode:d8c8d8c882d8c965416c6963: {     "Alice" [         "knows": "Bob"     ] }",
+  "decode:d8c8a1d8c9656b6e6f7773d8: "knows": "Bob"",
+  "decode:d8c885d8c965416c696365a1: "Alice" [     'isA': "Person"     "knows": "Carol"     "knows": ELIDED     'note': "A note" ]",
+  "decode:d8c882d8c885d8c965416c69: {     "Alice" [         'isA': "Person"         "knows": "Bob"         "knows": "Carol"         'note': "A note"     ] } [     'signed': Signature(Ed25519) ]",
+  "decode:d8c8d99c43841a3bea909318: COMPRESSED",
   "decode:d8c8d8c9f6: null",
+  "decode:d8c8d8c964efbbbf61: "﻿a"",
+  "decode:d8c8d8c9c1f97e00: 1970-01-01",
+  "decode:d8c8d8c9c24101: 2(h'01')",
+  "decode:d8c8d8c9d99c406161: <error: the decoded CBOR value was not the expected type>",
   "ur:ur:envelope/tpsoiyfdihjz: "Hello."",
   "ur:ur:envelope/lptpsoihfpjz: "Alice" [     'isA': "Person"     "knows": "Bob"     "knows": "Carol"     'note': "A note" ]",
   "ur:ur:envelope/lptpsoihfpjz: "Alice" [     'isA': "Person"     "knows": "Carol"     "knows": ELIDED     'note': "A note" ]",
-  "ur:ur:envelope/aeae: throw:Bytewords",
-  "ur:ur:digest/hdcxaeaeaeaeae: throw:UnexpectedType",
 ]
 `;
 
@@ -933,14 +1023,36 @@ graph LR
 style 0 stroke:goldenrod,stroke-width:4px"
 `;
 
-exports[`golden: hand corpus > kv:706 1`] = `
-"'Self'
+exports[`golden: hand corpus > kv:25:value 1`] = `
+"'value'
 ---
-028254e4 'Self'
+9d584667 '25'
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0[/"'Self'<br>028254e4"/]
+0[/"'25'<br>9d584667"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > kv:706 1`] = `
+"'706'
+---
+028254e4 '706'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"'706'<br>028254e4"/]
+style 0 stroke:goldenrod,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > kv:9999:custom 1`] = `
+"'custom'
+---
+7d6089de '9999'
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0[/"'9999'<br>7d6089de"/]
 style 0 stroke:goldenrod,stroke-width:4px"
 `;
 
@@ -955,7 +1067,7 @@ graph LR
 style 0 stroke:goldenrod,stroke-width:4px"
 `;
 
-exports[`golden: hand corpus > leaf:arid:c66be27d 1`] = `
+exports[`golden: hand corpus > leaf:arid:c66be27dbad7cd09 1`] = `
 "ARID(c66be27d)
 ---
 9280e5a6 ARID(c66be27d)
@@ -1021,7 +1133,7 @@ graph LR
 style 0 stroke:teal,stroke-width:4px"
 `;
 
-exports[`golden: hand corpus > leaf:bytes:00000000 1`] = `
+exports[`golden: hand corpus > leaf:bytes:0000000000000000 1`] = `
 "Bytes(40)
 ---
 3ebaeb2c Bytes(40)
@@ -1032,7 +1144,7 @@ graph LR
 style 0 stroke:teal,stroke-width:4px"
 `;
 
-exports[`golden: hand corpus > leaf:bytes:01020304 1`] = `
+exports[`golden: hand corpus > leaf:bytes:0102030405 1`] = `
 "Bytes(5)
 ---
 96cb178b Bytes(5)
@@ -1043,7 +1155,73 @@ graph LR
 style 0 stroke:teal,stroke-width:4px"
 `;
 
-exports[`golden: hand corpus > leaf:digest:2be2d79b 1`] = `
+exports[`golden: hand corpus > leaf:bytes:f09f9880 1`] = `
+"Bytes(4)
+---
+a1aade84 Bytes(4)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["Bytes(4)<br>a1aade84"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:cbor:c1f97e00 1`] = `
+"1970-01-01
+---
+2af0a278 1970-01-01
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["1970-01-01<br>2af0a278"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:cbor:c1fb3ff000001ad7 1`] = `
+"1970-01-01T00:00:01Z
+---
+09dfbe8a 1970-01-01T00:00:01Z
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["1970-01-01T00:00:01Z<br>09dfbe8a"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:cbor:c1fb41d96285e020 1`] = `
+"2023-12-26
+---
+5e5cdc00 2023-12-26
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["2023-12-26<br>5e5cdc00"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:cbor:c24101 1`] = `
+"2(h'01')
+---
+99fba113 2(h'01')
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["2(h'01')<br>99fba113"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:cbor:d99c406161 1`] = `
+"<error: the decoded CBOR value was not the expected type>
+---
+c62f4eb3 <error: the decoded CBOR value was not the expected type>
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["<error: the decoded CBOR value was not the expected type><br>c62f4eb3"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:digest:2be2d79b306a21ff 1`] = `
 "Digest(2be2d79b)
 ---
 18bcb182 Digest(2be2d79b)
@@ -1065,6 +1243,17 @@ graph LR
 style 0 stroke:teal,stroke-width:4px"
 `;
 
+exports[`golden: hand corpus > leaf:float:0.1 1`] = `
+"0.1
+---
+8a4d0033 0.1
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["0.1<br>8a4d0033"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
 exports[`golden: hand corpus > leaf:float:1.5 1`] = `
 "1.5
 ---
@@ -1073,6 +1262,17 @@ b68bb45e 1.5
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
 0["1.5<br>b68bb45e"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
+exports[`golden: hand corpus > leaf:float:1e+300 1`] = `
+"1e300
+---
+0d626869 1e300
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["1e300<br>0d626869"]
 style 0 stroke:teal,stroke-width:4px"
 `;
 
@@ -1230,6 +1430,17 @@ graph LR
 style 0 stroke:teal,stroke-width:4px"
 `;
 
+exports[`golden: hand corpus > leaf:text:é 1`] = `
+""é"
+---
+701813d6 "é"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0["&quot;é&quot;<br>701813d6"]
+style 0 stroke:teal,stroke-width:4px"
+`;
+
 exports[`golden: hand corpus > leaf:text:quote " and \\ ba 1`] = `
 ""quote " and \\ backslash"
 ---
@@ -1263,7 +1474,7 @@ graph LR
 style 0 stroke:teal,stroke-width:4px"
 `;
 
-exports[`golden: hand corpus > leaf:uuid:6ea4a9d6 1`] = `
+exports[`golden: hand corpus > leaf:uuid:6ea4a9d6b9be4b7f 1`] = `
 "UUID(6ea4a9d6-b9be-4b7f-9d5d-1a2b3c4d5e6f)
 ---
 f814166e UUID(6ea4a9d6-b9be-4b7f-9d5d-1a2b3c4d5e6f)
@@ -1480,6 +1691,132 @@ linkStyle 9 stroke:magenta,stroke-width:2px
 linkStyle 10 stroke-width:2px
 linkStyle 11 stroke:cyan,stroke-width:2px
 linkStyle 12 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(leaf:text:s+2) 1`] = `
+""s" [
+    "k": 1
+    "k": 337
+]
+---
+2d082239 NODE
+    f4bf9f7f subj "s"
+    aa369eca ASSERTION
+        7f093592 pred "k"
+        12d95303 obj 337
+    b3a0441c ASSERTION
+        7f093592 pred "k"
+        4bf5122f obj 1
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>2d082239"))
+    0 -- subj --> 1["&quot;s&quot;<br>f4bf9f7f"]
+    0 --> 2(["ASSERTION<br>aa369eca"])
+        2 -- pred --> 3["&quot;k&quot;<br>7f093592"]
+        2 -- obj --> 4["337<br>12d95303"]
+    0 --> 5(["ASSERTION<br>b3a0441c"])
+        5 -- pred --> 6["&quot;k&quot;<br>7f093592"]
+        5 -- obj --> 7["1<br>4bf5122f"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(leaf:text:s+2) 2`] = `
+""s" [
+    "p": "｡"
+    "p": "😀"
+]
+---
+fc0a7e6b NODE
+    f4bf9f7f subj "s"
+    59f61741 ASSERTION
+        7978f506 pred "p"
+        f30386f4 obj "｡"
+    932f05f5 ASSERTION
+        7978f506 pred "p"
+        e34a1fc8 obj "😀"
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>fc0a7e6b"))
+    0 -- subj --> 1["&quot;s&quot;<br>f4bf9f7f"]
+    0 --> 2(["ASSERTION<br>59f61741"])
+        2 -- pred --> 3["&quot;p&quot;<br>7978f506"]
+        2 -- obj --> 4["&quot;｡&quot;<br>f30386f4"]
+    0 --> 5(["ASSERTION<br>932f05f5"])
+        5 -- pred --> 6["&quot;p&quot;<br>7978f506"]
+        5 -- obj --> 7["&quot;😀&quot;<br>e34a1fc8"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > node(leaf:text:s+2) 3`] = `
+""s" [
+    "｡": 1
+    "😀": 1
+]
+---
+7ffd1c3f NODE
+    f4bf9f7f subj "s"
+    3b8a7413 ASSERTION
+        e34a1fc8 pred "😀"
+        4bf5122f obj 1
+    75181725 ASSERTION
+        f30386f4 pred "｡"
+        4bf5122f obj 1
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>7ffd1c3f"))
+    0 -- subj --> 1["&quot;s&quot;<br>f4bf9f7f"]
+    0 --> 2(["ASSERTION<br>3b8a7413"])
+        2 -- pred --> 3["&quot;😀&quot;<br>e34a1fc8"]
+        2 -- obj --> 4["1<br>4bf5122f"]
+    0 --> 5(["ASSERTION<br>75181725"])
+        5 -- pred --> 6["&quot;｡&quot;<br>f30386f4"]
+        5 -- obj --> 7["1<br>4bf5122f"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px"
 `;
 
 exports[`golden: hand corpus > node(wrap(node(leaf:text:Alice+4))+1) 1`] = `
@@ -1702,6 +2039,93 @@ linkStyle 14 stroke:cyan,stroke-width:2px
 linkStyle 15 stroke:magenta,stroke-width:2px"
 `;
 
+exports[`golden: hand corpus > position:9007199254740993(leaf:text:x) 1`] = `
+""x" [
+    'position': 9007199254740993
+]
+---
+ad80d1cb NODE
+    5e85370e subj "x"
+    556a2388 ASSERTION
+        9c0ff971 pred 'position'
+        a020085a obj 9007199254740993
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>ad80d1cb"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>556a2388"])
+        2 -- pred --> 3[/"'position'<br>9c0ff971"/]
+        2 -- obj --> 4["9007199254740993<br>a020085a"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > position:1152921504606846976(leaf:text:x) 1`] = `
+""x" [
+    'position': 1152921504606846976
+]
+---
+6eb57697 NODE
+    5e85370e subj "x"
+    94a68f16 ASSERTION
+        9c0ff971 pred 'position'
+        842c2b9a obj 1152921504606846976
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>6eb57697"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>94a68f16"])
+        2 -- pred --> 3[/"'position'<br>9c0ff971"/]
+        2 -- obj --> 4["1152921504606846976<br>842c2b9a"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > position:18446744073709551615(leaf:text:x) 1`] = `
+""x" [
+    'position': 18446744073709551615
+]
+---
+81dc6329 NODE
+    5e85370e subj "x"
+    32e1e296 ASSERTION
+        9c0ff971 pred 'position'
+        2d7cb092 obj 18446744073709551615
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>81dc6329"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>32e1e296"])
+        2 -- pred --> 3[/"'position'<br>9c0ff971"/]
+        2 -- obj --> 4["18446744073709551615<br>2d7cb092"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
 exports[`golden: hand corpus > recipient(node(leaf:text:Alice+4)) 1`] = `
 "ENCRYPTED [
     'isA': "Person"
@@ -1712,7 +2136,78 @@ exports[`golden: hand corpus > recipient(node(leaf:text:Alice+4)) 1`] = `
 ]"
 `;
 
-exports[`golden: hand corpus > request:1 1`] = `
+exports[`golden: hand corpus > recipient:lowOrder(leaf:text:Hello.) 1`] = `
+"ENCRYPTED [
+    'hasRecipient': SealedMessage
+]"
+`;
+
+exports[`golden: hand corpus > recipient:mlkem512(node(leaf:text:Alice+4)) 1`] = `
+"ENCRYPTED [
+    'isA': "Person"
+    "knows": "Bob"
+    "knows": "Carol"
+    'hasRecipient': SealedMessage(MLKEM512)
+    'note': "A note"
+]
+---
+ENCRYPTED [ 'isA': "Person", "knows": "Bob", "knows": "Carol", 'hasRecipient': SealedMessage(MLKEM512), 'note': "A note" ]
+---
+NODE
+---
+priv=d99ca482190200590660094bbe275581979939b83a2f2c37121f879ce2ba5dc4947717cacfda51a7f6923633980993579b2e80b17a439ea3dc3526a6c93cb33e7132c341e806af047a1978aec1e41db4186cdd60bda73a1a7da30e6d5263a13a1a3a7239748c75995548e143c385a058b38092e6a5c817559a48e6975953288af10fa0e8c9c6292ef36a2b26e04cb1dc4db7659d176797f1ebada167ad53f6a621c7109dc33369457d50205a03e1869923a9a7d5a2820447c49a0fad969a4781a8c75128549bb53d78b7731558b0965fe718668a6bc7d5310930c04127db1c38a918a0a7a63700b320c54a9da7bfc9806fbc0bcc8db889e0391e850016837b49dbab7ec5609bfcc90bfaf63911dcc5b50b0365380b139518d981c0792221ac3b0e85d95d5331bf3197c929643d2d22cdc7d960a0ea327d52370f1a0096f918cbd709efbb3ab78708640206aef28d04d55d63ac1c87cac1d7214e9af3a4926b1ec309998d20acdd551ef303a7802a762a9a1b8a1267747985f1fb1495b160b2b506e8bba7d7d7424e785828b04504693bb9cb0de13316056ca4ac88ac0f838fc623732ca3256c79804d9a80ed7b45cef727df81ad5e31357af33027114878e383f801bf8568273351635248446228887407528220caaa3519c8567cd75512fde4193b388cf528a6243913265a8674abc4f53b8e83eb69ccfa0bcc509ff466b45f81b42d3783d134a903647e6067831c1813e06487577848c8c0964210ade86b7e990a85b7483c3e851f51ba6db8798de59c2e72f0084d3323b0341369aabb9066ccefc25d4a6a2daa749bae341ceea576e3588187512ef6a58564c3ce1eaa92cf6a947890482f18b6cbe7c5a124b8c4586e392043834501b6c1b4758abe85b11951c52800f4ca1a57aa6561c7d44bb880274e06a600c88036e4c117aff19fdef27de2993daa8c334f835d3744c6cc1b7a9c153b8b80249d9406ecc8792085a98168c44d9c106e825a4b8ba69bf5ae33d30226249f0146c2bca17a037543f9f072587222d74323eafba69de8cc786b377ca70863aa04eb720cd1705797101ab21a067e532e37817800192e5b4643f61a670c13461150112303272e6153a69545fcd243665a2a1f340452797095655c99875ab35767bcc70a019b57d839bf943ac79df0cb5edc09e43981efd1927ffa69c0713fd70678c6268c4894297ee22b6bf76c97e8b18c950dea086cc98778f1ec1dce793af13604e7011a6e6176a84655b97c7a5913394e0166bf76b16d343cee8836e4a260c4c7270c672b2969261464aed6f86ca0f78403940b7df486ee93c7ef47687ae09c59616ffd179c2e0760e9a82a1ea2456a9c755ad14d084220cfb6862a7095e8605428899d8ed816077a6d29810bb9ec484b54592aea2dfb6500c038447f609dd301c2966a2905e27660688b62971617f36c977689cf6c6b1d3170c2634608786b7b15adaaa9809031b4e9a182f38c7824c2a16bbb44250037924b09ba310d83b39447e014e9303e17f52abc260553c8946d299ce33a843ef26938570619244df5a43e2270cc4e822332691373ba253734b86dfc3332853ad88188b59716af4b231151963e09b732f22c4a55689797011171a9502b12f2a51bf67371c931ab7a14ca9bc935a183b96dc54e8150c80d0b70fae04d12a71b0770ca620a4b14dc3c2b5bb7970433cd40b8c579b24c20c61af194cda5088f26ac8013559ae996e44bb3a5d32d8fc247434512a9262e05e432e189589cf70a1d5b3197e23016366258f3c91c5c83115b1a1f26cfdd973062515cb9c19d13049a7fa4a49e993ba3faabf2181651431fced95b73248ca6ec07e48117558b2b3a064b79c0ad265a2d17cc827463baad9ba308c8531b310acc377709976e1dc4bf83032274121f69f45d93f379f812113c91473aab00c7a309857c6c72c67f14c08cb131c5ef09ae9b74685fc831d84912907b087f18641ed8b92c45a4d87a8f6bd75b7f161a7658c4bb12c0f4b1110d346c1d300bdd109f4ae72c19f87ee2c082c7a03a6f1c8050701fcbb547dbf63ea1d01f2a1089038318f895932b39cf76145e26ca0c77c8bbb020cbfdb893b295c3f574bc44362bfb41359d433050d18a3831b266c0358a845d5e796a3dcb0ad526c1b447548324702269b7403873bf96434de115de07dc1b6ecdb099c0a6294c817152574727edda86ebd255e05c8f20d5e66b0e50132b7f79be71b5fd892ac6db5330b61d495a8e1bef25d60e38f84c419856d2aa9816d7587ef8090ab35afde17a6651603d7633a7ef8e35561c128ecc
+---
+pub=d99ca5821902005903205b4643f61a670c13461150112303272e6153a69545fcd243665a2a1f340452797095655c99875ab35767bcc70a019b57d839bf943ac79df0cb5edc09e43981efd1927ffa69c0713fd70678c6268c4894297ee22b6bf76c97e8b18c950dea086cc98778f1ec1dce793af13604e7011a6e6176a84655b97c7a5913394e0166bf76b16d343cee8836e4a260c4c7270c672b2969261464aed6f86ca0f78403940b7df486ee93c7ef47687ae09c59616ffd179c2e0760e9a82a1ea2456a9c755ad14d084220cfb6862a7095e8605428899d8ed816077a6d29810bb9ec484b54592aea2dfb6500c038447f609dd301c2966a2905e27660688b62971617f36c977689cf6c6b1d3170c2634608786b7b15adaaa9809031b4e9a182f38c7824c2a16bbb44250037924b09ba310d83b39447e014e9303e17f52abc260553c8946d299ce33a843ef26938570619244df5a43e2270cc4e822332691373ba253734b86dfc3332853ad88188b59716af4b231151963e09b732f22c4a55689797011171a9502b12f2a51bf67371c931ab7a14ca9bc935a183b96dc54e8150c80d0b70fae04d12a71b0770ca620a4b14dc3c2b5bb7970433cd40b8c579b24c20c61af194cda5088f26ac8013559ae996e44bb3a5d32d8fc247434512a9262e05e432e189589cf70a1d5b3197e23016366258f3c91c5c83115b1a1f26cfdd973062515cb9c19d13049a7fa4a49e993ba3faabf2181651431fced95b73248ca6ec07e48117558b2b3a064b79c0ad265a2d17cc827463baad9ba308c8531b310acc377709976e1dc4bf83032274121f69f45d93f379f812113c91473aab00c7a309857c6c72c67f14c08cb131c5ef09ae9b74685fc831d84912907b087f18641ed8b92c45a4d87a8f6bd75b7f161a7658c4bb12c0f4b1110d346c1d300bdd109f4ae72c19f87ee2c082c7a03a6f1c8050701fcbb547dbf63ea1d01f2a1089038318f895932b39cf76145e26ca0c77c8bbb020cbfdb893b295c3f574bc44362bfb41359d433050d18a3831b266c0358a845d5e796a3dcb0ad526c1b447548324702269b7403873bf96434de115de07dc1b6ecdb099c0a6294c817152574727edda86ebd255e05c8f20d5"
+`;
+
+exports[`golden: hand corpus > request:[] 1`] = `
+"request(ARID(c66be27d)) [
+    'body': «""» [
+        ❰""❱: 1
+    ]
+]
+---
+324fc352 NODE
+    446b69f7 subj request(ARID(c66be27d))
+    5d5e5334 ASSERTION
+        1dd8f298 pred 'body'
+        d366bd33 obj NODE
+            22738acd subj «""»
+            640db4fa ASSERTION
+                3e89498d pred ❰""❱
+                4bf5122f obj 1
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>324fc352"))
+    0 -- subj --> 1["request(ARID(c66be27d))<br>446b69f7"]
+    0 --> 2(["ASSERTION<br>5d5e5334"])
+        2 -- pred --> 3[/"'body'<br>1dd8f298"/]
+        2 -- obj --> 4(("NODE<br>d366bd33"))
+            4 -- subj --> 5["«&quot;&quot;»<br>22738acd"]
+            4 --> 6(["ASSERTION<br>640db4fa"])
+                6 -- pred --> 7["❰&quot;&quot;❱<br>3e89498d"]
+                6 -- obj --> 8["1<br>4bf5122f"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:red,stroke-width:4px
+style 5 stroke:teal,stroke-width:4px
+style 6 stroke:green,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px
+linkStyle 4 stroke:red,stroke-width:2px
+linkStyle 5 stroke-width:2px
+linkStyle 6 stroke:cyan,stroke-width:2px
+linkStyle 7 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > request:1[2,3] 1`] = `
 "request(ARID(c66be27d)) [
     'body': «add» [
         ❰lhs❱: 2
@@ -1772,7 +2267,7 @@ linkStyle 9 stroke:cyan,stroke-width:2px
 linkStyle 10 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > request:100 1`] = `
+exports[`golden: hand corpus > request:100:note:date[x] 1`] = `
 "request(ARID(11111111)) [
     'body': «100» [
         ❰"x"❱: "y"
@@ -1845,7 +2340,7 @@ linkStyle 12 stroke:cyan,stroke-width:2px
 linkStyle 13 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > request:add 1`] = `
+exports[`golden: hand corpus > request:add[lhs,rhs] 1`] = `
 "request(ARID(c66be27d)) [
     'body': «"add"» [
         ❰"lhs"❱: 2
@@ -1963,6 +2458,35 @@ linkStyle 2 stroke:cyan,stroke-width:2px
 linkStyle 3 stroke:magenta,stroke-width:2px"
 `;
 
+exports[`golden: hand corpus > salt(leaf:text:x) 1`] = `
+""x" [
+    'salt': Salt
+]
+---
+9d5a1d63 NODE
+    5e85370e subj "x"
+    611cf332 ASSERTION
+        618975ce pred 'salt'
+        d2a9a38a obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>9d5a1d63"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>611cf332"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>d2a9a38a"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
 exports[`golden: hand corpus > salt(node(leaf:text:Alice+2)) 1`] = `
 ""Alice" [
     "age": 30
@@ -1972,11 +2496,14 @@ exports[`golden: hand corpus > salt(node(leaf:text:Alice+2)) 1`] = `
     'salt': Salt
 ]
 ---
-0b96a0cf NODE
+7577dafb NODE
     13941b48 subj "Alice"
     0eb5609b ASSERTION
         5943be12 pred "age"
         cf972730 obj 30
+    611cf332 ASSERTION
+        618975ce pred 'salt'
+        d2a9a38a obj Salt
     970da8b3 ASSERTION
         db7dd21c pred "knows"
         15ec830a obj NODE
@@ -1984,41 +2511,38 @@ exports[`golden: hand corpus > salt(node(leaf:text:Alice+2)) 1`] = `
             4012caf2 ASSERTION
                 db7dd21c pred "knows"
                 afb8122e obj "Carol"
-    dd412f1d ASSERTION
-        618975ce pred 'salt'
-        7915f200 obj Salt
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0(("NODE<br>0b96a0cf"))
+0(("NODE<br>7577dafb"))
     0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
     0 --> 2(["ASSERTION<br>0eb5609b"])
         2 -- pred --> 3["&quot;age&quot;<br>5943be12"]
         2 -- obj --> 4["30<br>cf972730"]
-    0 --> 5(["ASSERTION<br>970da8b3"])
-        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
-        5 -- obj --> 7(("NODE<br>15ec830a"))
-            7 -- subj --> 8["&quot;Bob&quot;<br>13b74194"]
-            7 --> 9(["ASSERTION<br>4012caf2"])
-                9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
-                9 -- obj --> 11["&quot;Carol&quot;<br>afb8122e"]
-    0 --> 12(["ASSERTION<br>dd412f1d"])
-        12 -- pred --> 13[/"'salt'<br>618975ce"/]
-        12 -- obj --> 14["Salt<br>7915f200"]
+    0 --> 5(["ASSERTION<br>611cf332"])
+        5 -- pred --> 6[/"'salt'<br>618975ce"/]
+        5 -- obj --> 7["Salt<br>d2a9a38a"]
+    0 --> 8(["ASSERTION<br>970da8b3"])
+        8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]
+        8 -- obj --> 10(("NODE<br>15ec830a"))
+            10 -- subj --> 11["&quot;Bob&quot;<br>13b74194"]
+            10 --> 12(["ASSERTION<br>4012caf2"])
+                12 -- pred --> 13["&quot;knows&quot;<br>db7dd21c"]
+                12 -- obj --> 14["&quot;Carol&quot;<br>afb8122e"]
 style 0 stroke:red,stroke-width:4px
 style 1 stroke:teal,stroke-width:4px
 style 2 stroke:green,stroke-width:4px
 style 3 stroke:teal,stroke-width:4px
 style 4 stroke:teal,stroke-width:4px
 style 5 stroke:green,stroke-width:4px
-style 6 stroke:teal,stroke-width:4px
-style 7 stroke:red,stroke-width:4px
-style 8 stroke:teal,stroke-width:4px
-style 9 stroke:green,stroke-width:4px
-style 10 stroke:teal,stroke-width:4px
+style 6 stroke:goldenrod,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:red,stroke-width:4px
 style 11 stroke:teal,stroke-width:4px
 style 12 stroke:green,stroke-width:4px
-style 13 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
 style 14 stroke:teal,stroke-width:4px
 linkStyle 0 stroke:red,stroke-width:2px
 linkStyle 1 stroke-width:2px
@@ -2027,10 +2551,10 @@ linkStyle 3 stroke:magenta,stroke-width:2px
 linkStyle 4 stroke-width:2px
 linkStyle 5 stroke:cyan,stroke-width:2px
 linkStyle 6 stroke:magenta,stroke-width:2px
-linkStyle 7 stroke:red,stroke-width:2px
-linkStyle 8 stroke-width:2px
-linkStyle 9 stroke:cyan,stroke-width:2px
-linkStyle 10 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke:red,stroke-width:2px
 linkStyle 11 stroke-width:2px
 linkStyle 12 stroke:cyan,stroke-width:2px
 linkStyle 13 stroke:magenta,stroke-width:2px"
@@ -2132,7 +2656,7 @@ exports[`golden: hand corpus > salt(node(wrap(node(leaf:text:Alice+4))+1)) 1`] =
     'salt': Salt
 ]
 ---
-959c8609 NODE
+6d6b9e99 NODE
     0511ba41 subj WRAPPED
         ab2344e4 cont NODE
             13941b48 subj "Alice"
@@ -2155,13 +2679,13 @@ exports[`golden: hand corpus > salt(node(wrap(node(leaf:text:Alice+4))+1)) 1`] =
             c2768b34 ASSERTION
                 dbc1b4c9 pred 2
                 084fed08 obj 3
-    611cf332 ASSERTION
+    dd412f1d ASSERTION
         618975ce pred 'salt'
-        d2a9a38a obj Salt
+        7915f200 obj Salt
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0(("NODE<br>959c8609"))
+0(("NODE<br>6d6b9e99"))
     0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
         1 -- cont --> 2(("NODE<br>ab2344e4"))
             2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
@@ -2184,9 +2708,9 @@ graph LR
             18 --> 20(["ASSERTION<br>c2768b34"])
                 20 -- pred --> 21["2<br>dbc1b4c9"]
                 20 -- obj --> 22["3<br>084fed08"]
-    0 --> 23(["ASSERTION<br>611cf332"])
+    0 --> 23(["ASSERTION<br>dd412f1d"])
         23 -- pred --> 24[/"'salt'<br>618975ce"/]
-        23 -- obj --> 25["Salt<br>d2a9a38a"]
+        23 -- obj --> 25["Salt<br>7915f200"]
 style 0 stroke:red,stroke-width:4px
 style 1 stroke:blue,stroke-width:4px
 style 2 stroke:red,stroke-width:4px
@@ -2240,6 +2764,14 @@ linkStyle 23 stroke:cyan,stroke-width:2px
 linkStyle 24 stroke:magenta,stroke-width:2px"
 `;
 
+exports[`golden: hand corpus > salt:0(leaf:text:x) 1`] = `"throw:Components[DataTooShort]"`;
+
+exports[`golden: hand corpus > salt:7(leaf:text:x) 1`] = `"throw:Components[DataTooShort]"`;
+
+exports[`golden: hand corpus > salt:7..=5(leaf:text:x) 1`] = `"throw:Components[DataTooShort]"`;
+
+exports[`golden: hand corpus > salt:7..=10(leaf:text:x) 1`] = `"throw:Components[DataTooShort]"`;
+
 exports[`golden: hand corpus > salt:8(node(leaf:text:Alice+1)) 1`] = `
 ""Alice" [
     "knows": "Bob"
@@ -2282,24 +2814,24 @@ linkStyle 5 stroke:cyan,stroke-width:2px
 linkStyle 6 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > salt:8..=8(leaf:text:x) 1`] = `
+exports[`golden: hand corpus > salt:8..=16(leaf:text:x) 1`] = `
 ""x" [
     'salt': Salt
 ]
 ---
-9d5a1d63 NODE
+3c6576e1 NODE
     5e85370e subj "x"
-    611cf332 ASSERTION
+    dd412f1d ASSERTION
         618975ce pred 'salt'
-        d2a9a38a obj Salt
+        7915f200 obj Salt
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0(("NODE<br>9d5a1d63"))
+0(("NODE<br>3c6576e1"))
     0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
-    0 --> 2(["ASSERTION<br>611cf332"])
+    0 --> 2(["ASSERTION<br>dd412f1d"])
         2 -- pred --> 3[/"'salt'<br>618975ce"/]
-        2 -- obj --> 4["Salt<br>d2a9a38a"]
+        2 -- obj --> 4["Salt<br>7915f200"]
 style 0 stroke:red,stroke-width:4px
 style 1 stroke:teal,stroke-width:4px
 style 2 stroke:green,stroke-width:4px
@@ -2311,47 +2843,117 @@ linkStyle 2 stroke:cyan,stroke-width:2px
 linkStyle 3 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > salt:8..=32(node(leaf:text:Alice+1)) 1`] = `
+exports[`golden: hand corpus > salt:8..=1000(node(leaf:text:Alice+4)) 1`] = `
 ""Alice" [
+    'isA': "Person"
     "knows": "Bob"
+    "knows": "Carol"
+    'note': "A note"
     'salt': Salt
 ]
 ---
-92d59b8b NODE
+74741ab4 NODE
     13941b48 subj "Alice"
+    3c3ca1f1 ASSERTION
+        0fcd6a39 pred 'note'
+        61c8e387 obj "A note"
+    4012caf2 ASSERTION
+        db7dd21c pred "knows"
+        afb8122e obj "Carol"
+    581d8efe ASSERTION
+        2be2d79b pred 'isA'
+        bd52917f obj "Person"
+    611cf332 ASSERTION
+        618975ce pred 'salt'
+        d2a9a38a obj Salt
     78d666eb ASSERTION
         db7dd21c pred "knows"
         13b74194 obj "Bob"
-    e11c979c ASSERTION
-        618975ce pred 'salt'
-        16d66451 obj Salt
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0(("NODE<br>92d59b8b"))
+0(("NODE<br>74741ab4"))
     0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
-    0 --> 2(["ASSERTION<br>78d666eb"])
-        2 -- pred --> 3["&quot;knows&quot;<br>db7dd21c"]
-        2 -- obj --> 4["&quot;Bob&quot;<br>13b74194"]
-    0 --> 5(["ASSERTION<br>e11c979c"])
-        5 -- pred --> 6[/"'salt'<br>618975ce"/]
-        5 -- obj --> 7["Salt<br>16d66451"]
+    0 --> 2(["ASSERTION<br>3c3ca1f1"])
+        2 -- pred --> 3[/"'note'<br>0fcd6a39"/]
+        2 -- obj --> 4["&quot;A note&quot;<br>61c8e387"]
+    0 --> 5(["ASSERTION<br>4012caf2"])
+        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
+        5 -- obj --> 7["&quot;Carol&quot;<br>afb8122e"]
+    0 --> 8(["ASSERTION<br>581d8efe"])
+        8 -- pred --> 9[/"'isA'<br>2be2d79b"/]
+        8 -- obj --> 10["&quot;Person&quot;<br>bd52917f"]
+    0 --> 11(["ASSERTION<br>611cf332"])
+        11 -- pred --> 12[/"'salt'<br>618975ce"/]
+        11 -- obj --> 13["Salt<br>d2a9a38a"]
+    0 --> 14(["ASSERTION<br>78d666eb"])
+        14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
+        14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
 style 0 stroke:red,stroke-width:4px
 style 1 stroke:teal,stroke-width:4px
 style 2 stroke:green,stroke-width:4px
-style 3 stroke:teal,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
 style 4 stroke:teal,stroke-width:4px
 style 5 stroke:green,stroke-width:4px
-style 6 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
 style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:goldenrod,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
 linkStyle 0 stroke:red,stroke-width:2px
 linkStyle 1 stroke-width:2px
 linkStyle 2 stroke:cyan,stroke-width:2px
 linkStyle 3 stroke:magenta,stroke-width:2px
 linkStyle 4 stroke-width:2px
 linkStyle 5 stroke:cyan,stroke-width:2px
-linkStyle 6 stroke:magenta,stroke-width:2px"
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px"
 `;
+
+exports[`golden: hand corpus > salt:9..=9(leaf:text:x) 1`] = `
+""x" [
+    'salt': Salt
+]
+---
+7d9f9fd5 NODE
+    5e85370e subj "x"
+    f4dc2525 ASSERTION
+        618975ce pred 'salt'
+        a13a5663 obj Salt
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>7d9f9fd5"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>f4dc2525"])
+        2 -- pred --> 3[/"'salt'<br>618975ce"/]
+        2 -- obj --> 4["Salt<br>a13a5663"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:teal,stroke-width:4px
+style 2 stroke:green,stroke-width:4px
+style 3 stroke:goldenrod,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke-width:2px
+linkStyle 2 stroke:cyan,stroke-width:2px
+linkStyle 3 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > salt:10..=9(leaf:text:x) 1`] = `"throw:Components[InvalidData]"`;
 
 exports[`golden: hand corpus > salt:16(leaf:text:x) 1`] = `
 ""x" [
@@ -2382,158 +2984,45 @@ linkStyle 2 stroke:cyan,stroke-width:2px
 linkStyle 3 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > salt:16..=64(node(leaf:text:Alice+4)) 1`] = `
-""Alice" [
-    'isA': "Person"
-    "knows": "Bob"
-    "knows": "Carol"
-    'note': "A note"
+exports[`golden: hand corpus > salt:70000(leaf:text:x) 1`] = `
+""x" [
     'salt': Salt
 ]
 ---
-24712189 NODE
-    13941b48 subj "Alice"
-    15ee3bdd ASSERTION
+0dd5a83c NODE
+    5e85370e subj "x"
+    74099427 ASSERTION
         618975ce pred 'salt'
-        3ddee5f0 obj Salt
-    3c3ca1f1 ASSERTION
-        0fcd6a39 pred 'note'
-        61c8e387 obj "A note"
-    4012caf2 ASSERTION
-        db7dd21c pred "knows"
-        afb8122e obj "Carol"
-    581d8efe ASSERTION
-        2be2d79b pred 'isA'
-        bd52917f obj "Person"
-    78d666eb ASSERTION
-        db7dd21c pred "knows"
-        13b74194 obj "Bob"
+        28bb1725 obj Salt
 ---
 %%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
 graph LR
-0(("NODE<br>24712189"))
-    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
-    0 --> 2(["ASSERTION<br>15ee3bdd"])
+0(("NODE<br>0dd5a83c"))
+    0 -- subj --> 1["&quot;x&quot;<br>5e85370e"]
+    0 --> 2(["ASSERTION<br>74099427"])
         2 -- pred --> 3[/"'salt'<br>618975ce"/]
-        2 -- obj --> 4["Salt<br>3ddee5f0"]
-    0 --> 5(["ASSERTION<br>3c3ca1f1"])
-        5 -- pred --> 6[/"'note'<br>0fcd6a39"/]
-        5 -- obj --> 7["&quot;A note&quot;<br>61c8e387"]
-    0 --> 8(["ASSERTION<br>4012caf2"])
-        8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]
-        8 -- obj --> 10["&quot;Carol&quot;<br>afb8122e"]
-    0 --> 11(["ASSERTION<br>581d8efe"])
-        11 -- pred --> 12[/"'isA'<br>2be2d79b"/]
-        11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]
-    0 --> 14(["ASSERTION<br>78d666eb"])
-        14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
-        14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
+        2 -- obj --> 4["Salt<br>28bb1725"]
 style 0 stroke:red,stroke-width:4px
 style 1 stroke:teal,stroke-width:4px
 style 2 stroke:green,stroke-width:4px
 style 3 stroke:goldenrod,stroke-width:4px
 style 4 stroke:teal,stroke-width:4px
-style 5 stroke:green,stroke-width:4px
-style 6 stroke:goldenrod,stroke-width:4px
-style 7 stroke:teal,stroke-width:4px
-style 8 stroke:green,stroke-width:4px
-style 9 stroke:teal,stroke-width:4px
-style 10 stroke:teal,stroke-width:4px
-style 11 stroke:green,stroke-width:4px
-style 12 stroke:goldenrod,stroke-width:4px
-style 13 stroke:teal,stroke-width:4px
-style 14 stroke:green,stroke-width:4px
-style 15 stroke:teal,stroke-width:4px
-style 16 stroke:teal,stroke-width:4px
 linkStyle 0 stroke:red,stroke-width:2px
 linkStyle 1 stroke-width:2px
 linkStyle 2 stroke:cyan,stroke-width:2px
-linkStyle 3 stroke:magenta,stroke-width:2px
-linkStyle 4 stroke-width:2px
-linkStyle 5 stroke:cyan,stroke-width:2px
-linkStyle 6 stroke:magenta,stroke-width:2px
-linkStyle 7 stroke-width:2px
-linkStyle 8 stroke:cyan,stroke-width:2px
-linkStyle 9 stroke:magenta,stroke-width:2px
-linkStyle 10 stroke-width:2px
-linkStyle 11 stroke:cyan,stroke-width:2px
-linkStyle 12 stroke:magenta,stroke-width:2px
-linkStyle 13 stroke-width:2px
-linkStyle 14 stroke:cyan,stroke-width:2px
-linkStyle 15 stroke:magenta,stroke-width:2px"
+linkStyle 3 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > salt:100..=4000(node(leaf:text:Alice+2)) 1`] = `
-""Alice" [
-    "age": 30
-    "knows": "Bob" [
-        "knows": "Carol"
-    ]
-    'salt': Salt
+exports[`golden: hand corpus > seal(node(leaf:text:Alice+4)) 1`] = `
+"ENCRYPTED [
+    'hasRecipient': SealedMessage
 ]
 ---
-1cf20611 NODE
-    13941b48 subj "Alice"
-    0eb5609b ASSERTION
-        5943be12 pred "age"
-        cf972730 obj 30
-    970da8b3 ASSERTION
-        db7dd21c pred "knows"
-        15ec830a obj NODE
-            13b74194 subj "Bob"
-            4012caf2 ASSERTION
-                db7dd21c pred "knows"
-                afb8122e obj "Carol"
-    a283782f ASSERTION
-        618975ce pred 'salt'
-        40338f38 obj Salt
+ENCRYPTED [ 'hasRecipient': SealedMessage ]
 ---
-%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
-graph LR
-0(("NODE<br>1cf20611"))
-    0 -- subj --> 1["&quot;Alice&quot;<br>13941b48"]
-    0 --> 2(["ASSERTION<br>0eb5609b"])
-        2 -- pred --> 3["&quot;age&quot;<br>5943be12"]
-        2 -- obj --> 4["30<br>cf972730"]
-    0 --> 5(["ASSERTION<br>970da8b3"])
-        5 -- pred --> 6["&quot;knows&quot;<br>db7dd21c"]
-        5 -- obj --> 7(("NODE<br>15ec830a"))
-            7 -- subj --> 8["&quot;Bob&quot;<br>13b74194"]
-            7 --> 9(["ASSERTION<br>4012caf2"])
-                9 -- pred --> 10["&quot;knows&quot;<br>db7dd21c"]
-                9 -- obj --> 11["&quot;Carol&quot;<br>afb8122e"]
-    0 --> 12(["ASSERTION<br>a283782f"])
-        12 -- pred --> 13[/"'salt'<br>618975ce"/]
-        12 -- obj --> 14["Salt<br>40338f38"]
-style 0 stroke:red,stroke-width:4px
-style 1 stroke:teal,stroke-width:4px
-style 2 stroke:green,stroke-width:4px
-style 3 stroke:teal,stroke-width:4px
-style 4 stroke:teal,stroke-width:4px
-style 5 stroke:green,stroke-width:4px
-style 6 stroke:teal,stroke-width:4px
-style 7 stroke:red,stroke-width:4px
-style 8 stroke:teal,stroke-width:4px
-style 9 stroke:green,stroke-width:4px
-style 10 stroke:teal,stroke-width:4px
-style 11 stroke:teal,stroke-width:4px
-style 12 stroke:green,stroke-width:4px
-style 13 stroke:goldenrod,stroke-width:4px
-style 14 stroke:teal,stroke-width:4px
-linkStyle 0 stroke:red,stroke-width:2px
-linkStyle 1 stroke-width:2px
-linkStyle 2 stroke:cyan,stroke-width:2px
-linkStyle 3 stroke:magenta,stroke-width:2px
-linkStyle 4 stroke-width:2px
-linkStyle 5 stroke:cyan,stroke-width:2px
-linkStyle 6 stroke:magenta,stroke-width:2px
-linkStyle 7 stroke:red,stroke-width:2px
-linkStyle 8 stroke-width:2px
-linkStyle 9 stroke:cyan,stroke-width:2px
-linkStyle 10 stroke:magenta,stroke-width:2px
-linkStyle 11 stroke-width:2px
-linkStyle 12 stroke:cyan,stroke-width:2px
-linkStyle 13 stroke:magenta,stroke-width:2px"
+NODE
+---
+unseal=ok"
 `;
 
 exports[`golden: hand corpus > sign:ecdsa(node(leaf:text:Alice+4)) 1`] = `
@@ -2836,7 +3325,105 @@ linkStyle 16 stroke:cyan,stroke-width:2px
 linkStyle 17 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > sign:ed25519(node(leaf:text:Alice+4)) 2`] = `
+exports[`golden: hand corpus > sign:ed25519(wrap(node(leaf:text:Alice+4))) 1`] = `
+"{
+    {
+        "Alice" [
+            'isA': "Person"
+            "knows": "Bob"
+            "knows": "Carol"
+            'note': "A note"
+        ]
+    }
+} [
+    'signed': Signature(Ed25519)
+]
+---
+b52c8168 NODE
+    4120a476 subj WRAPPED
+        0511ba41 cont WRAPPED
+            ab2344e4 cont NODE
+                13941b48 subj "Alice"
+                3c3ca1f1 ASSERTION
+                    0fcd6a39 pred 'note'
+                    61c8e387 obj "A note"
+                4012caf2 ASSERTION
+                    db7dd21c pred "knows"
+                    afb8122e obj "Carol"
+                581d8efe ASSERTION
+                    2be2d79b pred 'isA'
+                    bd52917f obj "Person"
+                78d666eb ASSERTION
+                    db7dd21c pred "knows"
+                    13b74194 obj "Bob"
+    115bf1df ASSERTION
+        d0e39e78 pred 'signed'
+        35b3faf3 obj Signature(Ed25519)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>b52c8168"))
+    0 -- subj --> 1[/"WRAPPED<br>4120a476"\\]
+        1 -- cont --> 2[/"WRAPPED<br>0511ba41"\\]
+            2 -- cont --> 3(("NODE<br>ab2344e4"))
+                3 -- subj --> 4["&quot;Alice&quot;<br>13941b48"]
+                3 --> 5(["ASSERTION<br>3c3ca1f1"])
+                    5 -- pred --> 6[/"'note'<br>0fcd6a39"/]
+                    5 -- obj --> 7["&quot;A note&quot;<br>61c8e387"]
+                3 --> 8(["ASSERTION<br>4012caf2"])
+                    8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]
+                    8 -- obj --> 10["&quot;Carol&quot;<br>afb8122e"]
+                3 --> 11(["ASSERTION<br>581d8efe"])
+                    11 -- pred --> 12[/"'isA'<br>2be2d79b"/]
+                    11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]
+                3 --> 14(["ASSERTION<br>78d666eb"])
+                    14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
+                    14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
+    0 --> 17(["ASSERTION<br>115bf1df"])
+        17 -- pred --> 18[/"'signed'<br>d0e39e78"/]
+        17 -- obj --> 19["Signature(Ed25519)<br>35b3faf3"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:blue,stroke-width:4px
+style 3 stroke:red,stroke-width:4px
+style 4 stroke:teal,stroke-width:4px
+style 5 stroke:green,stroke-width:4px
+style 6 stroke:goldenrod,stroke-width:4px
+style 7 stroke:teal,stroke-width:4px
+style 8 stroke:green,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:teal,stroke-width:4px
+style 11 stroke:green,stroke-width:4px
+style 12 stroke:goldenrod,stroke-width:4px
+style 13 stroke:teal,stroke-width:4px
+style 14 stroke:green,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:teal,stroke-width:4px
+style 17 stroke:green,stroke-width:4px
+style 18 stroke:goldenrod,stroke-width:4px
+style 19 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:blue,stroke-width:2px
+linkStyle 3 stroke:red,stroke-width:2px
+linkStyle 4 stroke-width:2px
+linkStyle 5 stroke:cyan,stroke-width:2px
+linkStyle 6 stroke:magenta,stroke-width:2px
+linkStyle 7 stroke-width:2px
+linkStyle 8 stroke:cyan,stroke-width:2px
+linkStyle 9 stroke:magenta,stroke-width:2px
+linkStyle 10 stroke-width:2px
+linkStyle 11 stroke:cyan,stroke-width:2px
+linkStyle 12 stroke:magenta,stroke-width:2px
+linkStyle 13 stroke-width:2px
+linkStyle 14 stroke:cyan,stroke-width:2px
+linkStyle 15 stroke:magenta,stroke-width:2px
+linkStyle 16 stroke-width:2px
+linkStyle 17 stroke:cyan,stroke-width:2px
+linkStyle 18 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ed25519:note(node(leaf:text:Alice+4)) 1`] = `
 "{
     "Alice" [
         'isA': "Person"
@@ -2970,104 +3557,6 @@ linkStyle 25 stroke:cyan,stroke-width:2px
 linkStyle 26 stroke:magenta,stroke-width:2px"
 `;
 
-exports[`golden: hand corpus > sign:ed25519(wrap(node(leaf:text:Alice+4))) 1`] = `
-"{
-    {
-        "Alice" [
-            'isA': "Person"
-            "knows": "Bob"
-            "knows": "Carol"
-            'note': "A note"
-        ]
-    }
-} [
-    'signed': Signature(Ed25519)
-]
----
-b52c8168 NODE
-    4120a476 subj WRAPPED
-        0511ba41 cont WRAPPED
-            ab2344e4 cont NODE
-                13941b48 subj "Alice"
-                3c3ca1f1 ASSERTION
-                    0fcd6a39 pred 'note'
-                    61c8e387 obj "A note"
-                4012caf2 ASSERTION
-                    db7dd21c pred "knows"
-                    afb8122e obj "Carol"
-                581d8efe ASSERTION
-                    2be2d79b pred 'isA'
-                    bd52917f obj "Person"
-                78d666eb ASSERTION
-                    db7dd21c pred "knows"
-                    13b74194 obj "Bob"
-    115bf1df ASSERTION
-        d0e39e78 pred 'signed'
-        35b3faf3 obj Signature(Ed25519)
----
-%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
-graph LR
-0(("NODE<br>b52c8168"))
-    0 -- subj --> 1[/"WRAPPED<br>4120a476"\\]
-        1 -- cont --> 2[/"WRAPPED<br>0511ba41"\\]
-            2 -- cont --> 3(("NODE<br>ab2344e4"))
-                3 -- subj --> 4["&quot;Alice&quot;<br>13941b48"]
-                3 --> 5(["ASSERTION<br>3c3ca1f1"])
-                    5 -- pred --> 6[/"'note'<br>0fcd6a39"/]
-                    5 -- obj --> 7["&quot;A note&quot;<br>61c8e387"]
-                3 --> 8(["ASSERTION<br>4012caf2"])
-                    8 -- pred --> 9["&quot;knows&quot;<br>db7dd21c"]
-                    8 -- obj --> 10["&quot;Carol&quot;<br>afb8122e"]
-                3 --> 11(["ASSERTION<br>581d8efe"])
-                    11 -- pred --> 12[/"'isA'<br>2be2d79b"/]
-                    11 -- obj --> 13["&quot;Person&quot;<br>bd52917f"]
-                3 --> 14(["ASSERTION<br>78d666eb"])
-                    14 -- pred --> 15["&quot;knows&quot;<br>db7dd21c"]
-                    14 -- obj --> 16["&quot;Bob&quot;<br>13b74194"]
-    0 --> 17(["ASSERTION<br>115bf1df"])
-        17 -- pred --> 18[/"'signed'<br>d0e39e78"/]
-        17 -- obj --> 19["Signature(Ed25519)<br>35b3faf3"]
-style 0 stroke:red,stroke-width:4px
-style 1 stroke:blue,stroke-width:4px
-style 2 stroke:blue,stroke-width:4px
-style 3 stroke:red,stroke-width:4px
-style 4 stroke:teal,stroke-width:4px
-style 5 stroke:green,stroke-width:4px
-style 6 stroke:goldenrod,stroke-width:4px
-style 7 stroke:teal,stroke-width:4px
-style 8 stroke:green,stroke-width:4px
-style 9 stroke:teal,stroke-width:4px
-style 10 stroke:teal,stroke-width:4px
-style 11 stroke:green,stroke-width:4px
-style 12 stroke:goldenrod,stroke-width:4px
-style 13 stroke:teal,stroke-width:4px
-style 14 stroke:green,stroke-width:4px
-style 15 stroke:teal,stroke-width:4px
-style 16 stroke:teal,stroke-width:4px
-style 17 stroke:green,stroke-width:4px
-style 18 stroke:goldenrod,stroke-width:4px
-style 19 stroke:teal,stroke-width:4px
-linkStyle 0 stroke:red,stroke-width:2px
-linkStyle 1 stroke:blue,stroke-width:2px
-linkStyle 2 stroke:blue,stroke-width:2px
-linkStyle 3 stroke:red,stroke-width:2px
-linkStyle 4 stroke-width:2px
-linkStyle 5 stroke:cyan,stroke-width:2px
-linkStyle 6 stroke:magenta,stroke-width:2px
-linkStyle 7 stroke-width:2px
-linkStyle 8 stroke:cyan,stroke-width:2px
-linkStyle 9 stroke:magenta,stroke-width:2px
-linkStyle 10 stroke-width:2px
-linkStyle 11 stroke:cyan,stroke-width:2px
-linkStyle 12 stroke:magenta,stroke-width:2px
-linkStyle 13 stroke-width:2px
-linkStyle 14 stroke:cyan,stroke-width:2px
-linkStyle 15 stroke:magenta,stroke-width:2px
-linkStyle 16 stroke-width:2px
-linkStyle 17 stroke:cyan,stroke-width:2px
-linkStyle 18 stroke:magenta,stroke-width:2px"
-`;
-
 exports[`golden: hand corpus > sign:schnorr(node(leaf:text:Alice+4)) 1`] = `
 "{
     "Alice" [
@@ -3081,38 +3570,214 @@ exports[`golden: hand corpus > sign:schnorr(node(leaf:text:Alice+4)) 1`] = `
 ]"
 `;
 
-exports[`golden: hand corpus > sskr:1/2of3(node(leaf:text:Alice+4)) 1`] = `
-"e62a6a84974e0b9c96ff7d478ed923c8e8cdbd520139769a1e7813a11d906e4b
+exports[`golden: hand corpus > sign:schnorr(node(leaf:text:Alice+4)) 2`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    'signed': Signature
+]
+---
+c3da49af NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    adf6ab51 ASSERTION
+        d0e39e78 pred 'signed'
+        e529070b obj Signature
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>c3da49af"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>adf6ab51"])
+        16 -- pred --> 17[/"'signed'<br>d0e39e78"/]
+        16 -- obj --> 18["Signature<br>e529070b"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:goldenrod,stroke-width:4px
+style 18 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sign:ssh-ed25519(node(leaf:text:Alice+4)) 1`] = `"throw:Components[InvalidData]"`;
+
+exports[`golden: hand corpus > sign:ssh-ed25519:file/sha256(node(leaf:text:Alice+4)) 1`] = `
+"{
+    "Alice" [
+        'isA': "Person"
+        "knows": "Bob"
+        "knows": "Carol"
+        'note': "A note"
+    ]
+} [
+    'signed': Signature(SshEd25519)
+]
+---
+6f64ba96 NODE
+    0511ba41 subj WRAPPED
+        ab2344e4 cont NODE
+            13941b48 subj "Alice"
+            3c3ca1f1 ASSERTION
+                0fcd6a39 pred 'note'
+                61c8e387 obj "A note"
+            4012caf2 ASSERTION
+                db7dd21c pred "knows"
+                afb8122e obj "Carol"
+            581d8efe ASSERTION
+                2be2d79b pred 'isA'
+                bd52917f obj "Person"
+            78d666eb ASSERTION
+                db7dd21c pred "knows"
+                13b74194 obj "Bob"
+    75841db6 ASSERTION
+        d0e39e78 pred 'signed'
+        d88b3142 obj Signature(SshEd25519)
+---
+%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%
+graph LR
+0(("NODE<br>6f64ba96"))
+    0 -- subj --> 1[/"WRAPPED<br>0511ba41"\\]
+        1 -- cont --> 2(("NODE<br>ab2344e4"))
+            2 -- subj --> 3["&quot;Alice&quot;<br>13941b48"]
+            2 --> 4(["ASSERTION<br>3c3ca1f1"])
+                4 -- pred --> 5[/"'note'<br>0fcd6a39"/]
+                4 -- obj --> 6["&quot;A note&quot;<br>61c8e387"]
+            2 --> 7(["ASSERTION<br>4012caf2"])
+                7 -- pred --> 8["&quot;knows&quot;<br>db7dd21c"]
+                7 -- obj --> 9["&quot;Carol&quot;<br>afb8122e"]
+            2 --> 10(["ASSERTION<br>581d8efe"])
+                10 -- pred --> 11[/"'isA'<br>2be2d79b"/]
+                10 -- obj --> 12["&quot;Person&quot;<br>bd52917f"]
+            2 --> 13(["ASSERTION<br>78d666eb"])
+                13 -- pred --> 14["&quot;knows&quot;<br>db7dd21c"]
+                13 -- obj --> 15["&quot;Bob&quot;<br>13b74194"]
+    0 --> 16(["ASSERTION<br>75841db6"])
+        16 -- pred --> 17[/"'signed'<br>d0e39e78"/]
+        16 -- obj --> 18["Signature(SshEd25519)<br>d88b3142"]
+style 0 stroke:red,stroke-width:4px
+style 1 stroke:blue,stroke-width:4px
+style 2 stroke:red,stroke-width:4px
+style 3 stroke:teal,stroke-width:4px
+style 4 stroke:green,stroke-width:4px
+style 5 stroke:goldenrod,stroke-width:4px
+style 6 stroke:teal,stroke-width:4px
+style 7 stroke:green,stroke-width:4px
+style 8 stroke:teal,stroke-width:4px
+style 9 stroke:teal,stroke-width:4px
+style 10 stroke:green,stroke-width:4px
+style 11 stroke:goldenrod,stroke-width:4px
+style 12 stroke:teal,stroke-width:4px
+style 13 stroke:green,stroke-width:4px
+style 14 stroke:teal,stroke-width:4px
+style 15 stroke:teal,stroke-width:4px
+style 16 stroke:green,stroke-width:4px
+style 17 stroke:goldenrod,stroke-width:4px
+style 18 stroke:teal,stroke-width:4px
+linkStyle 0 stroke:red,stroke-width:2px
+linkStyle 1 stroke:blue,stroke-width:2px
+linkStyle 2 stroke:red,stroke-width:2px
+linkStyle 3 stroke-width:2px
+linkStyle 4 stroke:cyan,stroke-width:2px
+linkStyle 5 stroke:magenta,stroke-width:2px
+linkStyle 6 stroke-width:2px
+linkStyle 7 stroke:cyan,stroke-width:2px
+linkStyle 8 stroke:magenta,stroke-width:2px
+linkStyle 9 stroke-width:2px
+linkStyle 10 stroke:cyan,stroke-width:2px
+linkStyle 11 stroke:magenta,stroke-width:2px
+linkStyle 12 stroke-width:2px
+linkStyle 13 stroke:cyan,stroke-width:2px
+linkStyle 14 stroke:magenta,stroke-width:2px
+linkStyle 15 stroke-width:2px
+linkStyle 16 stroke:cyan,stroke-width:2px
+linkStyle 17 stroke:magenta,stroke-width:2px"
+`;
+
+exports[`golden: hand corpus > sskr:1/0of3(leaf:text:secret) 1`] = `"throw:Sskr[Shamir]"`;
+
+exports[`golden: hand corpus > sskr:1/2of3(leaf:text:secret) 1`] = `
+"1ce3006dbbca690689e6e94eeebcccd19ece0f036cffa57bc43635256260776a
 ---
 ENCRYPTED [
-    'isA': "Person"
-    "knows": "Bob"
-    "knows": "Carol"
-    'note': "A note"
     'sskrShare': SSKRShare
 ]
 ,,,
-6c1135205ed0d0ea08522f3f09da1b626539752ae9646d7d5ab00eb1f98007eb
+b707fbe4543de21972bc0901e22e3be5563f73a5423c3b52693f61128b33fad4
 ---
 ENCRYPTED [
-    'isA': "Person"
-    "knows": "Bob"
-    "knows": "Carol"
-    'note': "A note"
     'sskrShare': SSKRShare
 ]
 ,,,
-e7cee49e5af86fa0abaf73a05035141f47cc3f6d8d9ee7a1d9e16cbc456981fb
+f8a3a5c895519379ed0991ffbdddc292077e9104fe929f0377929ceac4181b88
 ---
 ENCRYPTED [
-    'isA': "Person"
-    "knows": "Bob"
-    "knows": "Carol"
-    'note': "A note"
     'sskrShare': SSKRShare
 ]
 ---
-JOIN-MISMATCH"
+joined"
 `;
 
 exports[`golden: hand corpus > sskr:2/2of3,3of5(leaf:text:secret) 1`] = `

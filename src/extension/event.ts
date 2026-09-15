@@ -19,13 +19,14 @@
 
 import { type ARID } from "@blockchaincommons/components";
 import { TAG_EVENT } from "@blockchaincommons/tags";
-import { taggedValue, CborDate } from "@blockchaincommons/dcbor";
+import { taggedValue, CborDate, expectText } from "@blockchaincommons/dcbor";
 import { CONTENT, NOTE, DATE } from "@blockchaincommons/known-values";
 
 import { Envelope } from "../base/envelope";
 import { type ToEnvelope, type EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
 import { decodeTaggedId } from "./tagged-id";
+import { datesEqual } from "./request";
 import { formatFlat } from "../format/notation.js";
 
 /**
@@ -53,9 +54,9 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
   private readonly _content: T;
   private readonly _id: ARID;
   private readonly _note: string;
-  private readonly _date: Date | undefined;
+  private readonly _date: CborDate | undefined;
 
-  private constructor(content: T, id: ARID, note = "", date?: Date) {
+  private constructor(content: T, id: ARID, note = "", date?: CborDate) {
     this._content = content;
     this._id = id;
     this._note = note;
@@ -86,10 +87,17 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
   }
 
   /**
-   * Adds a date to the event.
+   * Adds a date to the event: a `CborDate` is kept as it is (the
+   * reference's `Date`, exact to the nanosecond); a JavaScript `Date`
+   * converts through `CborDate.fromDate`.
    */
-  withDate(date: Date): Event<T> {
-    return new Event(this._content, this._id, this._note, date);
+  withDate(date: Date | CborDate): Event<T> {
+    return new Event(
+      this._content,
+      this._id,
+      this._note,
+      date instanceof Date ? CborDate.fromDate(date) : date,
+    );
   }
 
   /**
@@ -114,9 +122,15 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
   }
 
   /**
-   * Returns the date attached to the event, if any.
+   * The date attached to the event as a JavaScript `Date` (millisecond
+   * precision), if any; `cborDate` is the exact value.
    */
   get date(): Date | undefined {
+    return this._date?.toDate();
+  }
+
+  /** The date attached to the event, if any: the stored `CborDate`, exact as decoded or given. */
+  get cborDate(): CborDate | undefined {
     return this._date;
   }
 
@@ -128,11 +142,10 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
    * (if present).
    */
   toEnvelope(): Envelope {
-    // Wrap the **tagged** ARID inside the event tag — mirrors the reference
-    // `CBOR::to_tagged_value(TAG_EVENT, event.id)` which dispatches
-    // via `From<ARID> for CBOR` (the tagged form). See request.ts
-    // for the same fix and rationale.
-    const taggedArid = taggedValue(TAG_EVENT, this._id.toCbor());
+    // The subject is the tagged ARID inside the event tag, as the
+    // reference's `CBOR::to_tagged_value(TAG_EVENT, event.id)` builds it;
+    // the outer tag is the bare number, as the reference's constant is.
+    const taggedArid = taggedValue(TAG_EVENT.value, this._id.toCbor());
     const contentEnvelope = Envelope.from(this._content);
 
     let envelope = Envelope.leaf(taggedArid).addAssertion(CONTENT, contentEnvelope);
@@ -142,27 +155,31 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
     }
 
     if (this._date !== undefined) {
-      // Pass a tagged-CBOR Date (tag 1); mirrors the reference
-      // `Envelope::add_assertion(DATE, self.date)`. The earlier port
-      // emitted an ISO 8601 string here.
-      envelope = envelope.addAssertion(DATE, CborDate.fromDate(this._date));
+      // The stored date's own tag-1 encoding, as the reference's
+      // `add_optional_assertion(DATE, self.date)` dispatches through `Date → CBOR`.
+      envelope = envelope.addAssertion(DATE, this._date);
     }
 
     return envelope;
   }
 
   /**
-   * Creates an event from an envelope.
+   * Reads an event from an envelope (the reference's
+   * `Event::try_from(envelope)`): the `'content'` object through
+   * `contentExtractor`, the subject as `TAG_EVENT(ARID)`, the `'note'` and
+   * `'date'` objects by subject extraction.
    *
    * @typeParam T - The type to extract the content as
    *
-   * @throws EnvelopeError with code `General`.
+   * @throws EnvelopeError `NonexistentPredicate` when there is no content; `General`
+   *   (`Failed to parse content`) when the extractor fails; `NotLeaf` / `Cbor` when the
+   *   subject is not `TAG_EVENT(ARID)`; `Cbor` / `InvalidFormat` when a `'note'` is not
+   *   text or a `'date'` is not a tag-1 date
    */
   static fromEnvelope<T extends EnvelopeInput>(
     envelope: Envelope,
     contentExtractor: (env: Envelope) => T,
   ): Event<T> {
-    // `NonexistentPredicate` when there is no content; the extractor's failure is `General`.
     const contentEnvelope = envelope.objectForPredicate(CONTENT);
     let content: T;
     try {
@@ -174,12 +191,12 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
       );
     }
 
-    // The subject is TAG_EVENT(ARID); `NotLeaf` / `Cbor` when it is not.
     const id = decodeTaggedId(envelope, TAG_EVENT.value);
 
-    // A `'note'` must be text and a `'date'` a tag-1 date when present (`Cbor` otherwise).
-    const note = envelope.optionalObjectForPredicate(NOTE)?.expectString() ?? "";
-    const date = envelope.optionalObjectForPredicate(DATE)?.expectDate();
+    const note = envelope.objectForPredicateOr(NOTE, expectText, "");
+    const date = envelope.optionalObjectForPredicateAs(DATE, (cbor) =>
+      CborDate.fromTaggedCbor(cbor),
+    );
 
     return new Event(content, id, note, date);
   }
@@ -192,13 +209,16 @@ export class Event<T extends EnvelopeInput> implements ToEnvelope {
   }
 
   /**
-   * Checks equality with another event.
+   * Checks equality with another event: the content (as envelopes), the id,
+   * the note and the exact date must all be equal (the reference's derived
+   * `PartialEq`).
    */
   equals(other: Event<T>): boolean {
     return (
       this._id.equals(other._id) &&
       this._note === other._note &&
-      this._date?.getTime() === other._date?.getTime()
+      datesEqual(this._date, other._date) &&
+      Envelope.from(this._content).digest().equals(Envelope.from(other._content).digest())
     );
   }
 }

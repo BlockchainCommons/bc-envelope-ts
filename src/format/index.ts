@@ -17,6 +17,7 @@ export {
   FormatContext,
   getGlobalFormatContext,
   withFormatContext,
+  registerTags,
   registerTagsIn,
 } from "./format-context.js";
 export type { FormatContextOpt } from "./format-context.js";

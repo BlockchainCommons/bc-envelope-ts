@@ -14,9 +14,17 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Envelope } from "../src/index.js";
-import { PrivateKeys as PrivateKeyBase } from "@blockchaincommons/components";
+import { Envelope, EnvelopeError } from "../src/index.js";
+import {
+  ComponentsError,
+  PrivateKeys as PrivateKeyBase,
+  SealedMessage,
+  SymmetricKey,
+  type Encrypter,
+} from "@blockchaincommons/components";
 import { EncapsulationScheme, createEncapsulationKeypair } from "@blockchaincommons/components";
+import { encodeCbor } from "@blockchaincommons/dcbor";
+import { HAS_RECIPIENT } from "@blockchaincommons/known-values";
 import { MLKEMLevel, MLKEMPrivateKey } from "@blockchaincommons/components/pq";
 import "../src/all.js";
 
@@ -240,11 +248,72 @@ describe("Encapsulation", () => {
       expect(aliceSecret.bytes).not.toEqual(bobDecapsulated.bytes);
     });
 
-    it("accepts an empty recipient list, as the reference does (B15)", () => {
+    it("accepts an empty recipient list, as the reference does", () => {
       const envelope = helloEnvelope();
       const encrypted = envelope.encryptSubjectToRecipients([]);
       expect(encrypted.isSubjectEncrypted()).toBe(true);
       expect(encrypted.recipients()).toEqual([]);
+    });
+
+    it("reports a sealed plaintext that is not a symmetric key as Cbor with dcbor's message", () => {
+      // The reference's `SymmetricKey::from_tagged_cbor_data(content_key_data)?`.
+      const bob = PrivateKeyBase.generate();
+      const key = SymmetricKey.random();
+      const keyCbor = encodeCbor(key.toCbor());
+      const trailing = new Uint8Array(keyCbor.length + 1);
+      trailing.set(keyCbor);
+      const rows: [string, Uint8Array, string, string][] = [
+        ["not CBOR", new TextEncoder().encode("garbage"), "Underrun", "early end of CBOR data"],
+        [
+          "an integer",
+          new Uint8Array([1]),
+          "WrongType",
+          "the decoded CBOR value was not the expected type",
+        ],
+        [
+          "a trailing byte",
+          trailing,
+          "UnusedData",
+          "the decoded CBOR had 1 extra bytes at the end",
+        ],
+      ];
+      for (const [name, plaintext, cause, message] of rows) {
+        const sealed = SealedMessage.seal(plaintext, bob.publicKeys().encapsulationPublicKey());
+        const envelope = helloEnvelope().encryptSubject(key).addAssertion(HAS_RECIPIENT, sealed);
+        let error: unknown;
+        try {
+          envelope.decryptSubjectToRecipient(bob);
+        } catch (e) {
+          error = e;
+        }
+        expect(EnvelopeError.isEnvelopeError(error), name).toBe(true);
+        if (EnvelopeError.isEnvelopeError(error)) {
+          expect(error.code, name).toBe("Cbor");
+          expect(error.message, name).toBe(`dcbor error: ${message}`);
+          expect((error.cause as { code?: string } | undefined)?.code, name).toBe(cause);
+        }
+      }
+    });
+
+    it("reports a components failure while sealing as Components with components' message", () => {
+      // The reference's `?` into `Error::Components` around `SealedMessage::new`.
+      const broken: Encrypter = {
+        encapsulationPublicKey: () => {
+          throw ComponentsError.invalidData("no key");
+        },
+      } as unknown as Encrypter;
+      let error: unknown;
+      try {
+        helloEnvelope().addRecipient(broken, SymmetricKey.random());
+      } catch (e) {
+        error = e;
+      }
+      expect(EnvelopeError.isEnvelopeError(error)).toBe(true);
+      if (EnvelopeError.isEnvelopeError(error)) {
+        expect(error.code).toBe("Components");
+        expect(error.message).toBe("components error: invalid data: no key");
+        expect(error.cause?.name).toBe("ComponentsError");
+      }
     });
   });
 

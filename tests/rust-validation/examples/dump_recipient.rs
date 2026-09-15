@@ -1,5 +1,5 @@
 //! Prints a reference-produced `hasRecipient` envelope for the `recipientDecode`
-//! vector (follow-up B1): `"Hello."` encrypted with key 07…07 and sealed to the
+//! vector: `"Hello."` encrypted with key 07…07 and sealed to the
 //! PrivateKeyBase from seed ff00…; the port must decrypt it.
 //!
 //!   cargo run --release --example dump_recipient

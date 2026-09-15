@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion -- the recipe language is checked by its own type; a missing field is a corpus bug */
 /**
- * FROZEN: the adapter over the pre-redesign bundle. Never edited by the
- * mechanical API passes; `redesigned-adapter.ts` is the working-tree twin.
+ * The adapter over the frozen baseline bundle (`tests/baseline`), the
+ * package as it was when the differential suite was set up; kinds the
+ * bundle cannot express are listed in `isBaselineSupported`.
+ * `working-tree-adapter.ts` is the working-tree twin.
  */
 import {
   type VectorApi,
@@ -15,7 +17,7 @@ import {
   SEP,
 } from "./recipes";
 
-export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
+export function baselineShapedAdapterFor(m: any, deps: Deps): VectorApi {
   const C = deps.components;
   const leafValue = (l: Leaf): any => {
     switch (l.t) {
@@ -52,7 +54,9 @@ export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "uri":
         return C.URI.new(l.v);
       case "kv":
-        return new m.KnownValue(l.v);
+        return new m.KnownValue(Number(l.v));
+      case "cbor":
+        throw new Error("baseline: unsupported leaf kind");
     }
   };
   const signer = (seed: string, scheme: string): any => {
@@ -67,11 +71,11 @@ export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
     switch (e.k) {
       case "leaf": {
         if (e.v.t === "null") return m.Envelope.null();
-        if (e.v.t === "kv") return m.Envelope.newWithKnownValue(e.v.v);
+        if (e.v.t === "kv") return m.Envelope.newWithKnownValue(Number(e.v.v));
         return m.Envelope.new(leafValue(e.v));
       }
       case "kv":
-        return m.Envelope.newWithKnownValue(e.v);
+        return m.Envelope.newWithKnownValue(Number(e.v));
       case "node": {
         let env = build(e.subject);
         for (const [p, o] of e.assertions)
@@ -143,7 +147,7 @@ export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
       case "type":
         return build(e.e).addType(build(e.type));
       case "position":
-        return build(e.e).setPosition(e.pos);
+        return build(e.e).setPosition(Number(e.pos));
       case "request": {
         let req = m.Request.new(e.func, C.ARID.fromData(unhex(e.id)));
         for (const [p, v] of e.params) req = req.withParameter(p, build(v));
@@ -213,7 +217,7 @@ export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
             throw new Error("baseline: unsupported op");
         }
       }
-      case "domain":
+      default:
         throw new Error("baseline: unsupported recipe kind");
     }
   };
@@ -253,7 +257,7 @@ export function rustShapedAdapterFor(m: any, deps: Deps): VectorApi {
       const x = err as any;
       const name = String(x?.name ?? "Error");
       if (name === "CborError") return "CborError";
-      // uniform-resources: class names before the redesign, codes after.
+      // uniform-resources: the frozen bundle used class names, the working tree codes.
       const UR = [
         "Bytewords",
         "UnexpectedType",

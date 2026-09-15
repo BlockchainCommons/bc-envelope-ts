@@ -1,15 +1,15 @@
-# Migrating to the redesigned `@blockchaincommons/envelope`
-
-`@blockchaincommons/envelope` is the redesigned successor to `@bcts/envelope`.
+# Migrating to `@blockchaincommons/envelope`
 
 ## 0. Wire and error parity with the reference
 
-Validating against `bc-envelope-rust` 0.43.0 changed what the port
-*produces and accepts*, not only its names. If you are coming from the
-redesign of the section below, this is the checklist:
+`@blockchaincommons/envelope` is the successor to `@bcts/envelope`.
+
+The first validation against `bc-envelope-rust` 0.43.0 (1.0.0-beta.2)
+changed what the port *produces and accepts*, not only its names. If you are
+coming from the layout of the sections below, this is the checklist:
 
 - **Recipient envelopes** now seal the content key's tagged CBOR (37 bytes)
-  as the reference does. Envelopes produced by the redesign's `addRecipient`
+  as the reference does. Envelopes produced by 1.0.0-beta.1's `addRecipient`
   / `encryptToRecipients` / `seal` cannot be opened by this version or by a
   Rust peer, and vice versa; re-encrypt anything you persisted. (No
   released consumer had persisted one; there is no read-side shim.)
@@ -265,8 +265,8 @@ are unchanged.
 | — | Since 1.0.0-beta.2 the truncation rule is the reference's: the text's UTF-8 byte length decides, the cut keeps `maxLength` whole characters (a non-ASCII text can gain an `…` without losing a character). `Function`/`Parameter.toString()` print the reference's `Display` (`add`, `99`, `"greet"`; the `«…»`/`❰…❱` forms stay in format strings), `Expression.toString()` is the quoted format string, and `Response.summary()` writes `id: X error: E` on failure, as the reference does. |
 | `FormatContextOpt` `{ type: "none" \| "global" \| "custom", context }` and `formatContextNone()` / `formatContextGlobal()` / `formatContextCustom(c)` | `FormatContextOpt = FormatContext \| "global" \| "none"` |
 | `new FormatContext(tags, knownValues)`; `tags()` / `knownValues()` methods; `registerTag(v, n)` | `new FormatContext({ tags?, knownValues?, functions?, parameters? })`; `tags` / `knownValues` / `functions` / `parameters` getters; `context.tags.register(Tag.from(v, n))` |
-| `globalFormatContext()` / `GLOBAL_FORMAT_CONTEXT.get()` / `withFormatContextMut(fn)` / `registerTags()` | `getGlobalFormatContext()` / `withFormatContext(fn)`; the global context registers every tag on first use |
-| `registerTagsIn(context)` | unchanged (for custom contexts) |
+| `globalFormatContext()` / `GLOBAL_FORMAT_CONTEXT.get()` / `withFormatContextMut(fn)` | `getGlobalFormatContext()` / `withFormatContext(fn)` |
+| `registerTags()` / `registerTagsIn(context)` | unchanged: the envelope summarisers are installed by `registerTags()` (the reference's `bc_envelope::register_tags()`), not on first use |
 
 Three outputs changed, all to match the reference: annotated hex names its
 tags (`# tag(200) envelope`), tag-1 dates are summarised
@@ -320,7 +320,7 @@ errors are `EnvelopeError`s (code `General`).
 ## 7. Dependency changes
 
 `pako` and `@blockchaincommons/dcbor-compat` are no longer dependencies;
-`@blockchaincommons/dcbor` is. Envelope's dependents see the redesigned
+`@blockchaincommons/dcbor` is. Envelope's dependents see the
 components (`Digest.from`, `.bytes`, `SymmetricKey.random`), known-values
 (`getGlobalKnownValuesStore`, `KnownValue.codec`) and uniform-resources
 (`UR`, `decodeURWith`) through its types; see those packages' MIGRATION
@@ -329,7 +329,7 @@ notes.
 ## Appendix: migrating from `@bcts/envelope`
 
 `@blockchaincommons/envelope` is the canonical home of this library. It was extracted from the
-[`paritytech/bcts`](https://github.com/paritytech/bcts) monorepo, where it was
+[`paritytech/bcts`](https://github.com/paritytech/bcts) repository, where it was
 published as `@bcts/envelope`, into its own Blockchain Commons repository at
 [`BlockchainCommons/bc-envelope-ts`](https://github.com/BlockchainCommons/bc-envelope-ts).
 
@@ -362,7 +362,7 @@ thin re-export of this package, so nothing breaks the moment you update.
 ### 2. Version numbering restarts
 
 `@bcts/envelope` versions moved in lockstep with every other package in the
-monorepo, which is why it reached `1.0.0-beta.6`. Each extracted package now
+repository, which is why it reached `1.0.0-beta.6`. Each extracted package now
 versions independently and starts again at `1.0.0-beta.1`. A lower version
 number here does **not** mean older code.
 
@@ -381,19 +381,62 @@ module-level singletons across entry points. Use the ESM entry (`import`) or the
 CJS entry (`require`); both are declared in `exports` and validated in CI by
 `publint` and `@arethetypeswrong/cli`.
 
-### 5. Peer packages renamed too
+## 1.0.0-beta.3
 
-Every sibling library moved from the `@bcts` scope to `@blockchaincommons`. If
-you depend on more than one, rename them together so a single copy of each
-shared type is resolved:
+If you are coming from 1.0.0-beta.2:
 
-| Old | New |
-|---|---|
-| `@bcts/dcbor` | `@blockchaincommons/dcbor` |
-| `@bcts/<name>` | `@blockchaincommons/<name>` |
-
-### 6. What did not change
-
-- The public API: every exported name, signature and type is identical.
-- The wire format. Encodings produced by `@bcts/envelope` decode here, and the reverse.
-- Parity with the Rust reference implementation. See [`RUST_DIVERGENCES.md`](./RUST_DIVERGENCES.md).
+- **Register the envelope tags.** Call `registerTags()` (exported from
+  `/format` and `/all`) once before formatting, where the reference calls
+  `bc_envelope::register_tags()`. The global context is created on first
+  use with only the bc-tags names and the components summarisers, so until
+  then a request prints `40004(ARID(…))`, a function `40006(1)` and a
+  known-value leaf `40000(1)`. The context snapshots the tag and known-value
+  stores when it is created; register your own tags and known values before
+  the first format (`hex()` keeps naming through dcbor's live store).
+- **Known-value names.** The registry is the reference's seed plus
+  `~/.known-values` (see `@blockchaincommons/known-values` 1.0.0-beta.3);
+  an in-memory `KnownValue(9999, "custom")` prints `'custom'`, a decoded
+  9999 prints `'9999'`, and `context: "none"` prints `''name''`.
+- **Decode errors.** `Envelope.fromBytes` / `fromCbor` / `fromUntaggedCbor`
+  / `codec.decode` / `Expression.fromEnvelope` throw `Cbor` with the dcbor
+  message verbatim (`early end of CBOR data`, `expected CBOR tag envelope,
+  but got 201`, `the decoded CBOR value was not the expected type`,
+  `unknown envelope tag: 40000`) and the `CborError` as `cause`; internal
+  sites (`decryptSubject`, `decompress`, the sealed content key,
+  `Request`/`Event`/`Response.fromEnvelope`, subject extraction) read
+  `dcbor error: <message>`. Match on `code` and `cause.code`, not on the
+  old texts.
+- **Subject extraction.** `expectSubject(decoder)` returns a wrapped
+  envelope, a known value (with its name), a digest, an encrypted message
+  or a compressed value when the decoder returns an instance of that class
+  (`Envelope.fromCbor`, `KnownValue.fromCbor`, `Digest.fromCbor`, …);
+  `InvalidFormat` otherwise, and always for an assertion. `expectString` /
+  `expectNumber` / `expectBoolean` / `expectBytes` / `expectNull` are
+  leaf-only; `expectNumber` is exact (`2^53 + 1` throws `Cbor`). `isTrue` /
+  `isFalse` / `isBool` / `isNull` look through a node's subject.
+  `Request.note`, `Event.note` and `attachmentVendor` accept a node object.
+- **Integers.** `Function.value`, `Parameter.value` and `position()` are
+  `number | bigint` (a `number` up to `2^53 − 1`); `valueBigInt` is exact;
+  `Function.known` / `Parameter.known` / `Parameter.from` / `setPosition`
+  take `number | bigint`. `FunctionID` / `ParameterID` include `bigint`.
+- **Dates.** `Request.date` / `Event.date` stay a `Date` view; `cborDate` is
+  the exact stored `CborDate`; `withDate` takes `Date | CborDate`. A decoded
+  request or event now re-encodes byte for byte.
+- **Expressions.** Lookups go through the envelope: `parameter(7)` no
+  longer matches `"7"`; `objectForParameter` throws `NonexistentPredicate`
+  / `AmbiguousPredicate`; the function mismatch message prints the
+  reference's `Debug`.
+- **Codes and texts.** Salt lengths below 8 and inverted ranges:
+  `Components`; sskr failures in `sskrSplit`: `Sskr`; `abiguous
+  attachment`, `invalid attachment`, `the subject of the envelope is not the
+  unit value`, `general error: Expected an ID`; a `Verifier` that throws
+  propagates its own error.
+- **Elision.** `elide({ action: { encrypt } })` encrypts an already
+  encrypted or elided target (the reference's behaviour);
+  `Envelope.elideSetWithAction` is gone (`elide({ revealing, action })`).
+- **Seal options.** `seal(e, sender, recipient, { signing, metadata, nonce,
+  rng })` and `encryptToRecipient(e, recipient, { nonce, rng })`.
+- **New.** `lockWith` / `lockSubjectWith` / `unlockWith` /
+  `unlockSubjectWith(envelope, agent, id, …)` lock and unlock through an
+  SSH agent (`SshAgent` from components); `Function` / `Parameter`
+  `fromCbor` / `fromUntaggedCbor` / `codec`; `EnvelopeError.cborDecode`.

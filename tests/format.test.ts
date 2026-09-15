@@ -4,6 +4,7 @@ import {
   MermaidTheme,
   FormatContext,
   getGlobalFormatContext,
+  registerTagsIn,
   withFormatContext,
 } from "../src/format";
 import "../src/all.js";
@@ -79,14 +80,11 @@ describe("Mermaid Formatting", () => {
     });
   });
 
-  // E1b — pin TS Mermaid output byte-for-byte against Rust fixtures
-  // from `bc-envelope-rust/tests/format_tests.rs`. Same bug-class as
-  // the G1 / X1 format-string pins for GSTP / XID — round-trip checks
-  // never noticed encoder-path drift in the format-context summarizers
-  // until those pins were added; Mermaid was the last big-format
-  // surface lacking byte-shape pins.
-  describe("E1b — Mermaid byte-shape parity with Rust", () => {
-    it("matches Rust encrypted-subject Mermaid (E1b-1)", async () => {
+  // The Mermaid output pinned byte for byte against the reference's
+  // `tests/format_tests.rs`: round-trip digest checks pass whatever the
+  // rendering, so only a pinned string catches a drift in it.
+  describe("Mermaid byte-shape parity with the reference", () => {
+    it("matches the reference's encrypted-subject Mermaid", async () => {
       // Source: `bc-envelope-rust/tests/format_tests.rs:152-202`
       //   let envelope = Envelope::new("Alice")
       //       .add_assertion("knows", "Bob")
@@ -122,7 +120,7 @@ describe("Mermaid Formatting", () => {
       expect(env.mermaidFormat()).toBe(expected);
     });
 
-    it("matches Rust plaintext envelope Mermaid (E1b-2)", () => {
+    it("matches the reference's plaintext envelope Mermaid", () => {
       // The unencrypted version of the same envelope. The Rust suite
       // doesn't have an explicit Mermaid fixture for this case, but
       // the rendered output structurally mirrors the encrypted variant
@@ -153,7 +151,7 @@ describe("Mermaid Formatting", () => {
       expect(env.mermaidFormat()).toBe(expected);
     });
 
-    it("propagates non-default theme + orientation (E1b-3)", () => {
+    it("propagates a non-default theme and orientation", () => {
       // Pins that the `MermaidFormatOpts` flags reach the rendered
       // header verbatim — same byte-shape contract Rust's
       // `MermaidFormatOpts::default().theme(MermaidTheme::Dark)`
@@ -181,7 +179,7 @@ describe("Mermaid Formatting", () => {
       ).toBe(true);
     });
 
-    it("hides NODE elements (and their digests) under hideNodes (E1b-4)", () => {
+    it("hides NODE elements (and their digests) under hideNodes", () => {
       // Mirrors the warranty fixture pattern from
       // `bc-envelope-rust/tests/format_tests.rs:1288+` — when
       // `hide_nodes(true)` is set, NODE elements are *omitted
@@ -369,22 +367,20 @@ describe("Envelope Summary", () => {
   });
 });
 
-describe("E1a — format-context summarizer parity with Rust", () => {
-  // Pinned regression tests for the per-tag summarizer output strings,
-  // matching `bc-components-rust/src/tags_registry.rs::register_tags_in`.
-  // Same bug-class as the SealedMessage scheme-uppercase fix from G1
-  // and the MLDSA-44/MLDSA44 hyphen fix landed alongside this pin
-  // pass — wrong summarizer output silently breaks cross-impl format
-  // parity since round-trip digest checks pass either way.
+describe("format-context summarizer parity with the reference", () => {
+  // The per-tag summarizer output strings pinned against the reference's
+  // `tags_registry.rs::register_tags_in`: a wrong summarizer text breaks
+  // cross-implementation format parity while round-trip digest checks
+  // still pass.
 
-  it("renders TAG_JSON as JSON(<as_str>) (E1a-1)", async () => {
+  it("renders TAG_JSON as JSON(<as_str>)", async () => {
     const { CborJson: JSONTagged } = await import("@blockchaincommons/components");
     const json = JSONTagged.fromString('{"a":1}');
     const envelope = Envelope.from(json);
     expect(envelope.format()).toBe('JSON({"a":1})');
   });
 
-  it("renders TAG_REFERENCE via Reference.toString() (E1a-2)", async () => {
+  it("renders TAG_REFERENCE via Reference.toString()", async () => {
     const { Reference } = await import("@blockchaincommons/components");
     // Build a Reference from a known 32-byte digest image; the short
     // ref is the first 8 hex chars of that data.
@@ -398,7 +394,7 @@ describe("E1a — format-context summarizer parity with Rust", () => {
     expect(envelope.format()).toMatch(/^Reference\([0-9a-f]{8}\)$/);
   });
 
-  it("renders TAG_SIGNATURE for non-default scheme using raw enum name, not human-friendly form (E1a-3)", async () => {
+  it("renders TAG_SIGNATURE for a non-default scheme with the raw enum name, not the human-friendly form", async () => {
     const { Signature } = await import("@blockchaincommons/components");
     const { MLDSASignature, MLDSALevel } = await import("@blockchaincommons/components/pq");
     // Construct a stub Signature with the MLDSA44 scheme. The summarizer
@@ -415,23 +411,115 @@ describe("E1a — format-context summarizer parity with Rust", () => {
     expect(formatted).not.toContain("MLDSA-44");
   });
 
-  it("renders tag 40000 nested in a leaf through the known-value summarizer (E1a-4)", async () => {
+  it("renders tag 40000 nested in a leaf through the known-value summarizer", async () => {
     // A summarizer receives the tag's *content* (the bare integer), so the
     // summarizer decodes with `KnownValue.fromUntaggedCbor`, as the
-    // reference's `format_context.rs` calls `KnownValue::from_untagged_cbor`.
-    // `KnownValue.fromCbor` requires the tag and would make every row here
-    // `'<unknown>'`.
+    // reference's `format_context.rs` calls `KnownValue::from_untagged_cbor`,
+    // and names it through the context's registry: 25 (`VALUE`) is declared
+    // but not registered in the reference's seed, so it prints its codepoint.
     const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const leaf = Envelope.leaf(
       cbor([taggedValue(40000, 1), taggedValue(40000, 25), taggedValue(40000, 999)]),
     );
-    expect(leaf.format({ flat: true })).toBe("['isA', 'value', '999']");
+    expect(leaf.format({ flat: true })).toBe("['isA', '25', '999']");
     const map = Envelope.leaf(cbor(new Map([[taggedValue(40000, 4), "n"]])));
     expect(map.format({ flat: true })).toBe(`{'note': "n"}`);
   });
+
+  it("the known-value case prints the value's own name where the summarizer prints the codepoint", async () => {
+    const { VALUE } = await import("@blockchaincommons/known-values");
+    // In memory the constant carries its name; decoded, the value has none.
+    expect(Envelope.from(VALUE).format()).toBe("'value'");
+    expect(Envelope.fromCbor(Envelope.from(VALUE).toCbor()).format()).toBe("'25'");
+    expect(Envelope.leaf(VALUE.toCbor()).format()).toBe("'25'");
+  });
 });
 
-describe("E1f — SSH summarizer parity with Rust tags_registry.rs:196-238", () => {
+describe("known-value notation and summariser rendering", () => {
+  const leaf = (hex: string): Envelope => Envelope.fromBytes(Buffer.from(hex, "hex"));
+
+  it("the summarizer wraps a negative content and reports other content as an error", () => {
+    // `KnownValue::from_untagged_cbor` is `u64::try_from`: -1 wraps.
+    expect(leaf("d8c8d8c9d99c4020").format()).toBe("'18446744073709551615'");
+    expect(leaf("d8c8d8c9d99c406161").format()).toBe(
+      "<error: the decoded CBOR value was not the expected type>",
+    );
+    expect(leaf("d8c8d8c9d99c40f93e00").format()).toBe(
+      "<error: the decoded CBOR value was not the expected type>",
+    );
+  });
+
+  it("function and parameter summarizers decode u64 ids and report other content as an error", () => {
+    expect(leaf("d8c8d8c9d99c461bffffffffffffffff").format()).toBe("«18446744073709551615»");
+    expect(leaf("d8c8d8c9d99c46f93e00").format()).toBe("<error: invalid function>");
+    expect(leaf("d8c8d8c9d99c4720").format()).toBe("<error: invalid parameter>");
+    expect(leaf("d8c8d8c9d99c4601").format()).toBe("«add»");
+    expect(leaf("d8c8d8c9d99c4605").format()).toBe("«5»");
+  });
+
+  it('the "none" context flanks the value\'s own name twice, as the reference does', async () => {
+    const { IS_A, VALUE, KnownValue } = await import("@blockchaincommons/known-values");
+    expect(Envelope.from(IS_A).format({ context: "none" })).toBe("''isA''");
+    expect(Envelope.from(new KnownValue(9999, "custom")).format({ context: "none" })).toBe(
+      "''custom''",
+    );
+    expect(Envelope.from(VALUE).format({ context: "none" })).toBe("''value''");
+    expect(Envelope.fromCbor(Envelope.from(VALUE).toCbor()).format({ context: "none" })).toBe(
+      "''25''",
+    );
+    expect(
+      Envelope.from("s").addAssertion(IS_A, "T").addAssertion("k", 1).format({
+        context: "none",
+        flat: true,
+      }),
+    ).toBe('"s" [ \'\'isA\'\': "T", "k": 1 ]');
+    // summaries keep the codepoint with no context
+    expect(Envelope.from(IS_A).summary({ context: "none" })).toBe("'1'");
+  });
+
+  it("a context prints its registered name, else the value's own name", async () => {
+    const { KnownValue, KnownValuesStore } = await import("@blockchaincommons/known-values");
+    const custom = Envelope.from(new KnownValue(9999, "custom"));
+    expect(custom.format()).toBe("'custom'");
+    expect(Envelope.fromCbor(custom.toCbor()).format()).toBe("'9999'");
+    // `summary` looks the raw value up in the context's store only
+    expect(custom.summary()).toBe("'9999'");
+    const ctx = new FormatContext({
+      knownValues: new KnownValuesStore([new KnownValue(9999, "other")]),
+    });
+    expect(custom.format({ context: ctx })).toBe("'other'");
+  });
+
+  it("request summaries render through the context captured at registration, flat", async () => {
+    const { KnownValue, KnownValuesStore } = await import("@blockchaincommons/known-values");
+    // 40004(40000(9999)) in a custom context: an empty tags store plus one known value
+    const reqKv = leaf("d8c8d8c9d99c44d99c4019270f");
+    const ctx = new FormatContext({
+      knownValues: new KnownValuesStore([new KnownValue(9999, "custom")]),
+    });
+    expect(reqKv.format({ context: ctx, flat: true })).toBe("40004(40000(9999))");
+    registerTagsIn(ctx);
+    expect(reqKv.format({ context: ctx, flat: true })).toBe("request('custom')");
+    expect(reqKv.formatFlat()).toBe("request('9999')");
+    // a request over a node leaf renders the node flat inside the summary in both modes
+    const reqNode = leaf("d8c8d8c9d99c44d8c883d8c96173a1d8c9616b190151a1d8c9616b01");
+    expect(reqNode.format()).toBe('request("s" [ "k": \'337\', "k": \'isA\' ])');
+    expect(reqNode.formatFlat()).toBe('request("s" [ "k": \'337\', "k": \'isA\' ])');
+    expect(reqNode.format({ context: ctx })).toBe('request("s" [ "k": \'1\', "k": \'337\' ])');
+  });
+
+  it("format items sort by code point", () => {
+    // U+FF61 (three UTF-16 units below the surrogates) sorts before U+1F600
+    expect(
+      Envelope.from("s").addAssertion("p", "\uFF61").addAssertion("p", "\u{1F600}").formatFlat(),
+    ).toBe('"s" [ "p": "\uFF61", "p": "\u{1F600}" ]');
+    expect(
+      Envelope.from("s").addAssertion("\uFF61", 1).addAssertion("\u{1F600}", 1).formatFlat(),
+    ).toBe('"s" [ "\uFF61": 1, "\u{1F600}": 1 ]');
+  });
+});
+
+describe("SSH summarizer parity with the reference's tags_registry.rs", () => {
   // Pinned regression tests for the four `TAG_SSH_TEXT_*` summarizers,
   // matching `bc-components-rust/src/tags_registry.rs:196-238`. CBOR shape
   // for all four is `tag(N, text:openssh_text)` and the summarizer outputs
@@ -440,7 +528,7 @@ describe("E1f — SSH summarizer parity with Rust tags_registry.rs:196-238", () 
   // from `bc-components-rust/src/lib.rs:361,473` (Ed25519 + ECDSA-P256
   // generated from seed 59f2293a5bce7d4de59e71b4207ac5d2).
 
-  it("renders TAG_SSH_TEXT_PRIVATE_KEY as SSHPrivateKey(refHexShort) (E1f-1)", async () => {
+  it("renders TAG_SSH_TEXT_PRIVATE_KEY as SSHPrivateKey(refHexShort)", async () => {
     const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { TAG_SSH_TEXT_PRIVATE_KEY } = await import("@blockchaincommons/tags");
     const text = `-----BEGIN OPENSSH PRIVATE KEY-----
@@ -456,7 +544,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
     expect(envelope.format()).toMatch(/^SSHPrivateKey\([0-9a-f]{8}\)$/);
   });
 
-  it("renders TAG_SSH_TEXT_PUBLIC_KEY as SSHPublicKey(refHexShort) (E1f-2)", async () => {
+  it("renders TAG_SSH_TEXT_PUBLIC_KEY as SSHPublicKey(refHexShort)", async () => {
     const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { TAG_SSH_TEXT_PUBLIC_KEY } = await import("@blockchaincommons/tags");
     const text =
@@ -466,7 +554,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
     expect(envelope.format()).toMatch(/^SSHPublicKey\([0-9a-f]{8}\)$/);
   });
 
-  it("renders TAG_SSH_TEXT_SIGNATURE as fixed 'SSHSignature' (E1f-3)", async () => {
+  it("renders TAG_SSH_TEXT_SIGNATURE as fixed 'SSHSignature'", async () => {
     const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { TAG_SSH_TEXT_SIGNATURE } = await import("@blockchaincommons/tags");
     const { SSHPublicKey, SSHSignature } = await import("@blockchaincommons/components/ssh");
@@ -481,7 +569,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
     expect(envelope.format()).toBe("SSHSignature");
   });
 
-  it("renders TAG_SSH_TEXT_CERTIFICATE as fixed 'SSHCertificate' (E1f-4)", async () => {
+  it("renders TAG_SSH_TEXT_CERTIFICATE as fixed 'SSHCertificate'", async () => {
     const { cbor, taggedValue } = await import("@blockchaincommons/dcbor");
     const { TAG_SSH_TEXT_CERTIFICATE } = await import("@blockchaincommons/tags");
     // Rust placeholder summarizer doesn't validate — any text payload works.
@@ -494,7 +582,7 @@ AAAECsX3CKi3hm5VrrU26ffa2FB2YrFogg45ucOVbIz4FQo1R7gUMbIYiAd/vnJV0TiFiX
   });
 });
 
-describe("summary truncation follows the reference (D3 closed)", () => {
+describe("summary truncation follows the reference", () => {
   // `envelope_summary.rs`: `if string.len() > max_length { chars().take(max_length) + "…" }`
   // — the UTF-8 byte length decides, the cut keeps whole characters.
   const text = "unicode ✓ ☺ 日本"; // 14 characters, 22 bytes

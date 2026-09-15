@@ -27,6 +27,13 @@ const pkg = createRequire(import.meta.url)(join(root, "package.json")) as {
 
 const built = existsSync(join(dist, "index.mjs"));
 
+/** The envelope surface these tests touch on the built module. */
+interface EnvelopeLike {
+  toCbor(): { toData(): Uint8Array };
+  digest(): { toHex(): string };
+  isKnownValue(): boolean;
+}
+
 /** Every subpath the package promises, as dist-relative base names. */
 const entries = Object.entries(pkg.exports)
   .filter(([key]) => key !== "./package.json")
@@ -87,6 +94,64 @@ describe.skipIf(!built)("dist packaging", () => {
       const params = /^(?:async\s+)?function\s*\w*\s*\(([^)]*)\)/.exec(fn.toString())?.[1] ?? "";
       if (!/^envelope\b/.test(params.trim())) continue;
       expect(typeof proto[name], name).toBe("function");
+    }
+  });
+
+  it("the CommonJS and ESM builds share one global format context", async () => {
+    const require_ = createRequire(import.meta.url);
+    let cjs: { getGlobalFormatContext: () => object; registerTags: () => void };
+    try {
+      cjs = require_(join(dist, "format.cjs")) as typeof cjs;
+    } catch (error) {
+      console.warn(`CJS entry could not be loaded in this environment: ${String(error)}`);
+      return;
+    }
+    const esm = (await import(join(dist, "format.mjs"))) as {
+      getGlobalFormatContext: () => { tags: { summarizer: (tag: number) => unknown } };
+      registerTags: () => void;
+    };
+    expect(cjs.getGlobalFormatContext()).toBe(esm.getGlobalFormatContext());
+    cjs.registerTags();
+    esm.registerTags();
+    // a registration through one build is what the other sees
+    expect(esm.getGlobalFormatContext().tags.summarizer(40000)).toBeDefined();
+    expect(
+      (
+        cjs.getGlobalFormatContext() as { tags: { summarizer: (t: number) => unknown } }
+      ).tags.summarizer(40000),
+    ).toBe(esm.getGlobalFormatContext().tags.summarizer(40000));
+  });
+
+  it("a known value from another copy of known-values builds the known-value case", async () => {
+    const require_ = createRequire(import.meta.url);
+    let cjsKv: { IS_A: object; KnownValue: unknown };
+    try {
+      cjsKv = require_("@blockchaincommons/known-values") as typeof cjsKv;
+    } catch (error) {
+      console.warn(`CJS known-values could not be loaded in this environment: ${String(error)}`);
+      return;
+    }
+    const esmKv = (await import("@blockchaincommons/known-values")) as { KnownValue: unknown };
+    expect(cjsKv.KnownValue).not.toBe(esmKv.KnownValue);
+    const { Envelope } = (await import(join(dist, "index.mjs"))) as {
+      Envelope: {
+        from: (x: unknown) => EnvelopeLike;
+        knownValue: (x: unknown) => EnvelopeLike;
+      };
+    };
+    const { format, registerTags } = (await import(join(dist, "format.mjs"))) as {
+      format: (e: EnvelopeLike) => string;
+      registerTags: () => void;
+    };
+    registerTags();
+    const hex = (e: EnvelopeLike): string => Buffer.from(e.toCbor().toData()).toString("hex");
+    const own = Envelope.knownValue(1);
+    for (const e of [Envelope.from(cjsKv.IS_A), Envelope.knownValue(cjsKv.IS_A)]) {
+      expect(hex(e)).toBe("d8c801");
+      expect(e.isKnownValue()).toBe(true);
+      expect(e.digest().toHex()).toBe(own.digest().toHex());
+      expect(e.digest().toHex().startsWith("2be2d79b")).toBe(true);
+      expect(format(e)).toBe("'isA'");
     }
   });
 

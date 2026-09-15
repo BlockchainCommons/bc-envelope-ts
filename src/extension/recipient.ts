@@ -30,6 +30,7 @@
 
 import { type Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
+import { cborErrorAt, viaComponents } from "../base/foreign-errors.js";
 import { SymmetricKey } from "@blockchaincommons/components";
 import {
   type Encrypter,
@@ -53,15 +54,18 @@ export interface RecipientOptions extends RngOptions {
 // ============================================================================
 
 /**
- * Adds a recipient assertion to this envelope.
- *
- * This method adds a `hasRecipient` assertion containing a `SealedMessage`
- * that holds the content key encrypted to the recipient's public key.
+ * Adds a `hasRecipient` assertion holding `contentKey` sealed to the
+ * recipient's public key (the reference's `add_recipient` /
+ * `add_recipient_opt`): the plaintext is the key's tagged CBOR.
  *
  * @param recipient - The recipient's public key (implements Encrypter)
  * @param contentKey - The symmetric key used to encrypt the envelope's subject
- * @param options - A fixed `nonce` or an `rng` for the ephemeral key and nonce
+ * @param options - A fixed `nonce` for the sealed message, or an `rng` for
+ *   the ephemeral key and the nonce
  * @returns A new envelope with the recipient assertion added
+ * @throws EnvelopeError `Components` (`components error: <message>`, `cause`
+ *   the `ComponentsError`) when components cannot seal to the key (a
+ *   low-order X25519 public key)
  */
 export function addRecipient(
   envelope: Envelope,
@@ -69,53 +73,52 @@ export function addRecipient(
   contentKey: SymmetricKey,
   options: RecipientOptions = {},
 ): Envelope {
-  // The plaintext is the key's tagged CBOR (37 bytes), as the reference seals it;
   // components' option type does not admit an explicit `undefined` member.
   const opts: { nonce?: Nonce; rng?: RandomNumberGenerator } = {};
   if (options.nonce !== undefined) opts.nonce = options.nonce;
   if (options.rng !== undefined) opts.rng = options.rng;
-  const sealedMessage = SealedMessage.seal(
-    encodeCbor(contentKey.toCbor()),
-    recipient.encapsulationPublicKey(),
-    opts,
+  const sealedMessage = viaComponents(() =>
+    SealedMessage.seal(encodeCbor(contentKey.toCbor()), recipient.encapsulationPublicKey(), opts),
   );
   return envelope.addAssertion(HAS_RECIPIENT, sealedMessage);
 }
 
 /**
- * Encrypts the envelope's subject and adds a recipient assertion.
- *
- * This is a convenience method that:
- * 1. Generates a random content key
- * 2. Encrypts the subject with the content key
- * 3. Adds a recipient assertion with the sealed content key
+ * Encrypts the envelope's subject with a fresh content key and adds a
+ * `hasRecipient` assertion sealing that key to `recipient` (the reference's
+ * `encrypt_subject_to_recipient`).
  *
  * @param recipient - The recipient's public key (implements Encrypter)
+ * @param options - `rng` draws the content key, the subject's nonce and the
+ *   sealed message's ephemeral key; `nonce` pins the sealed message's nonce
  * @returns A new envelope with encrypted subject and recipient assertion
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `InvalidParameter` when `recipient` is not an
+ *   `Encrypter`; `Components` when components cannot seal to the key
  */
 export function encryptSubjectToRecipient(
   envelope: Envelope,
   recipient: Encrypter,
-  options: RngOptions = {},
+  options: RecipientOptions = {},
 ): Envelope {
   if (!isEncrypter(recipient)) {
     throw EnvelopeError.invalidParameter("recipient", "an Encrypter", recipient);
   }
 
-  const contentKey = SymmetricKey.random(options);
-  const encrypted = envelope.encryptSubject(contentKey, options);
+  const rngOptions: RngOptions = options.rng === undefined ? {} : { rng: options.rng };
+  const contentKey = SymmetricKey.random(rngOptions);
+  const encrypted = envelope.encryptSubject(contentKey, rngOptions);
   return addRecipient(encrypted, recipient, contentKey, options);
 }
 
 /**
- * Encrypts the envelope's subject and adds recipient assertions for multiple recipients.
+ * Encrypts the envelope's subject with one fresh content key and adds a
+ * `hasRecipient` assertion for each of `recipients` (the reference's
+ * `encrypt_subject_to_recipients`); an empty list is accepted.
  *
- * @param recipients - Array of recipient public keys (each implements Encrypter)
+ * @param recipients - The recipients' public keys (each implements Encrypter)
  * @returns A new envelope with encrypted subject and recipient assertions
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `InvalidParameter` when a recipient is not an
+ *   `Encrypter`; `Components` when components cannot seal to a key
  */
 export function encryptSubjectToRecipients(
   envelope: Envelope,
@@ -137,11 +140,10 @@ export function encryptSubjectToRecipients(
 }
 
 /**
- * Returns all SealedMessages from the envelope's `hasRecipient` assertions.
+ * The `SealedMessage` of every unobscured `hasRecipient` assertion (the
+ * reference's `recipients`).
  *
- * @returns Array of SealedMessage objects
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `Cbor` when a present object is not a `SealedMessage`
  */
 export function recipients(envelope: Envelope): SealedMessage[] {
   // Obscured objects are skipped, as the reference does; a present one must decode.
@@ -153,17 +155,16 @@ export function recipients(envelope: Envelope): SealedMessage[] {
 }
 
 /**
- * Decrypts the envelope's subject using the recipient's private key.
- *
- * This method:
- * 1. Finds all `hasRecipient` assertions
- * 2. Tries to decrypt each sealed message until one succeeds
- * 3. Uses the recovered content key to decrypt the subject
+ * Decrypts the envelope's subject with the content key the recipient's
+ * private key opens (the reference's `decrypt_subject_to_recipient`): the
+ * first sealed message the key opens yields the content key, which must
+ * decode as a `SymmetricKey`.
  *
  * @param recipient - The recipient's private key (implements Decrypter)
  * @returns A new envelope with decrypted subject
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `UnknownRecipient` when no sealed message opens;
+ *   `Cbor` (`dcbor error: <message>`) when the sealed plaintext is not a
+ *   symmetric key; the errors of `recipients` and `decryptSubject`
  */
 export function decryptSubjectToRecipient(envelope: Envelope, recipient: Decrypter): Envelope {
   // The reference's order: find the first sealed message this key opens, then decrypt.
@@ -180,12 +181,14 @@ export function decryptSubjectToRecipient(envelope: Envelope, recipient: Decrypt
     throw EnvelopeError.unknownRecipient();
   }
 
-  // The sealed plaintext is the key's tagged CBOR.
+  // The sealed plaintext is the key's tagged CBOR; the reference's
+  // `SymmetricKey::from_tagged_cbor_data(...)?` reports a failure as `Cbor`
+  // with dcbor's own message.
   let contentKey: SymmetricKey;
   try {
     contentKey = SymmetricKey.fromCbor(decodeCbor(contentKeyData));
   } catch (error) {
-    throw EnvelopeError.cbor("invalid content key", error instanceof Error ? error : undefined);
+    throw cborErrorAt(error);
   }
   return envelope.decryptSubject(contentKey);
 }
@@ -218,5 +221,3 @@ export function encryptToRecipients(
 ): Envelope {
   return encryptSubjectToRecipients(envelope.wrap(), recipients, options);
 }
-
-// Import side-effect to register prototype extensions

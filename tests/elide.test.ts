@@ -146,3 +146,55 @@ describe("Elision Extension", () => {
     });
   });
 });
+
+describe("the encrypt action on obscured targets", () => {
+  it("encrypts an already encrypted target and decrypts back to the original", async () => {
+    const { SymmetricKey } = await import("@blockchaincommons/components");
+    const key = SymmetricKey.random();
+    const envelope = Envelope.from("s").addAssertion("p", "o");
+    const target = envelope.assertions()[0];
+    const once = envelope.elide({ removing: [target], action: { encrypt: key } });
+    const twice = once.elide({ removing: [target], action: { encrypt: key } });
+    expect(twice.formatFlat()).toBe('"s" [ ENCRYPTED ]');
+    expect(twice.digest().equals(envelope.digest())).toBe(true);
+    expect(twice.walkDecrypt([key]).isEquivalentTo(envelope)).toBe(true);
+  });
+
+  it("encrypts an already elided target, keeping the digest", async () => {
+    const { SymmetricKey } = await import("@blockchaincommons/components");
+    const key = SymmetricKey.random();
+    const envelope = Envelope.from("s").addAssertion("p", "o");
+    const target = envelope.assertions()[0];
+    const elided = envelope.elide({ removing: [target] });
+    const encrypted = elided.elide({ removing: [target], action: { encrypt: key } });
+    expect(encrypted.formatFlat()).toBe('"s" [ ENCRYPTED ]');
+    expect(encrypted.digest().equals(envelope.digest())).toBe(true);
+  });
+
+  it("the compress action still rejects encrypted and elided targets", async () => {
+    const { SymmetricKey } = await import("@blockchaincommons/components");
+    const key = SymmetricKey.random();
+    const envelope = Envelope.from("s").addAssertion("p", "o");
+    const target = envelope.assertions()[0];
+    const encrypted = envelope.elide({ removing: [target], action: { encrypt: key } });
+    expect(() => encrypted.elide({ removing: [target], action: "compress" })).toThrow(
+      "envelope was already encrypted or compressed, so it cannot be encrypted",
+    );
+    const elided = envelope.elide({ removing: [target] });
+    expect(() => elided.elide({ removing: [target], action: "compress" })).toThrow(
+      "envelope was elided, so it cannot be compressed or encrypted",
+    );
+  });
+
+  it("encryptSubject keeps its checks", async () => {
+    const { SymmetricKey } = await import("@blockchaincommons/components");
+    const key = SymmetricKey.random();
+    const encrypted = Envelope.from("s").encryptSubject(key);
+    expect(() => encrypted.encryptSubject(key)).toThrow(
+      "envelope was already encrypted or compressed, so it cannot be encrypted",
+    );
+    expect(() => Envelope.from("s").elide().encryptSubject(key)).toThrow(
+      "envelope was elided, so it cannot be compressed or encrypted",
+    );
+  });
+});

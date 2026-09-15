@@ -1,5 +1,6 @@
 import { Envelope } from "../src/index.js";
 import { Attachments } from "../src/extension/attachment.js";
+import { ATTACHMENT, VENDOR } from "@blockchaincommons/known-values";
 import "../src/all.js";
 
 describe("Attachment Extension", () => {
@@ -134,5 +135,76 @@ describe("Attachment Extension", () => {
       const attachments = complexAttachment.attachments();
       expect(attachments.length).toBe(1);
     });
+  });
+});
+
+describe("attachment validation follows the reference", () => {
+  const code = (f: () => unknown): string => {
+    try {
+      f();
+      return "ok";
+    } catch (e) {
+      const x = e as { code: string; message: string };
+      return `${x.code}:${x.message}`;
+    }
+  };
+
+  it("a non-assertion is InvalidAttachment with the reference's text", () => {
+    expect(code(() => Envelope.from("x").validateAttachment())).toBe(
+      "InvalidAttachment:invalid attachment",
+    );
+    expect(code(() => Envelope.from("x").attachmentVendor())).toBe(
+      "InvalidAttachment:invalid attachment",
+    );
+  });
+
+  it("an object that is not wrapped is NotWrapped (the payload is read first)", () => {
+    const bogus = Envelope.assertion(ATTACHMENT, Envelope.from("p").addAssertion(VENDOR, "v"));
+    expect(code(() => bogus.validateAttachment())).toBe(
+      "NotWrapped:cannot unwrap an envelope that was not wrapped",
+    );
+  });
+
+  it("a wrong predicate or an extra assertion fails the rebuild", () => {
+    const wrongPredicate = Envelope.assertion(
+      "x",
+      Envelope.from("p").wrap().addAssertion(VENDOR, "v"),
+    );
+    expect(code(() => wrongPredicate.validateAttachment())).toBe(
+      "InvalidAttachment:invalid attachment",
+    );
+    const extra = Envelope.assertion(
+      ATTACHMENT,
+      Envelope.from("p").wrap().addAssertion(VENDOR, "v").addAssertion("x", 1),
+    );
+    expect(code(() => extra.validateAttachment())).toBe("InvalidAttachment:invalid attachment");
+  });
+
+  it("the vendor is read by subject extraction", () => {
+    const annotatedVendor = Envelope.assertion(
+      ATTACHMENT,
+      Envelope.from("p").wrap().addAssertion(VENDOR, Envelope.from("v").addAssertion("x", 1)),
+    );
+    expect(annotatedVendor.attachmentVendor()).toBe("v");
+    const intVendor = Envelope.assertion(
+      ATTACHMENT,
+      Envelope.from("p").wrap().addAssertion(VENDOR, 1),
+    );
+    expect(code(() => intVendor.attachmentVendor())).toBe(
+      "Cbor:dcbor error: the decoded CBOR value was not the expected type",
+    );
+    const noVendor = Envelope.assertion(ATTACHMENT, Envelope.from("p").wrap());
+    expect(code(() => noVendor.attachmentVendor())).toBe(
+      "NonexistentPredicate:no assertion matches the predicate",
+    );
+  });
+
+  it("several matching attachments are the reference's `abiguous attachment`", () => {
+    const envelope = Envelope.from("Data")
+      .addAttachment("Attachment 1", "com.example", "https://example.com/v1")
+      .addAttachment("Attachment 2", "com.example", "https://example.com/v1");
+    expect(code(() => envelope.expectAttachment({ vendor: "com.example" }))).toBe(
+      "AmbiguousAttachment:abiguous attachment",
+    );
   });
 });

@@ -1,0 +1,56 @@
+{
+ "count": 2,
+ "vectors": [
+  {
+   "name": "leaf:text:Hello.",
+   "recipe": {
+    "e": {
+     "k": "leaf",
+     "v": {
+      "t": "text",
+      "v": "Hello."
+     }
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c8d8c96648656c6c6f2e\n---\nur:envelope/tpsoiyfdihjzjzjldmksbaoede\n---\n8cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59\n---\n\"Hello.\"\n---\n\"Hello.\"\n---\n8cc96cdb \"Hello.\"\n---\n8cc96cdb \"Hello.\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;Hello.&quot;<br>8cc96cdb\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\"Hello.\")\n)\n---\nd8 c8                       # tag(200) envelope\n    d8 c9                   # tag(201) leaf\n        66                  # text(6)\n            48656c6c6f2e    # \"Hello.\"\n---\n\"Hello.\""
+  },
+  {
+   "name": "noreg kv:1 (a noreg row after a registered one: must be a MISMATCH)",
+   "recipe": {
+    "e": {
+     "k": "noreg",
+     "inner": {
+      "k": "kv",
+      "v": 1
+     }
+    },
+    "outs": [
+     "cbor",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c801\n---\n2be2d79b306a21ff8e3e6bd3d1c2c6c74ff4a693b1e7ba3a0f40cdfb9ea493f8\n---\n'isA'\n---\n'isA'\n---\n2be2d79b 'isA'\n---\n2be2d79b 'isA'\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[/\"'isA'<br>2be2d79b\"/]\nstyle 0 stroke:goldenrod,stroke-width:4px\n---\n200(1)\n---\nd8 c8   # tag(200) envelope\n    01  # unsigned(1)\n---\n'isA'"
+  }
+ ]
+}

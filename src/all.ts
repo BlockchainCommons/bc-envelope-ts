@@ -145,12 +145,28 @@ declare module "./base/envelope.js" {
     lockSubject(
       ...args: Tail<Parameters<typeof xsecret.lockSubject>>
     ): ReturnType<typeof xsecret.lockSubject>;
+    /** Method form of `lockSubjectWith` from `@blockchaincommons/envelope/secret`. */
+    lockSubjectWith(
+      ...args: Tail<Parameters<typeof xsecret.lockSubjectWith>>
+    ): ReturnType<typeof xsecret.lockSubjectWith>;
+    /** Method form of `lockWith` from `@blockchaincommons/envelope/secret`. */
+    lockWith(
+      ...args: Tail<Parameters<typeof xsecret.lockWith>>
+    ): ReturnType<typeof xsecret.lockWith>;
     /** Method form of `unlock` from `@blockchaincommons/envelope/secret`. */
     unlock(...args: Tail<Parameters<typeof xsecret.unlock>>): ReturnType<typeof xsecret.unlock>;
     /** Method form of `unlockSubject` from `@blockchaincommons/envelope/secret`. */
     unlockSubject(
       ...args: Tail<Parameters<typeof xsecret.unlockSubject>>
     ): ReturnType<typeof xsecret.unlockSubject>;
+    /** Method form of `unlockSubjectWith` from `@blockchaincommons/envelope/secret`. */
+    unlockSubjectWith(
+      ...args: Tail<Parameters<typeof xsecret.unlockSubjectWith>>
+    ): ReturnType<typeof xsecret.unlockSubjectWith>;
+    /** Method form of `unlockWith` from `@blockchaincommons/envelope/secret`. */
+    unlockWith(
+      ...args: Tail<Parameters<typeof xsecret.unlockWith>>
+    ): ReturnType<typeof xsecret.unlockWith>;
     /** Method form of `addSignature` from `@blockchaincommons/envelope/signature`. */
     addSignature(
       ...args: Tail<Parameters<typeof xsignature.addSignature>>
@@ -327,8 +343,12 @@ install("isLockedWithPassword", xsecret.isLockedWithPassword);
 install("isLockedWithSshAgent", xsecret.isLockedWithSshAgent);
 install("lock", xsecret.lock);
 install("lockSubject", xsecret.lockSubject);
+install("lockSubjectWith", xsecret.lockSubjectWith);
+install("lockWith", xsecret.lockWith);
 install("unlock", xsecret.unlock);
 install("unlockSubject", xsecret.unlockSubject);
+install("unlockSubjectWith", xsecret.unlockSubjectWith);
+install("unlockWith", xsecret.unlockWith);
 install("addSignature", xsignature.addSignature);
 install("addSignatures", xsignature.addSignatures);
 install("hasSignatureFrom", xsignature.hasSignatureFrom);

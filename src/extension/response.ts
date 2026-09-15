@@ -217,14 +217,15 @@ export class Response implements ToEnvelope {
   }
 
   /**
-   * The id; `General` when the response has none.
+   * The id; `General` (`Expected an ID`, the reference's panic text) when
+   * the response has none.
    *
    * @throws EnvelopeError with code `General`.
    */
   expectId(): ARID {
     const id = this.id;
     if (id === undefined) {
-      throw EnvelopeError.general("expected an ID");
+      throw EnvelopeError.general("Expected an ID");
     }
     return id;
   }
@@ -273,23 +274,20 @@ export class Response implements ToEnvelope {
    * as the subject and an 'error' assertion.
    */
   toEnvelope(): Envelope {
+    // The subject is the tagged ARID (or the tagged `'Unknown'` known
+    // value) inside the response tag, as the reference's
+    // `CBOR::to_tagged_value(TAG_RESPONSE, id)` builds it; the outer tag is
+    // the bare number, as the reference's constant is.
     if (this._result.ok) {
-      // Wrap the **tagged** ARID inside the response tag — mirrors
-      // the reference `CBOR::to_tagged_value(TAG_RESPONSE, response.id)` which
-      // dispatches via `From<ARID> for CBOR` (the tagged form). See
-      // request.ts for the same fix and rationale.
-      const taggedArid = taggedValue(TAG_RESPONSE, this._result.id.toCbor());
+      const taggedArid = taggedValue(TAG_RESPONSE.value, this._result.id.toCbor());
       return Envelope.leaf(taggedArid).addAssertion(RESULT, this._result.result);
     } else {
       let subject: Envelope;
       if (this._result.id !== undefined) {
-        const taggedArid = taggedValue(TAG_RESPONSE, this._result.id.toCbor());
+        const taggedArid = taggedValue(TAG_RESPONSE.value, this._result.id.toCbor());
         subject = Envelope.leaf(taggedArid);
       } else {
-        // UNKNOWN_VALUE is a `KnownValue`; its tagged-CBOR form is
-        // tag(40000, uint(N)). Mirror the reference's
-        // `CBOR::to_tagged_value(TAG_RESPONSE, KnownValue::Unknown)`.
-        const taggedUnknown = taggedValue(TAG_RESPONSE, UNKNOWN_VALUE.toCbor());
+        const taggedUnknown = taggedValue(TAG_RESPONSE.value, UNKNOWN_VALUE.toCbor());
         subject = Envelope.leaf(taggedUnknown);
       }
       return subject.addAssertion(ERROR, this._result.error);
@@ -297,40 +295,39 @@ export class Response implements ToEnvelope {
   }
 
   /**
-   * Creates a response from an envelope.
+   * Reads a response from an envelope (the reference's
+   * `Response::try_from(envelope)`): exactly one of `'result'` and `'error'`
+   * must be present, then the subject is `TAG_RESPONSE(ARID)`, or
+   * `TAG_RESPONSE('Unknown')` for a failure without an id.
    *
-   * @throws EnvelopeError with code `InvalidResponse`, `General`.
+   * @throws EnvelopeError `InvalidResponse` when neither or both of `'result'` and
+   *   `'error'` are present (or either is present more than once), or a failure's
+   *   known-value id is not `'Unknown'`; `NotLeaf` / `Cbor` (`dcbor error: <Display>`)
+   *   when the subject is not the tagged id
    */
   static fromEnvelope(envelope: Envelope): Response {
-    // Check for result or error assertion
+    // Exactly one of `'result'` and `'error'`, each present once.
     let hasResult = false;
     let hasError = false;
 
     try {
-      const resultObj = envelope.objectForPredicate(RESULT);
-      hasResult = resultObj !== undefined;
+      envelope.assertionWithPredicate(RESULT);
+      hasResult = true;
     } catch {
-      // No result
+      // No single result
     }
 
     try {
-      const errorObj = envelope.objectForPredicate(ERROR);
-      hasError = errorObj !== undefined;
+      envelope.assertionWithPredicate(ERROR);
+      hasError = true;
     } catch {
-      // No error
+      // No single error
     }
 
-    // Must have exactly one of result or error
     if (hasResult === hasError) {
       throw EnvelopeError.invalidResponse();
     }
 
-    // Extract ARID from tagged subject. The subject is either
-    // TAG_RESPONSE(tag_40012(arid_bytes)) for a successful/known-id
-    // response, or TAG_RESPONSE(tag_40000(uint)) for an
-    // UNKNOWN_VALUE id. See toEnvelope above.
-    // The subject is TAG_RESPONSE(ARID), or TAG_RESPONSE('Unknown') for a
-    // failure without an id; `NotLeaf` / `Cbor` when it is neither.
     const content = expectTaggedSubject(envelope, TAG_RESPONSE.value);
     let id: ARID | undefined;
     if (hasResult) {
@@ -376,23 +373,24 @@ export class Response implements ToEnvelope {
   }
 
   /**
-   * Checks equality with another response.
+   * Checks equality with another response: the same outcome, the same id
+   * (or none on both) and an equal result or error envelope (the
+   * reference's derived `PartialEq`).
    */
   equals(other: Response): boolean {
-    if (this._result.ok !== other._result.ok) return false;
-
     if (this._result.ok && other._result.ok) {
-      return this._result.id.equals(other._result.id);
+      return (
+        this._result.id.equals(other._result.id) &&
+        this._result.result.digest().equals(other._result.result.digest())
+      );
     }
 
     if (!this._result.ok && !other._result.ok) {
-      if (this._result.id === undefined && other._result.id === undefined) {
-        return true;
-      }
-      if (this._result.id !== undefined && other._result.id !== undefined) {
-        return this._result.id.equals(other._result.id);
-      }
-      return false;
+      const sameId =
+        this._result.id === undefined || other._result.id === undefined
+          ? this._result.id === other._result.id
+          : this._result.id.equals(other._result.id);
+      return sameId && this._result.error.digest().equals(other._result.error.digest());
     }
 
     return false;

@@ -276,9 +276,16 @@ const formatEnvelope = (envelope: Envelope, opts: EnvelopeFormatOpts): EnvelopeF
       return formatAssertion(c.assertion, opts);
 
     case "knownValue": {
-      // As in `summary`: the context's registered name, else the codepoint.
+      // The reference's `EnvelopeFormat for KnownValue`: with no context the
+      // value's own name is flanked with single quotes once by the `None`
+      // arm and once more by the common exit, so it prints as `''isA''`;
+      // reproduced deliberately, because that is what the reference
+      // prints. With a context, the context's registered name, else the
+      // value's own name (`'custom'` in memory, `'9999'` after a round
+      // trip).
       const ctx = resolveFormatContext(opts.context);
-      const name = ctx?.knownValues.assignedNameOf(c.value) ?? String(c.value.value);
+      if (ctx === undefined) return formatItem(`''${c.value.name}''`);
+      const name = ctx.knownValues.assignedNameOf(c.value) ?? c.value.name;
       return formatItem(`'${name}'`);
     }
 
@@ -338,14 +345,9 @@ const formatEnvelope = (envelope: Envelope, opts: EnvelopeFormatOpts): EnvelopeF
         }
       }
 
-      // Sort assertion items
-      //
-      // lexicographic comparison over the **entire** items array,
-      // not just the first element. With `compareFormatItems` returning
-      // bytewise (UTF-8) differences for `item`/`begin`/`end`, two
-      // assertions like `"a" : 0` and `"a" : 1` now sort by the integer
-      // suffix (since the first three items match exactly), matching
-      // the reference output.
+      // Sort assertion items: a lexicographic comparison over the whole
+      // item array, so `"a": 0` sorts before `"a": 1` by its last item, as
+      // the reference's `Vec<EnvelopeFormatItem>` ordering does.
       typeAssertionItems.sort((a, b) => compareFormatItemArrays(a, b));
       assertionItems.sort((a, b) => compareFormatItemArrays(a, b));
 
@@ -402,24 +404,32 @@ const formatEnvelope = (envelope: Envelope, opts: EnvelopeFormatOpts): EnvelopeF
 };
 
 /**
- * Compare two strings bytewise (UTF-8 code-unit comparison), matching
- * the reference `String::cmp` (which compares the UTF-8 byte slices). JavaScript's
- * default `<`/`>` on strings is also a code-unit comparison, so we use
- * that directly instead of `localeCompare` (locale-dependent).
+ * Compare two strings by code point, the order the reference's `String::cmp`
+ * gives by comparing UTF-8 bytes (UTF-8 preserves code-point order).
+ * JavaScript's `<` compares UTF-16 code units, which puts an astral
+ * character (U+1F600, a surrogate pair) before U+E000–U+FFFF; walking the
+ * code points restores the reference's order.
  */
-const compareStringsBytewise = (a: string, b: string): number => {
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
+const compareCodePoints = (a: string, b: string): number => {
+  const ai = a[Symbol.iterator]();
+  const bi = b[Symbol.iterator]();
+  for (;;) {
+    const x = ai.next();
+    const y = bi.next();
+    if (x.done === true) return y.done === true ? 0 : -1;
+    if (y.done === true) return 1;
+    const d = (x.value.codePointAt(0) ?? 0) - (y.value.codePointAt(0) ?? 0);
+    if (d !== 0) return d;
+  }
 };
 
 /**
  * Compare format items for sorting.
  *
- * Mirrors the `Ord` derivation the reference gets on `EnvelopeFormatItem`:
- * variants are ordered by their declaration order, and `item`/`begin`/
- * `end` carrying string payloads are compared bytewise. The TS
- * declaration order is `begin → end → item → separator → list`, which
+ * Mirrors the reference's `Ord` on `EnvelopeFormatItem`: variants are
+ * ordered by their declaration order (`begin`, `end`, `item`, `separator`,
+ * `list`), and the string payloads of `item`/`begin`/`end` are compared by
+ * code point.
  */
 const compareFormatItems = (a: EnvelopeFormatItem, b: EnvelopeFormatItem): number => {
   const getIndex = (item: EnvelopeFormatItem): number => {
@@ -444,15 +454,15 @@ const compareFormatItems = (a: EnvelopeFormatItem, b: EnvelopeFormatItem): numbe
     return aIndex - bIndex;
   }
 
-  // Same type, compare values bytewise (matches the reference `String::cmp`).
+  // Same type, compare values by code point (the reference's `String::cmp`).
   if (a.type === "item" && b.type === "item") {
-    return compareStringsBytewise(a.value, b.value);
+    return compareCodePoints(a.value, b.value);
   }
   if (a.type === "begin" && b.type === "begin") {
-    return compareStringsBytewise(a.value, b.value);
+    return compareCodePoints(a.value, b.value);
   }
   if (a.type === "end" && b.type === "end") {
-    return compareStringsBytewise(a.value, b.value);
+    return compareCodePoints(a.value, b.value);
   }
   if (a.type === "list" && b.type === "list") {
     return compareFormatItemArrays(a.items, b.items);
@@ -500,6 +510,7 @@ export function formatFlat(envelope: Envelope, options: Omit<FormatOptions, "fla
 // All exports are done inline above with 'export const' and 'export interface'
 
 // The request/response/event tag summarisers in the format context need to
-// format an inner envelope; installing the formatter here (the module that
+// format an inner envelope with the summariser's `flat` and the context
+// captured at registration; installing the formatter here (the module that
 // owns it) keeps the module graph free of a value-import cycle.
-setEnvelopeFormatHook((cbor, _flat) => format(Envelope.leaf(cbor)));
+setEnvelopeFormatHook((cbor, flat, context) => format(Envelope.leaf(cbor), { flat, context }));

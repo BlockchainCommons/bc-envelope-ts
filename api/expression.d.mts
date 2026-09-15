@@ -1,7 +1,9 @@
 import { ARID } from '@blockchaincommons/components';
 import { Cbor } from '@blockchaincommons/dcbor';
 import { CborCodec } from '@blockchaincommons/dcbor';
+import { CborDate } from '@blockchaincommons/dcbor';
 import { CborMap } from '@blockchaincommons/dcbor';
+import { CborTagged } from '@blockchaincommons/dcbor';
 import { Compressed } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
 import { EncryptedMessage } from '@blockchaincommons/components';
@@ -141,7 +143,9 @@ declare class Assertion implements DigestProvider {
      *
      * @param cbor - The CBOR value to convert
      * @returns A new Assertion instance
-     * @throws {EnvelopeError} If the CBOR is not a valid assertion
+     * @throws EnvelopeError with code `InvalidAssertion` when the CBOR is not
+     *   a single-element map; `Cbor` (`dcbor error: <Display>`) when the key
+     *   or the value is not an envelope
      */
     static fromCbor(cbor: Cbor): Assertion;
     /**
@@ -153,7 +157,9 @@ declare class Assertion implements DigestProvider {
      *
      * @param map - The CBOR map to convert
      * @returns A new Assertion instance
-     * @throws {EnvelopeError} If the map doesn't have exactly one entry
+     * @throws EnvelopeError with code `InvalidAssertion` when the map does not
+     *   have exactly one entry; `Cbor` (`dcbor error: <Display>`) when the key
+     *   or the value is not an envelope
      */
     static fromCborMap(map: CborMap): Assertion;
     /**
@@ -169,6 +175,9 @@ export declare const BLANK: Parameter;
 
 /** Type for CBOR decoder functions */
 declare type CborDecoder<T> = (cbor: Cbor) => T;
+
+/** Both absent, or both present and equal to the nanosecond. */
+export declare function datesEqual(a: CborDate | undefined, b: CborDate | undefined): boolean;
 
 /**
  * Trait for types that can provide a digest.
@@ -497,37 +506,49 @@ declare class Envelope implements DigestProvider {
      * @returns The tagged CBOR
      */
     toCbor(): Cbor;
-    /** Tagged-CBOR codec; `decode` also accepts the untagged form. */
+    /** Tagged-CBOR codec; `decode` requires tag 200 (`fromCbor`), like every codec in the stack. */
     static get codec(): CborCodec<Envelope>;
     /** The envelope tag (200). */
     cborTags(): Tag[];
     /** As `ur:envelope/…`. */
     toUR(): UR;
     /**
-     * Decodes an envelope from its tagged CBOR (tag 200).
+     * Decodes an envelope from its tagged CBOR (tag 200): the reference's
+     * `TryFrom<CBOR>` / `from_tagged_cbor`.
      *
-     * @throws {EnvelopeError} If the CBOR is not a tagged envelope
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor
+     *   Display and whose `cause` is the `CborError`: `WrongType` for an
+     *   untagged value, `WrongTag` for another tag (the expected tag named as
+     *   the global tags store names it), else what `fromUntaggedCbor` reports.
      */
     static fromCbor(cbor: Cbor): Envelope;
     /**
-     * Decodes an envelope from tagged CBOR bytes.
+     * Decodes an envelope from tagged CBOR bytes: the reference's
+     * `try_from_cbor_data`.
      *
-     * @throws {EnvelopeError} If the data is not valid CBOR or not an envelope
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+     *   of the byte-level failure (`early end of CBOR data`, `the decoded CBOR
+     *   had 1 extra bytes at the end`, `a CBOR numeric value was encoded in
+     *   non-canonical form`, …) and whose `cause` is the `CborError`; then as
+     *   `fromCbor`.
      */
     static fromBytes(data: Uint8Array): Envelope;
     /**
-     * Creates an envelope from untagged CBOR.
+     * Decodes an envelope from its untagged CBOR (the content of tag 200): the
+     * reference's `from_untagged_cbor`. A tag-24 or tag-201 value is a leaf, a
+     * tag-200 value a wrapped envelope, tag 40002 an encrypted message, tag
+     * 40003 a compressed value, a 32-byte string an elided envelope, an array
+     * a node, a single-element map an assertion and an unsigned integer a
+     * known value.
      *
-     * Every failure is `Cbor` (the reference decodes through `dcbor`, whose
-     * error is what `try_from_cbor_data` returns); the message names the
-     * structural fault (`node must have at least two elements`, `assertion
-     * must be a map with exactly one element`, …) and `cause` keeps the
-     * original.
-     *
-     * @param cbor - The untagged CBOR value
-     * @returns A new envelope
-     *
-     * @throws EnvelopeError with code `Cbor`.
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+     *   the reference returns and whose `cause` is the `CborError`: the dcbor
+     *   error of a malformed component as it is, else `Custom` with the
+     *   reference's text (`unknown envelope tag: <n>`, `invalid digest size:
+     *   expected 32, got <n>`, `node must have at least two elements`,
+     *   `invalid format`, `assertion must be a map with exactly one element`,
+     *   `a digest was expected but not found`, `invalid envelope`). A failure
+     *   inside an assertion's key or value nests as `dcbor error: <message>`.
      */
     static fromUntaggedCbor(cbor: Cbor): Envelope;
     private static decodeUntagged;
@@ -586,10 +607,16 @@ declare class Envelope implements DigestProvider {
      * cannot be correlated with another envelope of the same content.
      *
      * By default the salt length is proportional to the envelope's size
-     * (5–25 %, at least 8 bytes); give `length`, a `range`, or the exact
-     * `salt` instead. `rng` overrides the secure default.
+     * (5–25 %, at least 8 bytes; the reference's `add_salt_using`); give
+     * `length` (`add_salt_with_len_using`), a `range`
+     * (`add_salt_in_range_using`), or the exact `salt` (`add_salt_instance`)
+     * instead. `rng` overrides the secure default. The salt itself comes from
+     * components' `Salt`, whose checks the reference's `Salt::new_*` make.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `InvalidParameter` for a length or bound
+     *   that is not a non-negative integer; `Components` (the components
+     *   message, e.g. `data too short: salt expected at least 8, got 7`) for a
+     *   length below 8 or a bound the reference rejects.
      */
     addSalt({ salt, length, range, rng }?: SaltOptions): Envelope;
     /**
@@ -613,11 +640,13 @@ declare class Envelope implements DigestProvider {
     replaceSubject(subject: Envelope): Envelope;
     /** The assertions of a node (a frozen array); empty for every other case. */
     assertions(): readonly Envelope[];
-    /** `true` when the envelope is the boolean leaf `false`. */
+    /** The subject extracted with `decoder` (`extract_subject`), or `undefined` when it cannot be. */
+    private trySubject;
+    /** `true` when the subject is the boolean `false` (the reference's `is_false`: subject extraction, so a node whose subject is `false` qualifies). */
     isFalse(): boolean;
-    /** `true` when the envelope is the boolean leaf `true`. */
+    /** `true` when the subject is the boolean `true` (the reference's `is_true`). */
     isTrue(): boolean;
-    /** `true` when the envelope is a boolean leaf. */
+    /** `true` when the subject is a boolean (the reference's `is_bool`). */
     isBool(): boolean;
     /** `true` when the envelope is a number leaf. */
     isNumber(): boolean;
@@ -627,7 +656,7 @@ declare class Envelope implements DigestProvider {
     isNaN(): boolean;
     /** `true` when the envelope is a node whose subject is `NaN`. */
     isSubjectNaN(): boolean;
-    /** `true` when the envelope is the `null` leaf. */
+    /** `true` when the subject is `null` (the reference's `is_null`: subject extraction). */
     isNull(): boolean;
     /** A copy of the subject's bytes, or `undefined` when it is not a byte-string leaf. */
     asBytes(): Uint8Array<ArrayBuffer> | undefined;
@@ -738,13 +767,25 @@ declare class Envelope implements DigestProvider {
     /** `true` when the envelope is elided or a node whose subject is (recursively). */
     isSubjectElided(): boolean;
     /**
-     * Adds a `'position'` assertion with the given ordinal.
+     * Adds a `'position'` assertion with the given ordinal (the reference's
+     * `set_position(usize)`): a non-negative safe integer `number`, or a
+     * `bigint` in `0 ..= 2⁶⁴ − 1` for the exact form.
      *
-     * @throws EnvelopeError with code `InvalidFormat`.
+     * @throws EnvelopeError with code `InvalidParameter` for any other value;
+     *   `InvalidFormat` when the envelope already has several positions.
      */
-    setPosition(position: number): Envelope;
-    /** The value of the `'position'` assertion, or `undefined`. */
-    position(): number;
+    setPosition(position: number | bigint): Envelope;
+    /**
+     * The value of the `'position'` assertion (the reference's `position()`,
+     * `extract_subject::<usize>()`): a `number` when at most `2⁵³ − 1`, a
+     * `bigint` otherwise. A negative integer wraps to `2⁶⁴ + n`, as the
+     * reference's `usize::try_from(CBOR)` wraps it.
+     *
+     * @throws EnvelopeError with code `NonexistentPredicate` /
+     *   `AmbiguousPredicate` when there is not exactly one position; `Cbor`
+     *   (`dcbor error: <Display>`) when its object is not an integer in range.
+     */
+    position(): number | bigint;
     /**
      * A copy without the `'position'` assertion.
      *
@@ -811,8 +852,6 @@ declare class Envelope implements DigestProvider {
     private elideAll;
     /** Elides everything whose digest is in `target`, with `action` (elide, compress or encrypt). */
     private elideRemovingWith;
-    /** Elides everything whose digest is not in `target` (revealing mode) with `action`. */
-    elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     /** Elides everything whose digest is not in `target`, with `action` (elide, compress or encrypt). */
     private elideRevealingWith;
     /**
@@ -867,26 +906,56 @@ declare class Envelope implements DigestProvider {
      */
     walkDecompress(targetDigests?: Set<Digest>): Envelope;
     /**
-     * Add the tryLeaf method to Envelope prototype.
+     * The leaf's CBOR: the reference's `try_leaf()`.
      *
-     * This extracts the leaf CBOR value from an envelope.
-     *
-     * @throws EnvelopeError with code `NotLeaf`.
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf.
      */
     expectLeaf(): Cbor;
-    /** The subject's text; `NotLeaf` / `Cbor` when it is not a text leaf. */
+    /**
+     * The leaf's text: the reference's `String::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+     *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+     *   is not text.
+     */
     expectString(): string;
-    /** The subject's number; `NotLeaf` / `Cbor` when it is not a number leaf. */
+    /**
+     * The leaf's number as dcbor's `expectFloat` reads it: the reference's
+     * `f64::try_from(envelope)`. An integer the `f64` cannot represent exactly
+     * is rejected (`OutOfRange`), as the reference rejects it.
+     *
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+     *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+     *   is not a representable number.
+     */
     expectNumber(): number;
-    /** The subject's boolean; `NotLeaf` / `Cbor` when it is not a boolean leaf. */
+    /**
+     * The leaf's boolean: the reference's `bool::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectBoolean(): boolean;
-    /** A copy of the subject's bytes; `NotLeaf` / `Cbor` when it is not a byte-string leaf. */
+    /**
+     * A copy of the leaf's bytes: the reference's `ByteString::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectBytes(): Uint8Array<ArrayBuffer>;
-    /** `null`; `NotLeaf` / `Cbor` when the subject is not the `null` leaf. */
+    /**
+     * `null` when the leaf is the `null` value.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectNull(): null;
-    /** The subject's tag-1 date as a `Date`; `NotLeaf` / `Cbor` when it is not a date leaf. */
+    /**
+     * The subject's tag-1 date as a `Date` (millisecond precision): the
+     * reference's `extract_subject::<Date>()` viewed as a `Date`; use
+     * `expectSubject(CborDate.fromTaggedCbor)` for the exact value.
+     *
+     * @throws EnvelopeError as `expectSubject`.
+     */
     expectDate(): Date;
-    /** `extractSubject` as a method. */
+    /** `extractSubject` as a method: the reference's `extract_subject::<T>()`. */
     expectSubject<T>(decoder: CborDecoder<T>): T;
     /**
      * Add tryObjectForPredicate method to Envelope prototype
@@ -902,16 +971,21 @@ declare class Envelope implements DigestProvider {
     expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     /**
      * A copy with the subject encrypted by `key` (ChaCha20-Poly1305 over the
-     * subject's CBOR, the digest as AAD); `AlreadyEncrypted` / `AlreadyElided`
-     * when it cannot be.
+     * subject's CBOR, the digest as AAD): the reference's `encrypt_subject`.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `AlreadyEncrypted` when the subject is
+     *   encrypted or compressed; `AlreadyElided` when it is elided.
      */
     encryptSubject(key: SymmetricKey, options?: EncryptOptions): Envelope;
     /**
-     * A copy with the subject decrypted by `key`; `NotEncrypted` / `Components` on failure.
+     * A copy with the subject decrypted by `key` (the reference's
+     * `decrypt_subject`).
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `NotEncrypted` when the subject is not
+     *   encrypted; `Components` (`components error: <Display>`) when the key
+     *   does not open it; `Cbor` (`dcbor error: <Display>`) when the plaintext
+     *   is not an envelope; `MissingDigest` / `InvalidDigest` on a digest
+     *   mismatch.
      */
     decryptSubject(key: SymmetricKey): Envelope;
     /** Wraps this envelope and encrypts the wrapper's subject, so the whole envelope is hidden. */
@@ -921,15 +995,20 @@ declare class Envelope implements DigestProvider {
     /** `true` when the envelope is encrypted. */
     isEncrypted(): boolean;
     /**
-     * A copy compressed (deflate over its CBOR); this envelope when already compressed.
+     * A copy compressed (deflate over its CBOR): the reference's `compress`;
+     * this envelope when already compressed.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `AlreadyEncrypted` when the envelope is
+     *   encrypted; `AlreadyElided` when it is elided.
      */
     compress(): Envelope;
     /**
-     * A copy decompressed; this envelope when it is not compressed.
+     * A copy decompressed (the reference's `decompress`).
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `NotCompressed` when the envelope is not
+     *   compressed; `Components` (`components error: <Display>`) for a corrupt
+     *   stream; `Cbor` (`dcbor error: <Display>`) when the data is not an
+     *   envelope; `MissingDigest` / `InvalidDigest` on a digest mismatch.
      */
     decompress(): Envelope;
     /** A copy with the subject compressed; `AlreadyEncrypted` / `AlreadyElided` when it cannot be. */
@@ -1066,9 +1145,11 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     withNote(note: string): Event_2<T>;
     /**
-     * Adds a date to the event.
+     * Adds a date to the event: a `CborDate` is kept as it is (the
+     * reference's `Date`, exact to the nanosecond); a JavaScript `Date`
+     * converts through `CborDate.fromDate`.
      */
-    withDate(date: Date): Event_2<T>;
+    withDate(date: Date | CborDate): Event_2<T>;
     /**
      * Returns the content of the event.
      */
@@ -1082,9 +1163,12 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     get note(): string;
     /**
-     * Returns the date attached to the event, if any.
+     * The date attached to the event as a JavaScript `Date` (millisecond
+     * precision), if any; `cborDate` is the exact value.
      */
     get date(): Date | undefined;
+    /** The date attached to the event, if any: the stored `CborDate`, exact as decoded or given. */
+    get cborDate(): CborDate | undefined;
     /**
      * Converts the event to an envelope.
      *
@@ -1094,11 +1178,17 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     toEnvelope(): Envelope;
     /**
-     * Creates an event from an envelope.
+     * Reads an event from an envelope (the reference's
+     * `Event::try_from(envelope)`): the `'content'` object through
+     * `contentExtractor`, the subject as `TAG_EVENT(ARID)`, the `'note'` and
+     * `'date'` objects by subject extraction.
      *
      * @typeParam T - The type to extract the content as
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError `NonexistentPredicate` when there is no content; `General`
+     *   (`Failed to parse content`) when the extractor fails; `NotLeaf` / `Cbor` when the
+     *   subject is not `TAG_EVENT(ARID)`; `Cbor` / `InvalidFormat` when a `'note'` is not
+     *   text or a `'date'` is not a tag-1 date
      */
     static fromEnvelope<T extends EnvelopeInput>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
     /**
@@ -1106,66 +1196,79 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     toString(): string;
     /**
-     * Checks equality with another event.
+     * Checks equality with another event: the content (as envelopes), the id,
+     * the note and the exact date must all be equal (the reference's derived
+     * `PartialEq`).
      */
     equals(other: Event_2<T>): boolean;
 }
 export { Event_2 as Event }
 
 /**
- * Represents a complete expression with function and parameters.
+ * A function with its parameters: the expression envelope whose subject is
+ * the function leaf and whose assertions are the parameters (`parameter:
+ * argument`), as the reference's `Expression` holds its function and
+ * envelope.
  *
- * Parameters are stored as an *append-only array*, mirroring the reference
- * `bc-envelope`'s `Expression` which adds each parameter as a fresh
- * envelope assertion (multiple values per parameter ID are valid —
- * e.g. GSTP DKG invites carry multiple `participant` parameters).
- * Earlier the TS port used `Map<string, Parameter>`, which silently
- * overwrote previous values with the same parameter ID. The
- * resulting envelope had only the last `participant`, breaking
- * `objectsForParameter("participant")` decoders downstream
- * (`frost-hubert/group-invite.ts:383`).
+ * Parameters are assertions, so the same parameter may appear several
+ * times (`objectsForParameter` returns every argument) and every
+ * assertion, parameter or not, survives a round trip through an envelope.
  */
 export declare class Expression implements ToEnvelope {
     private readonly _function;
-    private readonly _parameters;
     private _envelope;
+    /** The expression `func` with no parameters yet. */
     constructor(func: Function_2);
     /** Returns the function. */
     get function(): Function_2;
-    /** Returns all parameters. */
+    /**
+     * The parameters of the expression, each carrying its argument as
+     * `paramValue`: every assertion whose predicate decodes as a parameter
+     * (`#6.40007(id)`), in the envelope's order. An assertion whose predicate
+     * is not a parameter is skipped. A TypeScript convenience: the reference
+     * reads parameters one at a time through `object_for_parameter`.
+     */
     get parameters(): Parameter[];
-    /** Adds a parameter to the expression. */
-    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    /**
+     * A copy with the assertion `param: value` added (the reference's
+     * `with_parameter`); an assertion already present is not repeated.
+     */
+    withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Expression;
     /** Adds multiple parameters at once; returns a new expression. */
     withParameters(params: Record<string, EnvelopeInput>): Expression;
-    /** Returns true if the parameter ID matches the one stored on a Parameter. */
-    private static parameterIdMatches;
     /**
-     * Gets the first parameter value with the given ID.
+     * The argument of the single `param` assertion (the reference's
+     * `object_for_parameter`).
      *
-     * For multi-valued parameters (e.g. several `participant` assertions),
-     * use {@link objectsForParameter} to retrieve all matching values.
+     * @throws EnvelopeError `NonexistentPredicate` when there is none, `AmbiguousPredicate`
+     *   when there are several
      */
-    parameter(param: ParameterID): Envelope | undefined;
+    objectForParameter(param: ParameterID | Parameter): Envelope;
     /**
-     * Returns all parameter values matching the given ID.
+     * The argument of the single `param` assertion, or `undefined` when there
+     * is none (the reference's `optional_object_for_parameter`).
      *
-     * to `Envelope::objects_for_predicate` and returns a `Vec<Envelope>`.
+     * @throws EnvelopeError `AmbiguousPredicate` when there are several
      */
-    objectsForParameter(param: ParameterID): Envelope[];
-    /** Checks if a parameter exists. */
-    hasParameter(param: ParameterID): boolean;
-    /** Converts the expression to an envelope. */
+    parameter(param: ParameterID | Parameter): Envelope | undefined;
+    /** The arguments of every `param` assertion (the reference's `objects_for_parameter`). */
+    objectsForParameter(param: ParameterID | Parameter): Envelope[];
+    /** `true` when at least one `param` assertion is present. */
+    hasParameter(param: ParameterID | Parameter): boolean;
+    /** The expression envelope: the function leaf with the parameter assertions. */
     toEnvelope(): Envelope;
     /**
-     * Creates an expression from an envelope.
+     * Reads an expression from an envelope (the reference's
+     * `Expression::try_from((envelope, expected_function))`): the subject is
+     * extracted as a function and the envelope is kept as it is, so
+     * assertions that are not parameters survive a round trip.
      *
-     * The function and each parameter are read as **tagged CBOR**
-     * (tag 40006 / tag 40007). Earlier the TS port stored these as
-     * pre-formatted display strings (e.g. `«"test"»`, `❰"param1"❱`)
-     * and parsed them by string matching; that diverged from the reference
-     * (which stores tag-40006/40007 leaves) and prevented the
-     * TAG_FUNCTION / TAG_PARAMETER format summarizers from firing.
+     * @throws EnvelopeError `Cbor` with the reference's dcbor Display as its message:
+     *   `invalid format` when the subject is not a leaf, `dcbor error: <reason>` when the
+     *   leaf is not a function (`dcbor error: invalid function`, `dcbor error: expected
+     *   CBOR tag function, but got 40007`), and `Expected function <expected>, but found
+     *   <found>` (the reference's `Debug` renderings) when `expectedFunction` is given
+     *   and differs
      */
     static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Expression;
     /**
@@ -1186,26 +1289,41 @@ export declare class Expression implements ToEnvelope {
  * 1. By a numeric ID (for well-known functions) - Known variant
  * 2. By a string name (for application-specific functions) - Named variant
  *
+ * A known function's id is the reference's `u64`: `value` is a `number`
+ * when it is a safe integer and a `bigint` otherwise, `valueBigInt` is
+ * always exact.
+ *
  * When encoded in CBOR, functions are tagged with #6.40006.
  */
-declare class Function_2 implements ToEnvelope {
+declare class Function_2 implements ToEnvelope, ToCbor, CborTagged {
     private readonly _variant;
     private readonly _value;
     private readonly _name;
     private constructor();
-    /** A function by known id (number) or name (string). */
+    /**
+     * A function by known id (a number or bigint) or name (a string).
+     *
+     * @throws EnvelopeError `InvalidParameter` as `known` does
+     */
     static from(id: FunctionID): Function_2;
-    /** A known function with a numeric id and an optional display name. */
-    static known(value: number, name?: string): Function_2;
+    /**
+     * A known function with a numeric id and an optional display name.
+     *
+     * @throws EnvelopeError `InvalidParameter` when `value` is not a non-negative safe
+     *   integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`
+     */
+    static known(value: number | bigint, name?: string): Function_2;
     /** Creates a new named function identified by a string. */
     static named(name: string): Function_2;
     /** Returns true if this is a known (numeric) function. */
     isKnown(): boolean;
     /** Returns true if this is a named (string) function. */
     isNamed(): boolean;
-    /** Returns the numeric value for known functions. */
-    get value(): number | undefined;
-    /** Returns the function identifier (number for known, string for named). */
+    /** The numeric id of a known function (a `number` when safe, else a `bigint`); `undefined` for a named one. */
+    get value(): number | bigint | undefined;
+    /** The exact numeric id of a known function; `undefined` for a named one. */
+    get valueBigInt(): bigint | undefined;
+    /** Returns the function identifier (the numeric id for known, the name for named). */
     get id(): FunctionID;
     /**
      * Returns the display name of the function.
@@ -1219,23 +1337,43 @@ declare class Function_2 implements ToEnvelope {
     get namedName(): string | undefined;
     /** Returns the assigned name if present (for known functions only). */
     get assignedName(): string | undefined;
+    /** The function tag (40006), named as the global tags store names it at the time. */
+    cborTags(): Tag[];
+    /** The bare id: the unsigned integer of a known function, the text of a named one. */
+    untaggedCbor(): Cbor;
+    /** `#6.40006(id)`, the tag named as the global tags store names it. */
+    toCbor(): Cbor;
     /**
-     * Creates an expression envelope with this function as the subject.
+     * Tagged-CBOR codec. `decode` requires `#6.40006(n)`: the tag is part of
+     * the type, as in the reference's `TryFrom<CBOR>`; use `fromUntaggedCbor`
+     * for the bare id. `tags` is named from the global tags store at each
+     * access, as the reference's `cbor_tags()` is.
+     */
+    static get codec(): CborCodec<Function_2>;
+    /**
+     * Decode `#6.40006(id)` (the reference's `TryFrom<CBOR>`).
      *
-     * which calls `Envelope::new_leaf(self)` — that goes through
-     * `From<Function> for CBOR = self.tagged_cbor()` which produces
-     * `tag(40006, untagged)` where untagged is `uint(N)` for Known
-     * or `text(name)` for Named.
+     * @throws CborError (dcbor's, with a code) — `WrongType` for an untagged value,
+     *   `WrongTag` for another tag (both tags named as the global tags store names
+     *   them), `Custom` `invalid function` for a content that is neither an unsigned
+     *   integer nor text
+     */
+    static fromCbor(cbor: Cbor): Function_2;
+    /**
+     * Decode the bare id — the content of tag 40006 (the reference's
+     * `from_untagged_cbor`): an unsigned integer is a known function, a text
+     * a named one.
      *
-     * The earlier TS port pre-formatted the display string into a
-     * text leaf (`Envelope.from("«\"name\"»")`), which breaks the
-     * TAG_FUNCTION summarizer (it never fires because the leaf is
-     * not tagged), so format() rendered the leaf as a quoted string
-     * instead of `«"name"»`.
+     * @throws CborError `Custom` `invalid function` for anything else
+     */
+    static fromUntaggedCbor(cbor: Cbor): Function_2;
+    /**
+     * Creates an expression envelope with this function as the subject: the
+     * leaf `#6.40006(id)`, as the reference's `Envelope::new_leaf(function)`.
      */
     toEnvelope(): Envelope;
     /** Creates an expression with a parameter. */
-    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Expression;
     /** Checks equality based on value (for known) or name (for named). */
     equals(other: Function_2): boolean;
     /**
@@ -1282,8 +1420,12 @@ export declare const FUNCTION_IDS: {
     readonly NOT: 15;
 };
 
-/** Type for function identifier (number or string) */
-export declare type FunctionID = number | string;
+/**
+ * A function identifier: a known function's numeric id (a `number` when it
+ * is a safe integer, a `bigint` for the rest of the reference's `u64`
+ * range) or a named function's name.
+ */
+export declare type FunctionID = number | bigint | string;
 
 /**
  * A store that maps functions to their assigned names.
@@ -1295,9 +1437,14 @@ export declare class FunctionsStore {
     private readonly _dict;
     /** Creates a new FunctionsStore with the given functions. */
     constructor(functions?: Iterable<Function_2>);
-    /** Inserts a function into the store. */
+    /** Inserts a function into the store, keyed by its id (known) or name (named). */
     register(func: Function_2): void;
-    /** Returns the assigned name for a function, if it exists in the store. */
+    /**
+     * The name the store assigned to `func`, if it is registered: the
+     * registered function's own name (its assigned name, or its number when
+     * it has none), as the reference's `assigned_name` returns the name it
+     * filed at insertion.
+     */
     assignedNameOf(func: Function_2): string | undefined;
     /** Returns the name for a function, either from this store or from the function itself. */
     nameOf(func: Function_2): string;
@@ -1305,7 +1452,7 @@ export declare class FunctionsStore {
     [Symbol.iterator](): IterableIterator<Function_2>;
     /** An independent copy (a format context takes one, as the reference does). */
     clone(): FunctionsStore;
-    /** The function's name in `store` when registered there, else its own name. */
+    /** The function's name in `store` when registered there, else its own name (`name_for_function`). */
     static nameForFunction(func: Function_2, store?: FunctionsStore): string;
 }
 
@@ -1407,27 +1554,45 @@ export declare function or(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
  * 1. By a numeric ID (for well-known parameters) - Known variant
  * 2. By a string name (for application-specific parameters) - Named variant
  *
+ * A known parameter's id is the reference's `u64`: `value` is a `number`
+ * when it is a safe integer and a `bigint` otherwise, `valueBigInt` is
+ * always exact. A parameter may carry the value envelope of its argument
+ * (`paramValue`), which the reference keeps in the expression envelope.
+ *
  * When encoded in CBOR, parameters are tagged with #6.40007.
  */
-export declare class Parameter implements ToEnvelope {
+export declare class Parameter implements ToEnvelope, ToCbor, CborTagged {
     private readonly _variant;
     private readonly _value;
     private readonly _name;
     private readonly _paramValue;
     private constructor();
-    /** Creates a new known parameter with a numeric ID and optional name. */
-    static known(value: number, name?: string): Parameter;
+    /**
+     * A known parameter with a numeric id and an optional display name.
+     *
+     * @throws EnvelopeError `InvalidParameter` when `value` is not a non-negative safe
+     *   integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`
+     */
+    static known(value: number | bigint, name?: string): Parameter;
     /** Creates a new named parameter identified by a string. */
     static named(name: string): Parameter;
-    /** A parameter by known id or name, carrying `value` when given. */
+    /**
+     * A parameter by known id (a number or bigint) or name (a string),
+     * carrying `value` when given.
+     *
+     * @throws EnvelopeError `InvalidParameter` when a numeric `id` is not a non-negative
+     *   safe integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`
+     */
     static from(id: ParameterID, value?: EnvelopeInput): Parameter;
     /** Returns true if this is a known (numeric) parameter. */
     isKnown(): boolean;
     /** Returns true if this is a named (string) parameter. */
     isNamed(): boolean;
-    /** Returns the numeric value for known parameters. */
-    get value(): number | undefined;
-    /** Returns the parameter identifier (number for known, string for named). */
+    /** The numeric id of a known parameter (a `number` when safe, else a `bigint`); `undefined` for a named one. */
+    get value(): number | bigint | undefined;
+    /** The exact numeric id of a known parameter; `undefined` for a named one. */
+    get valueBigInt(): bigint | undefined;
+    /** Returns the parameter identifier (the numeric id for known, the name for named). */
     get id(): ParameterID;
     /**
      * Returns the display name of the parameter.
@@ -1443,12 +1608,39 @@ export declare class Parameter implements ToEnvelope {
     get assignedName(): string | undefined;
     /** Returns the parameter value as an envelope, if set. */
     get paramValue(): Envelope | undefined;
+    /** The parameter tag (40007), named as the global tags store names it at the time. */
+    cborTags(): Tag[];
+    /** The bare id: the unsigned integer of a known parameter, the text of a named one. */
+    untaggedCbor(): Cbor;
+    /** `#6.40007(id)`, the tag named as the global tags store names it. */
+    toCbor(): Cbor;
     /**
-     * Creates a parameter envelope.
+     * Tagged-CBOR codec. `decode` requires `#6.40007(n)`: the tag is part of
+     * the type, as in the reference's `TryFrom<CBOR>`; use `fromUntaggedCbor`
+     * for the bare id. `tags` is named from the global tags store at each
+     * access, as the reference's `cbor_tags()` is.
+     */
+    static get codec(): CborCodec<Parameter>;
+    /**
+     * Decode `#6.40007(id)` (the reference's `TryFrom<CBOR>`).
      *
-     * Same encoding as `Function.toEnvelope` above: the parameter is stored
-     * as `tag(40007, untagged)` where untagged is `uint(N)` (Known) or
-     * `text(name)` (Named).
+     * @throws CborError (dcbor's, with a code) — `WrongType` for an untagged value,
+     *   `WrongTag` for another tag (both tags named as the global tags store names
+     *   them), `Custom` `invalid parameter` for a content that is neither an unsigned
+     *   integer nor text
+     */
+    static fromCbor(cbor: Cbor): Parameter;
+    /**
+     * Decode the bare id — the content of tag 40007 (the reference's
+     * `from_untagged_cbor`): an unsigned integer is a known parameter, a text
+     * a named one.
+     *
+     * @throws CborError `Custom` `invalid parameter` for anything else
+     */
+    static fromUntaggedCbor(cbor: Cbor): Parameter;
+    /**
+     * The parameter as an envelope: the leaf `#6.40007(id)`, or the
+     * assertion `#6.40007(id): value` when the parameter carries a value.
      */
     toEnvelope(): Envelope;
     /** Checks equality based on value (for known) or name (for named). */
@@ -1478,8 +1670,12 @@ export declare const PARAMETER_IDS: {
     readonly RHS: 3;
 };
 
-/** Type for parameter identifier (number or string) */
-export declare type ParameterID = number | string;
+/**
+ * A parameter identifier: a known parameter's numeric id (a `number` when
+ * it is a safe integer, a `bigint` for the rest of the reference's `u64`
+ * range) or a named parameter's name.
+ */
+export declare type ParameterID = number | bigint | string;
 
 /**
  * A store that maps parameters to their assigned names.
@@ -1491,9 +1687,14 @@ export declare class ParametersStore {
     private readonly _dict;
     /** Creates a new ParametersStore with the given parameters. */
     constructor(parameters?: Iterable<Parameter>);
-    /** Inserts a parameter into the store. */
+    /** Inserts a parameter into the store, keyed by its id (known) or name (named). */
     register(param: Parameter): void;
-    /** Returns the assigned name for a parameter, if it exists in the store. */
+    /**
+     * The name the store assigned to `param`, if it is registered: the
+     * registered parameter's own name (its assigned name, or its number when
+     * it has none), as the reference's `assigned_name` returns the name it
+     * filed at insertion.
+     */
     assignedNameOf(param: Parameter): string | undefined;
     /** Returns the name for a parameter, either from this store or from the parameter itself. */
     nameOf(param: Parameter): string;
@@ -1501,7 +1702,7 @@ export declare class ParametersStore {
     [Symbol.iterator](): IterableIterator<Parameter>;
     /** An independent copy (a format context takes one, as the reference does). */
     clone(): ParametersStore;
-    /** The parameter's name in `store` when registered there, else its own name. */
+    /** The parameter's name in `store` when registered there, else its own name (`name_for_parameter`). */
     static nameForParameter(param: Parameter, store?: ParametersStore): string;
 }
 
@@ -1532,7 +1733,7 @@ declare class Request_2 implements ToEnvelope {
     private readonly _date;
     private constructor();
     /**
-     * A request for `func` (a `Function`, a known-function number, a name, or
+     * A request for `func` (a `Function`, a known-function id, a name, or
      * a ready `Expression`) identified by `id`.
      */
     static from(func: Function_2 | Expression | FunctionID, id: ARID): Request_2;
@@ -1543,15 +1744,17 @@ declare class Request_2 implements ToEnvelope {
     /**
      * Adds a parameter to the request.
      */
-    withParameter(param: ParameterID, value: EnvelopeInput): Request_2;
+    withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Request_2;
     /**
      * Adds a note to the request.
      */
     withNote(note: string): Request_2;
     /**
-     * Adds a date to the request.
+     * Adds a date to the request: a `CborDate` is kept as it is (the
+     * reference's `Date`, exact to the nanosecond); a JavaScript `Date`
+     * converts through `CborDate.fromDate`.
      */
-    withDate(date: Date): Request_2;
+    withDate(date: Date | CborDate): Request_2;
     /**
      * Returns the body of the request (the expression to be evaluated).
      */
@@ -1565,9 +1768,12 @@ declare class Request_2 implements ToEnvelope {
      */
     get note(): string;
     /**
-     * Returns the date attached to the request, if any.
+     * The date attached to the request as a JavaScript `Date` (millisecond
+     * precision), if any; `cborDate` is the exact value.
      */
     get date(): Date | undefined;
+    /** The date attached to the request, if any: the stored `CborDate`, exact as decoded or given. */
+    get cborDate(): CborDate | undefined;
     /**
      * Returns the function of the request.
      */
@@ -1584,9 +1790,16 @@ declare class Request_2 implements ToEnvelope {
      */
     toEnvelope(): Envelope;
     /**
-     * Creates a request from an envelope.
+     * Reads a request from an envelope (the reference's
+     * `Request::try_from((envelope, expected_function))`): the `'body'`
+     * object as an expression, the subject as `TAG_REQUEST(ARID)`, the
+     * `'note'` and `'date'` objects by subject extraction.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError `NonexistentPredicate` / `AmbiguousPredicate` when the body is
+     *   not exactly one; `Cbor` (`dcbor error: <reason>`) when the body is not an
+     *   expression or is not `expectedFunction`; `NotLeaf` / `Cbor` when the subject is not
+     *   `TAG_REQUEST(ARID)`; `Cbor` / `InvalidFormat` when a `'note'` is not text or a
+     *   `'date'` is not a tag-1 date
      */
     static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Request_2;
     /**
@@ -1594,7 +1807,9 @@ declare class Request_2 implements ToEnvelope {
      */
     toString(): string;
     /**
-     * Checks equality with another request.
+     * Checks equality with another request: the id, the note, the exact
+     * date and the body envelope must all be equal (the reference's derived
+     * `PartialEq`).
      */
     equals(other: Request_2): boolean;
 }
@@ -1687,7 +1902,8 @@ declare class Response_2 implements ToEnvelope {
      */
     get id(): ARID | undefined;
     /**
-     * The id; `General` when the response has none.
+     * The id; `General` (`Expected an ID`, the reference's panic text) when
+     * the response has none.
      *
      * @throws EnvelopeError with code `General`.
      */
@@ -1719,9 +1935,15 @@ declare class Response_2 implements ToEnvelope {
      */
     toEnvelope(): Envelope;
     /**
-     * Creates a response from an envelope.
+     * Reads a response from an envelope (the reference's
+     * `Response::try_from(envelope)`): exactly one of `'result'` and `'error'`
+     * must be present, then the subject is `TAG_RESPONSE(ARID)`, or
+     * `TAG_RESPONSE('Unknown')` for a failure without an id.
      *
-     * @throws EnvelopeError with code `InvalidResponse`, `General`.
+     * @throws EnvelopeError `InvalidResponse` when neither or both of `'result'` and
+     *   `'error'` are present (or either is present more than once), or a failure's
+     *   known-value id is not `'Unknown'`; `NotLeaf` / `Cbor` (`dcbor error: <Display>`)
+     *   when the subject is not the tagged id
      */
     static fromEnvelope(envelope: Envelope): Response_2;
     /**
@@ -1729,7 +1951,9 @@ declare class Response_2 implements ToEnvelope {
      */
     toString(): string;
     /**
-     * Checks equality with another response.
+     * Checks equality with another response: the same outcome, the same id
+     * (or none on both) and an equal result or error envelope (the
+     * reference's derived `PartialEq`).
      */
     equals(other: Response_2): boolean;
 }
@@ -1740,13 +1964,13 @@ export declare const RHS: Parameter;
 
 /** Options for `Envelope.addSalt`. */
 declare interface SaltOptions {
-    /** Use exactly this salt (at least 8 bytes). */
+    /** Use exactly this salt, whatever its length. */
     salt?: Salt | Uint8Array;
-    /** Random salt of exactly this many bytes (at least 8). */
+    /** Random salt of exactly this many bytes (the reference requires at least 8). */
     length?: number;
-    /** Random salt of a length in this inclusive range. */
+    /** Random salt of a length in this inclusive range (the reference requires `min` of at least 8 and `max` of at least `min`). */
     range?: {
-        /** Smallest length (at least 8). */
+        /** Smallest length. */
         min: number;
         /** Largest length. */
         max: number;

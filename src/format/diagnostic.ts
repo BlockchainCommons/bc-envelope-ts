@@ -1,15 +1,10 @@
 /**
- * Diagnostic notation formatting for Gordian Envelopes.
- *
- * This module provides methods for converting envelopes to CBOR diagnostic
- * notation, a human-readable text format defined in
- * [RFC-8949 §8](https://www.rfc-editor.org/rfc/rfc8949.html#name-diagnostic-notation).
- *
- * to `dcbor::diagnostic_opt` / `dcbor::diagnostic_annotated`. We do the same
- * — the {@link diagnostic} and {@link diagnosticAnnotated} methods reuse the
- * canonical formatters in `@blockchaincommons/dcbor-compat` so envelope diagnostic output stays
- * byte-for-byte compatible with the rest of the suite (and with the reference output
- * in the parity-test fixtures).
+ * Diagnostic notation formatting for Gordian Envelopes: the CBOR diagnostic
+ * notation of [RFC-8949 §8](https://www.rfc-editor.org/rfc/rfc8949.html#name-diagnostic-notation)
+ * as dcbor renders it, plain (`diagnostic`) or annotated with tag names
+ * through a format context (`diagnostic_annotated`); the annotated form
+ * names tags through the context's own store, the global context's
+ * snapshot by default.
  */
 
 import { type Envelope } from "../base/envelope";

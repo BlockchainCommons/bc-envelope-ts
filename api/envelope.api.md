@@ -116,7 +116,6 @@ export class Envelope implements DigestProvider {
     elementsCount(): number;
     elide(options?: ElideOptions): Envelope;
     static elided(digest: Digest): Envelope;
-    elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     encrypt(key: SymmetricKey, options?: EncryptOptions): Envelope;
     static encrypted(encryptedMessage: EncryptedMessage): Envelope;
     encryptSubject(key: SymmetricKey, options?: EncryptOptions): Envelope;
@@ -184,13 +183,13 @@ export class Envelope implements DigestProvider {
     optionalObjectForPredicate(predicate: EnvelopeInput): Envelope | undefined;
     optionalObjectForPredicateAs<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T | undefined;
     pipe<A extends unknown[], R>(fn: (envelope: Envelope, ...args: A) => R, ...args: A): R;
-    position(): number;
+    position(): number | bigint;
     predicate(): Envelope;
     removeAssertion(target: Envelope): Envelope;
     removePosition(): Envelope;
     replaceAssertion(assertion: Envelope, newAssertion: Envelope): Envelope;
     replaceSubject(subject: Envelope): Envelope;
-    setPosition(position: number): Envelope;
+    setPosition(position: number | bigint): Envelope;
     shallowDigests(): Set<Digest>;
     structuralDigest(): Digest;
     subject(): Envelope;
@@ -254,6 +253,7 @@ export class EnvelopeError extends Error {
     static ambiguousType(): EnvelopeError;
     readonly cause?: Error;
     static cbor(message: string, cause?: Error): EnvelopeError;
+    static cborDecode(cause: Error): EnvelopeError;
     readonly code: EnvelopeErrorCode;
     static components(message: string, cause?: Error): EnvelopeError;
     readonly details: EnvelopeErrorDetails;
@@ -266,7 +266,7 @@ export class EnvelopeError extends Error {
     static edgeUnexpectedAssertion(): EnvelopeError;
     static general(message: string, cause?: Error): EnvelopeError;
     static invalidAssertion(): EnvelopeError;
-    static invalidAttachment(message?: string): EnvelopeError;
+    static invalidAttachment(): EnvelopeError;
     static invalidDigest(): EnvelopeError;
     static invalidFormat(): EnvelopeError;
     static invalidInnerSignatureType(): EnvelopeError;
