@@ -4,14 +4,19 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
+[features]
+# Compares the SSH-agent lock and unlock rows too (bc-components/ssh-agent).
+agent = ["bc-components/ssh-agent", "bc-envelope/ssh-agent"]
+
 [dependencies]
 bc-envelope = "=0.43.0"
-bc-components = "0.31"
+bc-components = { version = "=0.31.1", features = ["ssh", "pqcrypto"] }
 bc-rand = "=0.5.0"
-bc-ur = "0.19"
-dcbor = { version = "0.25", features = ["num-bigint"] }
-known-values = "0.15"
-sskr = "0.12"
+bc-ur = "=0.19.2"
+dcbor = "=0.25.2"
+known-values = "=0.15.5"
+sskr = "=0.12.0"
+ssh-key = "=0.6.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 hex = "0.4"

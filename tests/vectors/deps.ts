@@ -17,10 +17,12 @@ export async function baselineDeps(): Promise<Deps> {
 export async function currentDeps(): Promise<Deps> {
   const root: any = await import("@blockchaincommons/components");
   const kdf: any = await import("@blockchaincommons/components/kdf");
+  const pq: any = await import("@blockchaincommons/components/pq");
+  const sskrShares: any = await import("@blockchaincommons/components/sskr");
   const rand: any = await import("@blockchaincommons/rand");
   const sskr: any = await import("@blockchaincommons/sskr");
   return {
-    components: { ...root, ...kdf },
+    components: { ...root, ...kdf, ...pq, ...sskrShares },
     rand,
     sskr,
     seededRng: (seed: Seed) => new rand.SeededRng(seed.map(BigInt)),

@@ -1,0 +1,29 @@
+{
+ "count": 1,
+ "vectors": [
+  {
+   "name": "responseOp expectIdEarly (wrong code for the mapped panic: must be a MISMATCH)",
+   "recipe": {
+    "e": {
+     "k": "responseOp",
+     "op": "expectIdEarly",
+     "id": "c66be27dbad7cd095ca77647406d07976dc0f35f0d4d654bb0e96dd227a1e9fc"
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "throw:InvalidResponse|invalid response"
+  }
+ ]
+}

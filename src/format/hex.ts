@@ -1,17 +1,13 @@
 /**
- * Hex formatting for Gordian Envelopes.
- *
- * `dcbor::HexFormatOpts` for an annotated multi-line hex dump (tag names,
- * column-aligned notes). We do the same — both {@link Envelope.hex} and
- * {@link Envelope.hexOpt} reuse the canonical {@link hexOpt} formatter in
- * `@blockchaincommons/dcbor-compat` so envelope hex output stays byte-for-byte compatible with
- * the reference's parity-test fixtures.
+ * Hex formatting for Gordian Envelopes: the annotated multi-line hex dump
+ * (tag names, column-aligned notes) that dcbor's `hexAnnotated` renders,
+ * the reference's `Envelope::hex` over `dcbor::HexFormatOpts`.
  */
 
 import { type Envelope } from "../base/envelope";
 import { hexAnnotated } from "@blockchaincommons/dcbor/diagnostic";
 
-import { type FormatContextOpt, tagsStoreFor } from "./format-context";
+import { type FormatContextOpt, hexTagsStoreFor } from "./format-context";
 
 /** Options for `hex`. */
 export interface HexOptions {
@@ -21,8 +17,14 @@ export interface HexOptions {
   context?: FormatContextOpt;
 }
 
-/** The envelope's CBOR as hex, annotated line by line unless `annotate` is false. */
+/**
+ * The envelope's CBOR as hex, annotated line by line unless `annotate` is
+ * false. With the global context the tag names come from dcbor's live
+ * global store (the reference's `hex()` resolves `FormatContextOpt::Global`
+ * to `TagsStoreOpt::Global`), not from the snapshot the global format
+ * context holds.
+ */
 export function hex(envelope: Envelope, { annotate = true, context }: HexOptions = {}): string {
   if (!annotate) return envelope.toCbor().toHex();
-  return hexAnnotated(envelope.toCbor(), { tagsStore: tagsStoreFor(context) });
+  return hexAnnotated(envelope.toCbor(), { tagsStore: hexTagsStoreFor(context) });
 }

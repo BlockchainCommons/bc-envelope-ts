@@ -131,7 +131,9 @@ declare class Assertion implements DigestProvider {
      *
      * @param cbor - The CBOR value to convert
      * @returns A new Assertion instance
-     * @throws {EnvelopeError} If the CBOR is not a valid assertion
+     * @throws EnvelopeError with code `InvalidAssertion` when the CBOR is not
+     *   a single-element map; `Cbor` (`dcbor error: <Display>`) when the key
+     *   or the value is not an envelope
      */
     static fromCbor(cbor: Cbor): Assertion;
     /**
@@ -143,7 +145,9 @@ declare class Assertion implements DigestProvider {
      *
      * @param map - The CBOR map to convert
      * @returns A new Assertion instance
-     * @throws {EnvelopeError} If the map doesn't have exactly one entry
+     * @throws EnvelopeError with code `InvalidAssertion` when the map does not
+     *   have exactly one entry; `Cbor` (`dcbor error: <Display>`) when the key
+     *   or the value is not an envelope
      */
     static fromCborMap(map: CborMap): Assertion;
     /**
@@ -478,37 +482,49 @@ declare class Envelope implements DigestProvider {
      * @returns The tagged CBOR
      */
     toCbor(): Cbor;
-    /** Tagged-CBOR codec; `decode` also accepts the untagged form. */
+    /** Tagged-CBOR codec; `decode` requires tag 200 (`fromCbor`), like every codec in the stack. */
     static get codec(): CborCodec<Envelope>;
     /** The envelope tag (200). */
     cborTags(): Tag[];
     /** As `ur:envelope/…`. */
     toUR(): UR;
     /**
-     * Decodes an envelope from its tagged CBOR (tag 200).
+     * Decodes an envelope from its tagged CBOR (tag 200): the reference's
+     * `TryFrom<CBOR>` / `from_tagged_cbor`.
      *
-     * @throws {EnvelopeError} If the CBOR is not a tagged envelope
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor
+     *   Display and whose `cause` is the `CborError`: `WrongType` for an
+     *   untagged value, `WrongTag` for another tag (the expected tag named as
+     *   the global tags store names it), else what `fromUntaggedCbor` reports.
      */
     static fromCbor(cbor: Cbor): Envelope;
     /**
-     * Decodes an envelope from tagged CBOR bytes.
+     * Decodes an envelope from tagged CBOR bytes: the reference's
+     * `try_from_cbor_data`.
      *
-     * @throws {EnvelopeError} If the data is not valid CBOR or not an envelope
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+     *   of the byte-level failure (`early end of CBOR data`, `the decoded CBOR
+     *   had 1 extra bytes at the end`, `a CBOR numeric value was encoded in
+     *   non-canonical form`, …) and whose `cause` is the `CborError`; then as
+     *   `fromCbor`.
      */
     static fromBytes(data: Uint8Array): Envelope;
     /**
-     * Creates an envelope from untagged CBOR.
+     * Decodes an envelope from its untagged CBOR (the content of tag 200): the
+     * reference's `from_untagged_cbor`. A tag-24 or tag-201 value is a leaf, a
+     * tag-200 value a wrapped envelope, tag 40002 an encrypted message, tag
+     * 40003 a compressed value, a 32-byte string an elided envelope, an array
+     * a node, a single-element map an assertion and an unsigned integer a
+     * known value.
      *
-     * Every failure is `Cbor` (the reference decodes through `dcbor`, whose
-     * error is what `try_from_cbor_data` returns); the message names the
-     * structural fault (`node must have at least two elements`, `assertion
-     * must be a map with exactly one element`, …) and `cause` keeps the
-     * original.
-     *
-     * @param cbor - The untagged CBOR value
-     * @returns A new envelope
-     *
-     * @throws EnvelopeError with code `Cbor`.
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+     *   the reference returns and whose `cause` is the `CborError`: the dcbor
+     *   error of a malformed component as it is, else `Custom` with the
+     *   reference's text (`unknown envelope tag: <n>`, `invalid digest size:
+     *   expected 32, got <n>`, `node must have at least two elements`,
+     *   `invalid format`, `assertion must be a map with exactly one element`,
+     *   `a digest was expected but not found`, `invalid envelope`). A failure
+     *   inside an assertion's key or value nests as `dcbor error: <message>`.
      */
     static fromUntaggedCbor(cbor: Cbor): Envelope;
     private static decodeUntagged;
@@ -567,10 +583,16 @@ declare class Envelope implements DigestProvider {
      * cannot be correlated with another envelope of the same content.
      *
      * By default the salt length is proportional to the envelope's size
-     * (5–25 %, at least 8 bytes); give `length`, a `range`, or the exact
-     * `salt` instead. `rng` overrides the secure default.
+     * (5–25 %, at least 8 bytes; the reference's `add_salt_using`); give
+     * `length` (`add_salt_with_len_using`), a `range`
+     * (`add_salt_in_range_using`), or the exact `salt` (`add_salt_instance`)
+     * instead. `rng` overrides the secure default. The salt itself comes from
+     * components' `Salt`, whose checks the reference's `Salt::new_*` make.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `InvalidParameter` for a length or bound
+     *   that is not a non-negative integer; `Components` (the components
+     *   message, e.g. `data too short: salt expected at least 8, got 7`) for a
+     *   length below 8 or a bound the reference rejects.
      */
     addSalt({ salt, length, range, rng }?: SaltOptions): Envelope;
     /**
@@ -594,11 +616,13 @@ declare class Envelope implements DigestProvider {
     replaceSubject(subject: Envelope): Envelope;
     /** The assertions of a node (a frozen array); empty for every other case. */
     assertions(): readonly Envelope[];
-    /** `true` when the envelope is the boolean leaf `false`. */
+    /** The subject extracted with `decoder` (`extract_subject`), or `undefined` when it cannot be. */
+    private trySubject;
+    /** `true` when the subject is the boolean `false` (the reference's `is_false`: subject extraction, so a node whose subject is `false` qualifies). */
     isFalse(): boolean;
-    /** `true` when the envelope is the boolean leaf `true`. */
+    /** `true` when the subject is the boolean `true` (the reference's `is_true`). */
     isTrue(): boolean;
-    /** `true` when the envelope is a boolean leaf. */
+    /** `true` when the subject is a boolean (the reference's `is_bool`). */
     isBool(): boolean;
     /** `true` when the envelope is a number leaf. */
     isNumber(): boolean;
@@ -608,7 +632,7 @@ declare class Envelope implements DigestProvider {
     isNaN(): boolean;
     /** `true` when the envelope is a node whose subject is `NaN`. */
     isSubjectNaN(): boolean;
-    /** `true` when the envelope is the `null` leaf. */
+    /** `true` when the subject is `null` (the reference's `is_null`: subject extraction). */
     isNull(): boolean;
     /** A copy of the subject's bytes, or `undefined` when it is not a byte-string leaf. */
     asBytes(): Uint8Array<ArrayBuffer> | undefined;
@@ -719,13 +743,25 @@ declare class Envelope implements DigestProvider {
     /** `true` when the envelope is elided or a node whose subject is (recursively). */
     isSubjectElided(): boolean;
     /**
-     * Adds a `'position'` assertion with the given ordinal.
+     * Adds a `'position'` assertion with the given ordinal (the reference's
+     * `set_position(usize)`): a non-negative safe integer `number`, or a
+     * `bigint` in `0 ..= 2⁶⁴ − 1` for the exact form.
      *
-     * @throws EnvelopeError with code `InvalidFormat`.
+     * @throws EnvelopeError with code `InvalidParameter` for any other value;
+     *   `InvalidFormat` when the envelope already has several positions.
      */
-    setPosition(position: number): Envelope;
-    /** The value of the `'position'` assertion, or `undefined`. */
-    position(): number;
+    setPosition(position: number | bigint): Envelope;
+    /**
+     * The value of the `'position'` assertion (the reference's `position()`,
+     * `extract_subject::<usize>()`): a `number` when at most `2⁵³ − 1`, a
+     * `bigint` otherwise. A negative integer wraps to `2⁶⁴ + n`, as the
+     * reference's `usize::try_from(CBOR)` wraps it.
+     *
+     * @throws EnvelopeError with code `NonexistentPredicate` /
+     *   `AmbiguousPredicate` when there is not exactly one position; `Cbor`
+     *   (`dcbor error: <Display>`) when its object is not an integer in range.
+     */
+    position(): number | bigint;
     /**
      * A copy without the `'position'` assertion.
      *
@@ -792,8 +828,6 @@ declare class Envelope implements DigestProvider {
     private elideAll;
     /** Elides everything whose digest is in `target`, with `action` (elide, compress or encrypt). */
     private elideRemovingWith;
-    /** Elides everything whose digest is not in `target` (revealing mode) with `action`. */
-    elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     /** Elides everything whose digest is not in `target`, with `action` (elide, compress or encrypt). */
     private elideRevealingWith;
     /**
@@ -848,26 +882,56 @@ declare class Envelope implements DigestProvider {
      */
     walkDecompress(targetDigests?: Set<Digest>): Envelope;
     /**
-     * Add the tryLeaf method to Envelope prototype.
+     * The leaf's CBOR: the reference's `try_leaf()`.
      *
-     * This extracts the leaf CBOR value from an envelope.
-     *
-     * @throws EnvelopeError with code `NotLeaf`.
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf.
      */
     expectLeaf(): Cbor;
-    /** The subject's text; `NotLeaf` / `Cbor` when it is not a text leaf. */
+    /**
+     * The leaf's text: the reference's `String::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+     *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+     *   is not text.
+     */
     expectString(): string;
-    /** The subject's number; `NotLeaf` / `Cbor` when it is not a number leaf. */
+    /**
+     * The leaf's number as dcbor's `expectFloat` reads it: the reference's
+     * `f64::try_from(envelope)`. An integer the `f64` cannot represent exactly
+     * is rejected (`OutOfRange`), as the reference rejects it.
+     *
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+     *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+     *   is not a representable number.
+     */
     expectNumber(): number;
-    /** The subject's boolean; `NotLeaf` / `Cbor` when it is not a boolean leaf. */
+    /**
+     * The leaf's boolean: the reference's `bool::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectBoolean(): boolean;
-    /** A copy of the subject's bytes; `NotLeaf` / `Cbor` when it is not a byte-string leaf. */
+    /**
+     * A copy of the leaf's bytes: the reference's `ByteString::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectBytes(): Uint8Array<ArrayBuffer>;
-    /** `null`; `NotLeaf` / `Cbor` when the subject is not the `null` leaf. */
+    /**
+     * `null` when the leaf is the `null` value.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectNull(): null;
-    /** The subject's tag-1 date as a `Date`; `NotLeaf` / `Cbor` when it is not a date leaf. */
+    /**
+     * The subject's tag-1 date as a `Date` (millisecond precision): the
+     * reference's `extract_subject::<Date>()` viewed as a `Date`; use
+     * `expectSubject(CborDate.fromTaggedCbor)` for the exact value.
+     *
+     * @throws EnvelopeError as `expectSubject`.
+     */
     expectDate(): Date;
-    /** `extractSubject` as a method. */
+    /** `extractSubject` as a method: the reference's `extract_subject::<T>()`. */
     expectSubject<T>(decoder: CborDecoder<T>): T;
     /**
      * Add tryObjectForPredicate method to Envelope prototype
@@ -883,16 +947,21 @@ declare class Envelope implements DigestProvider {
     expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     /**
      * A copy with the subject encrypted by `key` (ChaCha20-Poly1305 over the
-     * subject's CBOR, the digest as AAD); `AlreadyEncrypted` / `AlreadyElided`
-     * when it cannot be.
+     * subject's CBOR, the digest as AAD): the reference's `encrypt_subject`.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `AlreadyEncrypted` when the subject is
+     *   encrypted or compressed; `AlreadyElided` when it is elided.
      */
     encryptSubject(key: SymmetricKey, options?: EncryptOptions): Envelope;
     /**
-     * A copy with the subject decrypted by `key`; `NotEncrypted` / `Components` on failure.
+     * A copy with the subject decrypted by `key` (the reference's
+     * `decrypt_subject`).
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `NotEncrypted` when the subject is not
+     *   encrypted; `Components` (`components error: <Display>`) when the key
+     *   does not open it; `Cbor` (`dcbor error: <Display>`) when the plaintext
+     *   is not an envelope; `MissingDigest` / `InvalidDigest` on a digest
+     *   mismatch.
      */
     decryptSubject(key: SymmetricKey): Envelope;
     /** Wraps this envelope and encrypts the wrapper's subject, so the whole envelope is hidden. */
@@ -902,15 +971,20 @@ declare class Envelope implements DigestProvider {
     /** `true` when the envelope is encrypted. */
     isEncrypted(): boolean;
     /**
-     * A copy compressed (deflate over its CBOR); this envelope when already compressed.
+     * A copy compressed (deflate over its CBOR): the reference's `compress`;
+     * this envelope when already compressed.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `AlreadyEncrypted` when the envelope is
+     *   encrypted; `AlreadyElided` when it is elided.
      */
     compress(): Envelope;
     /**
-     * A copy decompressed; this envelope when it is not compressed.
+     * A copy decompressed (the reference's `decompress`).
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `NotCompressed` when the envelope is not
+     *   compressed; `Components` (`components error: <Display>`) for a corrupt
+     *   stream; `Cbor` (`dcbor error: <Display>`) when the data is not an
+     *   envelope; `MissingDigest` / `InvalidDigest` on a digest mismatch.
      */
     decompress(): Envelope;
     /** A copy with the subject compressed; `AlreadyEncrypted` / `AlreadyElided` when it cannot be. */
@@ -1061,13 +1135,13 @@ declare type ObscureType = (typeof ObscureType)[keyof typeof ObscureType];
 
 /** Options for `Envelope.addSalt`. */
 declare interface SaltOptions {
-    /** Use exactly this salt (at least 8 bytes). */
+    /** Use exactly this salt, whatever its length. */
     salt?: Salt | Uint8Array;
-    /** Random salt of exactly this many bytes (at least 8). */
+    /** Random salt of exactly this many bytes (the reference requires at least 8). */
     length?: number;
-    /** Random salt of a length in this inclusive range. */
+    /** Random salt of a length in this inclusive range (the reference requires `min` of at least 8 and `max` of at least `min`). */
     range?: {
-        /** Smallest length (at least 8). */
+        /** Smallest length. */
         min: number;
         /** Largest length. */
         max: number;

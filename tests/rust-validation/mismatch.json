@@ -1,0 +1,31 @@
+{
+ "count": 1,
+ "vectors": [
+  {
+   "name": "leaf:text:Hello. (last hex digit of the digest flipped)",
+   "recipe": {
+    "e": {
+     "k": "leaf",
+     "v": {
+      "t": "text",
+      "v": "Hello."
+     }
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c8d8c96648656c6c6f2e\n---\nur:envelope/tpsoiyfdihjzjzjldmksbaoede\n---\n8cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d50\n---\n\"Hello.\"\n---\n\"Hello.\"\n---\n8cc96cdb \"Hello.\"\n---\n8cc96cdb \"Hello.\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;Hello.&quot;<br>8cc96cdb\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\"Hello.\")\n)\n---\nd8 c8                       # tag(200) envelope\n    d8 c9                   # tag(201) leaf\n        66                  # text(6)\n            48656c6c6f2e    # \"Hello.\"\n---\n\"Hello.\""
+  }
+ ]
+}

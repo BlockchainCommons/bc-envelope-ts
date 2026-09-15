@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Envelope } from "../src/index.js";
+import { cbor, taggedValue } from "@blockchaincommons/dcbor";
 import { Digest } from "@blockchaincommons/components";
 import "../src/all.js";
 
@@ -233,5 +234,104 @@ describe("Core Encoding Tests", () => {
       // Verify digest is preserved
       expect(restored.digest().equals(originalDigest)).toBe(true);
     });
+  });
+});
+
+/** `throw:<cause code>:<message>` for a decode rejection. */
+function rejection(f: () => unknown): string {
+  try {
+    f();
+    return "ok";
+  } catch (e) {
+    const x = e as { code?: string; message: string; cause?: { code?: string } };
+    return `throw:${x.code ?? "?"}:${x.cause?.code ?? "-"}:${x.message}`;
+  }
+}
+const hex = (h: string): Uint8Array => Uint8Array.from(Buffer.from(h, "hex"));
+
+describe("decode failures report the reference's dcbor error", () => {
+  // `fromBytes` corresponds to `try_from_cbor_data`, which returns the dcbor
+  // error itself: the port's message is its Display with no prefix and the
+  // `cause` carries the variant.
+  const rows: [string, string, string][] = [
+    [
+      "two-key map",
+      "d8c8a2d8c96161d8c96162d8c96163d8c96164",
+      "Custom:assertion must be a map with exactly one element",
+    ],
+    [
+      "elided 31 bytes",
+      "d8c8581f" + "00".repeat(31),
+      "Custom:invalid digest size: expected 32, got 31",
+    ],
+    ["empty node", "d8c880", "Custom:node must have at least two elements"],
+    ["subject-only node", "d8c881d8c96161", "Custom:node must have at least two elements"],
+    ["truncated", "d8c8d8c961", "Underrun:early end of CBOR data"],
+    ["trailing byte", "d8c8d8c9616100", "UnusedData:the decoded CBOR had 1 extra bytes at the end"],
+    ["null in tag 200", "d8c8f6", "Custom:invalid envelope"],
+    ["negative in tag 200", "d8c820", "Custom:invalid envelope"],
+    ["float in tag 200", "d8c8f93e00", "Custom:invalid envelope"],
+    ["text in tag 200", "d8c86161", "Custom:invalid envelope"],
+    ["untagged 01", "01", "WrongType:the decoded CBOR value was not the expected type"],
+    ["tag 40000", "d8c8d99c4001", "Custom:unknown envelope tag: 40000"],
+    ["non-assertion node element", "d8c882d8c96161d8c96162", "Custom:invalid format"],
+    [
+      "wrapped node with a non-assertion element",
+      "d8c8d8c882d8c96161d8c96162",
+      "Custom:invalid format",
+    ],
+    ["map key not an envelope", "d8c8a1f6f6", "Custom:dcbor error: invalid envelope"],
+    ["map value not an envelope", "d8c8a1d8c96161f6", "Custom:dcbor error: invalid envelope"],
+    [
+      "nested map key not an envelope",
+      "d8c8a1a1f6f6f6",
+      "Custom:dcbor error: dcbor error: invalid envelope",
+    ],
+    [
+      "encrypted without a digest",
+      "d8c8d99c428343349e194c0b0b0b0b0b0b0b0b0b0b0b0b50147c18b0293cbe6db007cbd894643413",
+      "Custom:a digest was expected but not found",
+    ],
+    [
+      "compressed without a digest",
+      "d8c8d99c43831ad92c0822182954f348cdc9c9d75128cf2fca49d151c8c0c9d30300",
+      "Custom:a digest was expected but not found",
+    ],
+    [
+      "non-canonical float inside",
+      "d8c8d8c9fa4f000000",
+      "NonCanonicalNumeric:a CBOR numeric value was encoded in non-canonical form",
+    ],
+  ];
+  for (const [name, bytes, expected] of rows) {
+    it(name, () => {
+      expect(rejection(() => Envelope.fromBytes(hex(bytes)))).toBe(`throw:Cbor:${expected}`);
+    });
+  }
+
+  it("outer tag 201 names the expected tag as the global tags store names it", () => {
+    const outcome = rejection(() => Envelope.fromBytes(hex("d8c96161")));
+    expect(outcome).toMatch(/^throw:Cbor:WrongTag:expected CBOR tag (envelope|200), but got 201$/);
+  });
+
+  it("fromCbor and codec.decode take the tagged form only", () => {
+    expect(rejection(() => Envelope.fromCbor(cbor(1)))).toBe(
+      "throw:Cbor:WrongType:the decoded CBOR value was not the expected type",
+    );
+    expect(rejection(() => Envelope.codec.decode(taggedValue(201, "a")))).toMatch(
+      /^throw:Cbor:WrongTag:expected CBOR tag (envelope|200), but got 201$/,
+    );
+  });
+
+  it("every decode failure carries the CborError as its cause", () => {
+    for (const bytes of ["d8c8d8c961", "d8c8f6", "01", "d8c8581f" + "00".repeat(31)]) {
+      try {
+        Envelope.fromBytes(hex(bytes));
+        expect.unreachable();
+      } catch (e) {
+        expect((e as Error).name).toBe("EnvelopeError");
+        expect(((e as Error).cause as Error).name).toBe("CborError");
+      }
+    }
   });
 });

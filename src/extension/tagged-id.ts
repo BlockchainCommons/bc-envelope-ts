@@ -5,13 +5,21 @@ import { KnownValue } from "@blockchaincommons/known-values";
 
 import type { Envelope } from "../base/envelope";
 import { EnvelopeError } from "../base/error";
+import { cborErrorAt } from "../base/foreign-errors.js";
 
 // The request / response / event subjects: `tag(ARID)` (or `tag('Unknown')`
 // for an id-less failure). Decoding follows the reference's
-// `try_leaf()?.try_into_expected_tagged_value(tag)?.try_into()?`: `NotLeaf`
-// for a structural subject, `Cbor` for the wrong tag or a bad id.
+// `subject().try_leaf()?.try_into_expected_tagged_value(tag)?.try_into()?`:
+// `NotLeaf` for a structural subject, `Cbor` with the dcbor Display
+// (`dcbor error: expected CBOR tag 40005, but got 40004`) for the wrong tag
+// or a bad id.
 
-/** The content under `tag` of the envelope's leaf subject. */
+/**
+ * The content under `tag` of the envelope's leaf subject.
+ *
+ * @throws EnvelopeError `NotLeaf` when the subject is not a leaf, `Cbor`
+ *   (`dcbor error: <Display>`) when the leaf is untagged or carries another tag
+ */
 export function expectTaggedSubject(envelope: Envelope, tag: number | bigint): Cbor {
   const leaf = envelope.subject().asLeaf();
   if (leaf === undefined) {
@@ -20,19 +28,20 @@ export function expectTaggedSubject(envelope: Envelope, tag: number | bigint): C
   try {
     return expectTaggedContent(leaf, tag);
   } catch (error) {
-    throw EnvelopeError.cbor(
-      `expected CBOR tag ${String(tag)}`,
-      error instanceof Error ? error : undefined,
-    );
+    throw cborErrorAt(error);
   }
 }
 
-/** `content` as an ARID; `Cbor` when it is not one. */
+/**
+ * `content` as an ARID.
+ *
+ * @throws EnvelopeError `Cbor` (`dcbor error: <Display>`) when it is not one
+ */
 export function decodeId(content: Cbor): ARID {
   try {
     return ARID.fromCbor(content);
   } catch (error) {
-    throw EnvelopeError.cbor("invalid id", error instanceof Error ? error : undefined);
+    throw cborErrorAt(error);
   }
 }
 

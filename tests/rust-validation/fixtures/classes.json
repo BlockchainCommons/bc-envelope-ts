@@ -1,0 +1,167 @@
+{
+ "count": 7,
+ "vectors": [
+  {
+   "name": "leaf:text:Hello. (match)",
+   "recipe": {
+    "e": {
+     "k": "leaf",
+     "v": {
+      "t": "text",
+      "v": "Hello."
+     }
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c8d8c96648656c6c6f2e\n---\nur:envelope/tpsoiyfdihjzjzjldmksbaoede\n---\n8cc96cdb771176e835114a0f8936690b41cfed0df22d014eedd64edaea945d59\n---\n\"Hello.\"\n---\n\"Hello.\"\n---\n8cc96cdb \"Hello.\"\n---\n8cc96cdb \"Hello.\"\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0[\"&quot;Hello.&quot;<br>8cc96cdb\"]\nstyle 0 stroke:teal,stroke-width:4px\n---\n200(\n    201(\"Hello.\")\n)\n---\nd8 c8                       # tag(200) envelope\n    d8 c9                   # tag(201) leaf\n        66                  # text(6)\n            48656c6c6f2e    # \"Hello.\"\n---\n\"Hello.\""
+  },
+  {
+   "name": "responseOp expectIdEarly (panic-mapped: the reference panics with \"Expected an ID\")",
+   "recipe": {
+    "e": {
+     "k": "responseOp",
+     "op": "expectIdEarly",
+     "id": "c66be27dbad7cd095ca77647406d07976dc0f35f0d4d654bb0e96dd227a1e9fc"
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "throw:General|general error: Expected an ID"
+  },
+  {
+   "name": "domain knownValue.1.5 (J1) (js-only J1)",
+   "recipe": {
+    "e": {
+     "k": "domain",
+     "case": "knownValue.1.5",
+     "cls": "J1"
+    },
+    "out": [
+     "format"
+    ],
+    "outs": [
+     "format"
+    ]
+   },
+   "expect": "throw:InvalidParameter|value must be an unsigned 64-bit integer, got 1.5"
+  },
+  {
+   "name": "domain knownValue.-1 (J2) (js-only J2)",
+   "recipe": {
+    "e": {
+     "k": "domain",
+     "case": "knownValue.-1",
+     "cls": "J2"
+    },
+    "out": [
+     "format"
+    ],
+    "outs": [
+     "format"
+    ]
+   },
+   "expect": "throw:InvalidParameter|value must be an unsigned 64-bit integer, got -1"
+  },
+  {
+   "name": "domain leaf.undefined (J3) (js-only J3)",
+   "recipe": {
+    "e": {
+     "k": "domain",
+     "case": "leaf.undefined",
+     "cls": "J3"
+    },
+    "out": [
+     "format"
+    ],
+    "outs": [
+     "format"
+    ]
+   },
+   "expect": "throw:InvalidParameter|value must be an encodable value (undefined is not)"
+  },
+  {
+   "name": "domain node.emptyAssertions (J4) (js-only J4)",
+   "recipe": {
+    "e": {
+     "k": "domain",
+     "case": "node.emptyAssertions",
+     "cls": "J4"
+    },
+    "out": [
+     "format"
+    ],
+    "outs": [
+     "format"
+    ]
+   },
+   "expect": "throw:InvalidParameter|assertions must be a non-empty array"
+  },
+  {
+   "name": "agentLock[alice] id=\"alice\"(leaf:text:Hello.) (build-scoped in the default build)",
+   "recipe": {
+    "e": {
+     "k": "agentLock",
+     "e": {
+      "k": "leaf",
+      "v": {
+       "t": "text",
+       "v": "Hello."
+      }
+     },
+     "identities": [
+      {
+       "seed": "59f2293a5bce7d4de59e71b4207ac5d2b5c6bfbf4e4a3d2b1f0e9d8c7b6a5948",
+       "comment": "alice"
+      }
+     ],
+     "id": "alice",
+     "salt": "101112131415161718191a1b1c1d1e1f",
+     "nonce": "0b0b0b0b0b0b0b0b0b0b0b0b",
+     "rng": [
+      "17295166580085024720",
+      "422929670265678780",
+      "5577237070365765850",
+      "7953171132032326923"
+     ]
+    },
+    "outs": [
+     "cbor",
+     "ur",
+     "digest",
+     "format",
+     "flat",
+     "tree",
+     "treeDigests",
+     "mermaid",
+     "diagnostic",
+     "hex",
+     "summary"
+    ]
+   },
+   "expect": "d8c882d99c42844d573d2df6c1934ce8808e0fe7824c518684c556472008a67932f75060e0513bccc1155335fd4f6f7fc5705d5825d99c415820172a5e51431062e7b13525cbceb8ad8475977444cf28423e21c0d1dcbdfcaf47a113d8c9d99c5bd99c4284582076dc663de4a503c25b33a0815d61ccb2a4b9b88a6b0a2351eabe56acbb53db104c0b0b0b0b0b0b0b0b0b0b0b0b50a572be7e1548e433cb3d8b3b2b79e262581c8304d99c5250101112131415161718191a1b1c1d1e1f65616c696365\n---\nur:envelope/lftansfwlrgthgfsdpynsemugsvslamnbsvdlfgsgylnlrskhfflcxayolkkeyylgdhnvtgyfrsfsebzgueczcgwjllbskjohlhddatansfphdcxchdrhygyfxbeidvdpaecdasbtoropmlrkpmsjyfytkdefwfmclrtttuoryztpefloybwtpsotanshptansfwlrhdcxkouoiyfsveonaxsahpeonblyhlhssfproxrhrolejebkcngywdrnhfpsrkguuybegsbdbdbdbdbdbdbdbdbdbdbdbdgdonjprnkbbzfdveeosbfslufrdnkkvoidhdcelsaatansgmgdbebybgbwbbbzcmchcscfcycwcecackctihhsjziniaihfzwmdnae\n---\nb76c1e84f6e9807365bc0339c9bbab4712d85d66b65de9a6f28235b35eb47da0\n---\nENCRYPTED [\n    'hasSecret': EncryptedKey(SSHAgent(\"alice\"))\n]\n---\nENCRYPTED [ 'hasSecret': EncryptedKey(SSHAgent(\"alice\")) ]\n---\nb76c1e84 NODE\n    172a5e51 subj ENCRYPTED\n    8c786242 ASSERTION\n        10500c3d pred 'hasSecret'\n        11dfeb35 obj EncryptedKey(SSHAgent(\"alice\"))\n---\nb76c1e84 NODE\n    172a5e51 subj ENCRYPTED\n    8c786242 ASSERTION\n        10500c3d pred 'hasSecret'\n        11dfeb35 obj EncryptedKey(SSHAgent(\"alice\"))\n---\n%%{ init: { 'theme': 'default', 'flowchart': { 'curve': 'basis' } } }%%\ngraph LR\n0((\"NODE<br>b76c1e84\"))\n    0 -- subj --> 1>\"ENCRYPTED<br>172a5e51\"]\n    0 --> 2([\"ASSERTION<br>8c786242\"])\n        2 -- pred --> 3[/\"'hasSecret'<br>10500c3d\"/]\n        2 -- obj --> 4[\"EncryptedKey(SSHAgent(&quot;alice&quot;))<br>11dfeb35\"]\nstyle 0 stroke:red,stroke-width:4px\nstyle 1 stroke:coral,stroke-width:4px\nstyle 2 stroke:green,stroke-width:4px\nstyle 3 stroke:goldenrod,stroke-width:4px\nstyle 4 stroke:teal,stroke-width:4px\nlinkStyle 0 stroke:red,stroke-width:2px\nlinkStyle 1 stroke-width:2px\nlinkStyle 2 stroke:cyan,stroke-width:2px\nlinkStyle 3 stroke:magenta,stroke-width:2px\n---\n200(\n    [\n        40002(\n            [\n                h'573d2df6c1934ce8808e0fe782',\n                h'518684c556472008a67932f7',\n                h'60e0513bccc1155335fd4f6f7fc5705d',\n                h'd99c415820172a5e51431062e7b13525cbceb8ad8475977444cf28423e21c0d1dcbdfcaf47'\n            ]\n        ),\n        {\n            19:\n            201(\n                40027(\n                    40002(\n                        [\n                            h'76dc663de4a503c25b33a0815d61ccb2a4b9b88a6b0a2351eabe56acbb53db10',\n                            h'0b0b0b0b0b0b0b0b0b0b0b0b',\n                            h'a572be7e1548e433cb3d8b3b2b79e262',\n                            h'8304d99c5250101112131415161718191a1b1c1d1e1f65616c696365'\n                        ]\n                    )\n                )\n            )\n        }\n    ]\n)\n---\nd8 c8                                   # tag(200) envelope\n    82                                  # array(2)\n        d9 9c42                         # tag(40002) encrypted\n            84                          # array(4)\n                4d                      # bytes(13)\n                    573d2df6c1934ce8808e0fe782\n                4c                      # bytes(12)\n                    518684c556472008a67932f7\n                50                      # bytes(16)\n                    60e0513bccc1155335fd4f6f7fc5705d\n                5825                    # bytes(37)\n                    d99c415820172a5e51431062e7b13525cbceb8ad8475977444cf28423e21c0d1dcbdfcaf47\n        a1                              # map(1)\n            13                          # unsigned(19)\n            d8 c9                       # tag(201) leaf\n                d9 9c5b                 # tag(40027) encrypted-key\n                    d9 9c42             # tag(40002) encrypted\n                        84              # array(4)\n                            5820        # bytes(32)\n                                76dc663de4a503c25b33a0815d61ccb2a4b9b88a6b0a2351eabe56acbb53db10\n                            4c          # bytes(12)\n                                0b0b0b0b0b0b0b0b0b0b0b0b\n                            50          # bytes(16)\n                                a572be7e1548e433cb3d8b3b2b79e262\n                            581c        # bytes(28)\n                                8304d99c5250101112131415161718191a1b1c1d1e1f65616c696365\n---\nNODE\n---\nkey=7eb559bbbf6cce2632cf9f194aeb50943de7e1cbad54dcfab27a42759f5e2fed\n---\nunlock=ok"
+  }
+ ]
+}

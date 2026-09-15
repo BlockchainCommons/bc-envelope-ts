@@ -7,11 +7,11 @@
  */
 import { describe, it, expect } from "vitest";
 import * as src from "../src/all.js";
-import { HAND, WIRE, REJECT, DOMAIN_CASES } from "./corpus/corpus";
+import { HAND, WIRE, REJECT, DOMAIN_CASES, isReproducible } from "./corpus/corpus";
 import {
   type E,
   materialize,
-  redesignedAdapterFor,
+  workingTreeAdapterFor,
   recipeName,
   randomnessOf,
   type Out,
@@ -19,11 +19,11 @@ import {
 import { currentDeps } from "./vectors/deps";
 import "../src/all.js";
 
-const api = redesignedAdapterFor(src, await currentDeps());
+const api = workingTreeAdapterFor(src, await currentDeps());
 
 describe("golden: hand corpus", () => {
   for (const e of HAND) {
-    if (e.k === "decode" || e.k === "ur") continue;
+    if (e.k === "decode" || e.k === "ur" || !isReproducible(e)) continue;
     // Digests (tree, mermaid) are stable only where no fresh randomness enters.
     const level = randomnessOf(e);
     const out: Out[] =
@@ -37,9 +37,9 @@ describe("golden: hand corpus", () => {
     });
   }
   for (const [name, list] of [
-    ["wire", WIRE],
+    ["wire", WIRE.filter(isReproducible)],
     ["reject", REJECT],
-    ["domain", DOMAIN_CASES.map((c): E => ({ k: "domain", case: c }))],
+    ["domain", DOMAIN_CASES.map(([c, cls]): E => ({ k: "domain", case: c, cls }))],
   ] as const) {
     it(`category ${name}`, () => {
       const rows = list.map(
@@ -66,9 +66,10 @@ describe("golden: hand corpus", () => {
 });
 
 /**
- * Freeze additions: what the port does today for every behavioural
- * finding (B1–B17 and the domain rows), recorded verbatim so later
- * changes are a visible diff. Outcomes are `ok:<value>` or
+ * Behaviour snapshots: what the port does today at every boundary the
+ * review corrected (content keys, deduplication, obscured subjects, dates,
+ * mutability, error codes, format strings, acceptance, the JavaScript input
+ * domain), recorded verbatim so later changes are a visible diff. Outcomes are `ok:<value>` or
  * `throw:<class>[:<code>]:<message>` with the `cause` chain.
  */
 import { EnvelopeError } from "../src/index.js";
@@ -78,7 +79,7 @@ import { PrivateKeyBase, SymmetricKey, Salt, ARID } from "@blockchaincommons/com
 import { cbor, taggedValue, expectText } from "@blockchaincommons/dcbor";
 import { SIGNED, NOTE } from "@blockchaincommons/known-values";
 
-describe("golden: freeze additions", () => {
+describe("golden: behaviour snapshots", () => {
   const { Envelope } = src;
   const hexOf = (u: Uint8Array): string => Buffer.from(u).toString("hex");
   const bytes = (n: number, s = 0): Uint8Array =>
@@ -108,7 +109,7 @@ describe("golden: freeze additions", () => {
   const hello = Envelope.from("Hello.");
   const id = ARID.from(bytes(32, 0xc6));
 
-  it("B1: the sealed content key is 32 raw bytes", () => {
+  it("the sealed content key is the key's tagged CBOR", () => {
     const sealed = hello
       .encryptSubject(key)
       .addRecipient(bob.encapsulationPrivateKey().publicKey(), key);
@@ -117,7 +118,7 @@ describe("golden: freeze additions", () => {
       `decryptSubjectToRecipient(bob): ${outcome(() => sealed.decryptSubjectToRecipient(bob))}`,
     ]).toMatchSnapshot();
   });
-  it("B2: duplicate assertions are appended", () => {
+  it("duplicate assertions are deduplicated by digest", () => {
     const a1 = Envelope.from("Alice").addAssertion("knows", "Bob");
     const a2 = a1.addAssertion("knows", "Bob");
     expect([
@@ -126,7 +127,7 @@ describe("golden: freeze additions", () => {
       `format: ${a2.format().replace(/\n\s*/g, " ")}`,
     ]).toMatchSnapshot();
   });
-  it("B3: a node whose subject is obscured", () => {
+  it("a node whose subject is obscured", () => {
     const salted = Envelope.from("A").addAssertion("p", "o", { salt: true });
     const inner = salted.assertions()[0]!.subject();
     const elidedInner = salted.elide({ removing: [inner] });
@@ -138,13 +139,13 @@ describe("golden: freeze additions", () => {
       `node(): ${outcome(() => Envelope.node(elidedInner.subject(), elidedInner.assertions()))}`,
     ]).toMatchSnapshot();
   });
-  it("B4: Date and undefined inputs", () => {
+  it("Date and undefined inputs", () => {
     expect([
       `from(new Date(0)): ${outcome(() => hexOf(Envelope.leaf(new Date(0)).toCbor().toData()))}`,
       `from(undefined): ${outcome(() => Envelope.from(undefined as never).diagnostic())}`,
     ]).toMatchSnapshot();
   });
-  it("B5: mutability", () => {
+  it("mutability", () => {
     const m = Envelope.from("Alice").addAssertion("knows", "Bob");
     const before = { d: m.digest().toHex(), c: hexOf(m.toCbor().toData()) };
     const push = outcome(() =>
@@ -164,8 +165,7 @@ describe("golden: freeze additions", () => {
       `digest().bytes[0] ^= 0xff → digest unchanged ${d.digest().toHex() === dhex} (components' Digest.bytes is already a copy)`,
     ]).toMatchSnapshot();
   });
-  it("B6: salt bypasses the assertion check", () => {
-    // W1: the check runs before salting, so the construction itself is rejected.
+  it("the assertion check runs before salting", () => {
     const b6 = () =>
       Envelope.from("A").addAssertionEnvelope(Envelope.from("not-an-assertion"), { salt: true });
     expect([
@@ -173,7 +173,7 @@ describe("golden: freeze additions", () => {
       `fromBytes: ${outcome(() => Envelope.fromBytes(b6().toCbor().toData()))}`,
     ]).toMatchSnapshot();
   });
-  it("B7: General where the reference has a variant", () => {
+  it("the reference's error variant at every operation", () => {
     const enc = hello.encryptSubject(key);
     const sealed = enc.addRecipient(bob.encapsulationPrivateKey().publicKey(), key);
     const req = xp.Request.from(new xp.Expression(xp.Function.named("f")), id).toEnvelope();
@@ -191,14 +191,14 @@ describe("golden: freeze additions", () => {
       `Request.fromEnvelope mismatch: ${outcome(() => xp.Request.fromEnvelope(req, xp.Function.named("g")))}`,
     ]).toMatchSnapshot();
   });
-  it("B8: decode error wrapping", () => {
+  it("decode error identity", () => {
     expect([
       `fromCbor(200([1])): ${outcome(() => Envelope.fromCbor(taggedValue(200, cbor([1]))))}`,
       `fromBytes(ff00): ${outcome(() => Envelope.fromBytes(Uint8Array.from([0xff, 0x00])))}`,
       `fromCbor(201(42)): ${outcome(() => Envelope.fromCbor(taggedValue(201, cbor(42))))}`,
     ]).toMatchSnapshot();
   });
-  it("B9: an obscured recipient", () => {
+  it("an obscured recipient", () => {
     const two = hello
       .encryptSubject(key)
       .addRecipient(bob.encapsulationPrivateKey().publicKey(), key)
@@ -220,14 +220,14 @@ describe("golden: freeze additions", () => {
       `decryptSubjectToRecipient(carol): ${outcome(() => bobElided.decryptSubjectToRecipient(carol))}`,
     ]).toMatchSnapshot();
   });
-  it("B10: empty verifier lists", () => {
+  it("empty verifier lists", () => {
     const signed = hello.sign(PrivateKeyBase.from(bytes(32, 5)).schnorrSigningPrivateKey());
     expect([
       `hasSignaturesFrom([]): ${outcome(() => signed.hasSignaturesFrom([]))}`,
       `verifySignaturesFrom([]): ${outcome(() => signed.verifySignaturesFrom([]))}`,
     ]).toMatchSnapshot();
   });
-  it("B11/B12/B16: format strings", () => {
+  it("format strings", () => {
     expect([
       `Function.known(5): ${outcome(() => new xp.Expression(xp.Function.known(5)).toEnvelope())}`,
       `format(NOTE, { context: "none" }): ${outcome(() => fmt.format(Envelope.knownValue(NOTE), { context: "none" }))}`,
@@ -235,7 +235,7 @@ describe("golden: freeze additions", () => {
       `Response.failure(id).withError("e").summary(): ${outcome(() => xp.Response.failure(id).withError("e").summary())}`,
     ]).toMatchSnapshot();
   });
-  it("B13/B14/B15/B17: acceptance", () => {
+  it("acceptance", () => {
     const req = xp.Request.from(new xp.Expression(xp.Function.named("f")).withParameter("a", 1), id)
       .toEnvelope()
       .addAssertion("note", "x");
@@ -248,7 +248,7 @@ describe("golden: freeze additions", () => {
       `'signed' wrapping a non-signature → verify(pub): ${outcome(() => hello.addAssertion(SIGNED, Envelope.from("x").wrap()).verify(PrivateKeyBase.from(bytes(32, 5)).schnorrSigningPrivateKey().publicKey()))}`,
     ]).toMatchSnapshot();
   });
-  it("§3: the JS input domain", () => {
+  it("the JavaScript input domain", () => {
     expect([
       `node(s, []): ${outcome(() => Envelope.node(hello, []))}`,
       `knownValue(-1): ${outcome(() => Envelope.knownValue(-1))}`,

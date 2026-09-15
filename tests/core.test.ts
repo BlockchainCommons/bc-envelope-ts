@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Envelope } from "../src";
-import { NOTE, UNIT } from "@blockchaincommons/known-values";
+import { NOTE, POSITION, UNIT } from "@blockchaincommons/known-values";
 import "../src/all.js";
 
 // ============================================================================
@@ -599,5 +599,224 @@ describe("Core Envelope Tests", () => {
       const e = Envelope.from("Hello").elide();
       expect(e.format()).toBe("ELIDED");
     });
+  });
+});
+
+/** `ok:<value>` or `throw:<code>:<message>`. */
+function outcome(f: () => unknown): string {
+  try {
+    return `ok:${String(f())}`;
+  } catch (e) {
+    const x = e as { code: string; message: string };
+    return `throw:${x.code}:${x.message}`;
+  }
+}
+
+describe("subject extraction follows extract_subject", () => {
+  it("returns the case's own value when the decoder returns its type", async () => {
+    const { KnownValue } = await import("@blockchaincommons/known-values");
+    const { Digest } = await import("@blockchaincommons/components");
+    const { expectText } = await import("@blockchaincommons/dcbor");
+    const wrapped = Envelope.from("a").wrap();
+    expect(wrapped.expectSubject((c) => Envelope.fromCbor(c)).formatFlat()).toBe('"a"');
+    expect(outcome(() => wrapped.expectSubject(expectText))).toBe(
+      "throw:InvalidFormat:invalid format",
+    );
+    const named = Envelope.knownValue(new KnownValue(9999, "custom"));
+    const kv = named.expectSubject((c) => KnownValue.fromCbor(c));
+    expect(`${String(kv.value)}:${kv.name}`).toBe("9999:custom");
+    expect(outcome(() => named.expectSubject((c) => c))).toBe("throw:InvalidFormat:invalid format");
+    expect(outcome(() => named.expectSubject(expectText))).toBe(
+      "throw:InvalidFormat:invalid format",
+    );
+    const elided = Envelope.from("a").elide();
+    expect(elided.expectSubject((c) => Digest.fromCbor(c)).equals(elided.digest())).toBe(true);
+    expect(outcome(() => Envelope.assertion("p", "o").expectSubject(expectText))).toBe(
+      "throw:InvalidFormat:invalid format",
+    );
+    expect(outcome(() => Envelope.assertion("p", "o").expectSubject((c) => c))).toBe(
+      "throw:InvalidFormat:invalid format",
+    );
+    // A node extracts its subject.
+    expect(Envelope.from("a").addAssertion("k", 1).expectSubject(expectText)).toBe("a");
+  });
+
+  it("a leaf the decoder rejects is Cbor with the dcbor message", async () => {
+    const { expectText } = await import("@blockchaincommons/dcbor");
+    expect(outcome(() => Envelope.from(1).expectSubject(expectText))).toBe(
+      "throw:Cbor:dcbor error: the decoded CBOR value was not the expected type",
+    );
+    expect(outcome(() => Envelope.from(1).expectString())).toBe(
+      "throw:Cbor:dcbor error: the decoded CBOR value was not the expected type",
+    );
+    expect(outcome(() => Envelope.from("a").addAssertion("k", 1).expectString())).toBe(
+      "throw:NotLeaf:the envelope's subject is not a leaf",
+    );
+    expect(outcome(() => Envelope.from("a").wrap().expectString())).toBe(
+      "throw:NotLeaf:the envelope's subject is not a leaf",
+    );
+  });
+
+  it("the boolean and null predicates extract the subject", () => {
+    expect(Envelope.from(true).addAssertion("k", 1).isTrue()).toBe(true);
+    expect(Envelope.from(false).addAssertion("k", 1).isFalse()).toBe(true);
+    expect(Envelope.from(true).addAssertion("k", 1).isBool()).toBe(true);
+    expect(Envelope.NULL.addAssertion("k", 1).isNull()).toBe(true);
+    expect(Envelope.from(true).wrap().isBool()).toBe(false);
+    expect(Envelope.from(1).isBool()).toBe(false);
+    expect(Envelope.from("null").isNull()).toBe(false);
+  });
+
+  it("expectNumber is f64::try_from: exact integers only", () => {
+    expect(Envelope.from(2n ** 53n).expectNumber()).toBe(9007199254740992);
+    expect(outcome(() => Envelope.from(2n ** 53n + 1n).expectNumber())).toBe(
+      "throw:Cbor:dcbor error: the CBOR numeric value could not be represented in the specified numeric type",
+    );
+    expect(Envelope.from(2n ** 64n - 1n).expectNumber()).toBe(2 ** 64);
+    expect(Envelope.from(-(2n ** 64n)).expectNumber()).toBe(-(2 ** 64));
+    expect(outcome(() => Envelope.from(-(2n ** 53n) - 2n).expectNumber())).toBe(
+      "throw:Cbor:dcbor error: the CBOR numeric value could not be represented in the specified numeric type",
+    );
+    expect(Envelope.from(1.5).expectNumber()).toBe(1.5);
+    expect(outcome(() => Envelope.from("a").expectNumber())).toBe(
+      "throw:Cbor:dcbor error: the decoded CBOR value was not the expected type",
+    );
+    expect(outcome(() => Envelope.from(1).addAssertion("k", 1).expectNumber())).toBe(
+      "throw:NotLeaf:the envelope's subject is not a leaf",
+    );
+  });
+});
+
+describe("position is a u64", () => {
+  it("takes and returns bigints above the safe range", () => {
+    const e = Envelope.from("x").setPosition(2n ** 60n);
+    expect(e.position()).toBe(2n ** 60n);
+    expect(
+      Envelope.from("x")
+        .setPosition(2n ** 53n + 1n)
+        .position(),
+    ).toBe(2n ** 53n + 1n);
+    expect(Envelope.from("x").setPosition(5n).position()).toBe(5);
+    expect(
+      Envelope.from("x")
+        .setPosition(2n ** 64n - 1n)
+        .position(),
+    ).toBe(2n ** 64n - 1n);
+  });
+  it("wraps negative content as the reference's usize does", () => {
+    expect(Envelope.from("x").addAssertion(POSITION, -1).position()).toBe(2n ** 64n - 1n);
+    expect(outcome(() => Envelope.from("x").addAssertion(POSITION, 1.5).position())).toBe(
+      "throw:Cbor:dcbor error: the decoded CBOR value was not the expected type",
+    );
+    expect(
+      Envelope.from("x").addAssertion(POSITION, Envelope.from(7).addAssertion("k", 1)).position(),
+    ).toBe(7);
+    expect(outcome(() => Envelope.from("x").position())).toBe(
+      "throw:NonexistentPredicate:no assertion matches the predicate",
+    );
+  });
+  it("rejects what a usize cannot be", () => {
+    const expected =
+      "position must be an integer in [0, 9007199254740991] or a bigint in [0, 18446744073709551615]";
+    expect(outcome(() => Envelope.from("x").setPosition(1.5))).toBe(
+      `throw:InvalidParameter:${expected}, got 1.5`,
+    );
+    expect(outcome(() => Envelope.from("x").setPosition(-1))).toBe(
+      `throw:InvalidParameter:${expected}, got -1`,
+    );
+    expect(outcome(() => Envelope.from("x").setPosition(2 ** 53))).toBe(
+      `throw:InvalidParameter:${expected}, got 9007199254740992`,
+    );
+    expect(outcome(() => Envelope.from("x").setPosition(2n ** 64n))).toBe(
+      `throw:InvalidParameter:${expected}, got 18446744073709551616n`,
+    );
+  });
+});
+
+describe("addSalt goes through components' Salt", () => {
+  it("lengths below 8 and inverted ranges are Components errors", () => {
+    const e = Envelope.from("x");
+    expect(outcome(() => e.addSalt({ length: 7 }))).toBe(
+      "throw:Components:components error: data too short: salt expected at least 8, got 7",
+    );
+    expect(outcome(() => e.addSalt({ length: 0 }))).toBe(
+      "throw:Components:components error: data too short: salt expected at least 8, got 0",
+    );
+    expect(outcome(() => e.addSalt({ range: { min: 7, max: 10 } }))).toBe(
+      "throw:Components:components error: data too short: salt expected at least 8, got 7",
+    );
+    expect(outcome(() => e.addSalt({ range: { min: 10, max: 9 } }))).toMatch(
+      /^throw:Components:components error: /,
+    );
+  });
+  it("non-integers are InvalidParameter", () => {
+    const e = Envelope.from("x");
+    expect(outcome(() => e.addSalt({ length: 1.5 }))).toBe(
+      "throw:InvalidParameter:length must be a non-negative integer, got 1.5",
+    );
+    expect(outcome(() => e.addSalt({ length: NaN }))).toBe(
+      "throw:InvalidParameter:length must be a non-negative integer, got NaN",
+    );
+    expect(outcome(() => e.addSalt({ range: { min: 8.5, max: 10 } }))).toBe(
+      "throw:InvalidParameter:range.min must be a non-negative integer, got 8.5",
+    );
+  });
+  it("a salt instance of any length is accepted", () => {
+    expect(
+      Envelope.from("x")
+        .addSalt({ salt: new Uint8Array(4) })
+        .formatFlat(),
+    ).toBe("\"x\" [ 'salt': Salt ]");
+  });
+});
+
+describe("node assertions sort by digest bytes", () => {
+  it("is independent of the host collation", () => {
+    // Under a Danish or Norwegian collation a text comparison of the hex digests
+    // would swap these two assertions; the byte order gives the reference's digest.
+    const e = Envelope.from("s").addAssertion("k", 337).addAssertion("k", 1);
+    expect(e.digest().toHex()).toBe(
+      "2d0822395f8f0f42363ccbcb386ed770e75c5f1821157202dc0e20fbdb523f95",
+    );
+    const original = String.prototype.localeCompare;
+    String.prototype.localeCompare = function (this: string, other: string): number {
+      // A stub collating "aa" after "ab", as da_DK does.
+      const key = (s: string): string => s.replace(/aa/g, "￿");
+      return key(this) < key(other) ? -1 : key(this) > key(other) ? 1 : 0;
+    };
+    try {
+      expect(Envelope.from("s").addAssertion("k", 337).addAssertion("k", 1).digest().toHex()).toBe(
+        "2d0822395f8f0f42363ccbcb386ed770e75c5f1821157202dc0e20fbdb523f95",
+      );
+    } finally {
+      String.prototype.localeCompare = original;
+    }
+  });
+});
+
+describe("known values from another module copy", () => {
+  it("build the known-value case through the brand", async () => {
+    const { KnownValue } = await import("@blockchaincommons/known-values");
+    // A value shaped like a known value from another copy: the brand, not the class.
+    const foreign = Object.create(null) as Record<PropertyKey, unknown>;
+    Object.defineProperty(foreign, Symbol.for("@blockchaincommons/known-values/type"), {
+      value: true,
+    });
+    foreign["valueBigInt"] = 1n;
+    foreign["value"] = 1;
+    foreign["name"] = "isA";
+    foreign["assignedName"] = "isA";
+    foreign["toCbor"] = () => new KnownValue(1).toCbor();
+    foreign["untaggedCbor"] = () => new KnownValue(1).untaggedCbor();
+    foreign["equals"] = (other: unknown) =>
+      KnownValue.isKnownValue(other) && other.valueBigInt === 1n;
+    const e = Envelope.from(foreign as never);
+    expect(e.isKnownValue()).toBe(true);
+    expect(Buffer.from(e.toCbor().toData()).toString("hex")).toBe("d8c801");
+    expect(
+      Envelope.knownValue(foreign as never)
+        .digest()
+        .equals(Envelope.knownValue(1).digest()),
+    ).toBe(true);
   });
 });

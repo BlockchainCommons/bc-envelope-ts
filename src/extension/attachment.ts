@@ -13,7 +13,8 @@
  * See BCR-2023-006: https://github.com/BlockchainCommons/Research/blob/master/papers/bcr-2023-006-envelope-attachment.md
  */
 
-import { Envelope } from "../base/envelope";
+import { expectText } from "@blockchaincommons/dcbor";
+import { Envelope, tryObjectForPredicate, tryOptionalObjectForPredicate } from "../base/envelope";
 import { type Digest } from "../base/digest";
 import { EnvelopeError } from "../base/error";
 import type { EnvelopeInput } from "../base/envelope-encodable";
@@ -190,30 +191,38 @@ export function attachmentPayload(envelope: Envelope): Envelope {
 }
 
 /**
- * Returns the vendor of an attachment envelope.
+ * Returns the vendor of an attachment envelope: the object's `'vendor'`
+ * read by subject extraction (the reference's
+ * `extract_object_for_predicate`), so a salted or otherwise annotated vendor
+ * is read too; an empty vendor is a vendor.
  *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError with code `InvalidAttachment` when the envelope is
+ *   not an assertion; `NonexistentPredicate` / `AmbiguousPredicate` when
+ *   there is not exactly one vendor; `Cbor` (`dcbor error: <Display>`) when
+ *   it is not text.
  */
 export function attachmentVendor(envelope: Envelope): string {
   const c = envelope.case;
   if (c.type !== "assertion") {
     throw EnvelopeError.invalidAttachment();
   }
-  // `NonexistentPredicate` when absent, `Cbor` when not text; an empty vendor is a vendor.
-  return c.assertion.object().objectForPredicate(VENDOR).expectString();
+  return tryObjectForPredicate(c.assertion.object(), VENDOR, expectText);
 }
 
 /**
- * Returns the conformsTo of an attachment envelope.
+ * Returns the conformsTo of an attachment envelope, or `undefined` when it
+ * has none (the reference's `extract_optional_object_for_predicate`).
  *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError with code `InvalidAttachment` when the envelope is
+ *   not an assertion; `AmbiguousPredicate` when there are several; `Cbor`
+ *   when it is not text.
  */
 export function attachmentConformsTo(envelope: Envelope): string | undefined {
   const c = envelope.case;
   if (c.type !== "assertion") {
     throw EnvelopeError.invalidAttachment();
   }
-  return c.assertion.object().optionalObjectForPredicate(CONFORMS_TO)?.expectString();
+  return tryOptionalObjectForPredicate(c.assertion.object(), CONFORMS_TO, expectText);
 }
 
 /** Which attachments `attachments` and `expectAttachment` select. */
@@ -245,39 +254,23 @@ export function attachments(envelope: Envelope, filter: AttachmentFilter = {}): 
 }
 
 /**
- * Validates that this envelope is a valid attachment.
+ * Validates that this envelope is a valid attachment, in the reference's
+ * order (`validate_attachment`): the payload is read (`NotWrapped` when the
+ * object is not wrapped), then the vendor and the conformsTo, then the
+ * attachment is rebuilt from them and must be equivalent to this envelope
+ * (which also checks that the predicate is `'attachment'`).
  *
- * An attachment is valid if:
- * 1. The envelope is an assertion with 'attachment' as predicate
- * 2. The object contains a wrapped payload with vendor assertion
- * 3. Reconstructing the attachment yields an equivalent envelope
- *
- * @throws EnvelopeError if the envelope is not a valid attachment
+ * @throws EnvelopeError with code `InvalidAttachment` when the envelope is
+ *   not an assertion or does not rebuild; `NotWrapped`,
+ *   `NonexistentPredicate`, `AmbiguousPredicate` or `Cbor` from the parts.
  */
 export function validateAttachment(envelope: Envelope): void {
-  const c = envelope.case;
-  if (c.type !== "assertion") {
-    throw EnvelopeError.invalidAttachment("Envelope is not an assertion");
-  }
-
-  // Verify predicate is 'attachment' (using digest comparison for KnownValue predicates)
-  const predicate = c.assertion.predicate();
-  const expectedPredicate = Envelope.from(ATTACHMENT);
-  if (!predicate.digest().equals(expectedPredicate.digest())) {
-    throw EnvelopeError.invalidAttachment("Assertion predicate is not 'attachment'");
-  }
-
-  // Extract components
   const payload = attachmentPayload(envelope);
   const vendor = attachmentVendor(envelope);
   const conformsTo = attachmentConformsTo(envelope);
-
-  // Reconstruct the attachment
   const reconstructed = attachment(payload, vendor, conformsTo);
-
-  // Check equivalence (same digest = semantically equivalent)
-  if (!envelope.digest().equals(reconstructed.digest())) {
-    throw EnvelopeError.invalidAttachment("Attachment structure is invalid");
+  if (!envelope.isEquivalentTo(reconstructed)) {
+    throw EnvelopeError.invalidAttachment();
   }
 }
 

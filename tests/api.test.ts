@@ -1,5 +1,5 @@
 /**
- * The redesigned core surface: constructors and constants, the case
+ * The core surface: constructors and constants, the case
  * getter, the expect* grammar, elide options, salt options, codable
  * members, error codes and the `pipe` bridge.
  */
@@ -239,7 +239,7 @@ describe("salt", () => {
       1,
     );
     expect(() => e.addSalt({ length: 4 })).toThrow(EnvelopeError);
-    // A caller-supplied salt is taken as is (the reference's `add_salt_instance`, B15).
+    // A caller-supplied salt is taken as is (the reference's `add_salt_instance`).
     expect(e.addSalt({ salt: new Uint8Array(2) }).assertionsWithPredicate(SALT).length).toBe(1);
     expect(() => e.addSalt({ range: { min: 2, max: 9 } })).toThrow(EnvelopeError);
     expect(() => e.addSalt({ range: { min: 10, max: 9 } })).toThrow(EnvelopeError);
@@ -302,15 +302,19 @@ describe("pipe and format options", () => {
     expect(alice.diagnostic({ annotate: true })).toContain("envelope");
     expect(Envelope.from("a".repeat(50)).summary({ maxLength: 10 }).length).toBeLessThan(20);
     expect(Envelope.from(IS_A).summary()).toBe("'isA'");
-    // `"none"` prints the codepoint, as the reference's `FormatContextOpt::None` does (B12).
+    // A summary with no context prints the codepoint (the reference looks the
+    // raw value up in an empty store); notation with no context flanks the
+    // value's own name twice, as the reference's `FormatContextOpt::None` arm does.
     expect(Envelope.from(IS_A).summary({ context: "none" })).toBe("'1'");
     const ctx = new FormatContext();
     ctx.tags.register(Tag.from(200, "custom"));
     ctx.knownValues.register(new KnownValue(1, "alias"));
     expect(alice.hex({ context: ctx })).toContain("# tag(200) custom");
     expect(Envelope.from(IS_A).format({ context: ctx })).toBe("'alias'");
-    expect(Envelope.from(IS_A).format({ context: "none" })).toBe("'1'");
-    expect(ctx.clone().tags).toBe(ctx.tags);
+    expect(Envelope.from(IS_A).format({ context: "none" })).toBe("''isA''");
+    // a clone copies every store
+    expect(ctx.clone().tags).not.toBe(ctx.tags);
+    expect(ctx.clone().tags.nameForValue(200)).toBe("custom");
   });
 });
 

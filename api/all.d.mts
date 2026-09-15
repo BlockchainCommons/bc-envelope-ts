@@ -1,9 +1,11 @@
 import { ARID } from '@blockchaincommons/components';
 import { Cbor } from '@blockchaincommons/dcbor';
 import { CborCodec } from '@blockchaincommons/dcbor';
+import { CborDate } from '@blockchaincommons/dcbor';
 import { CborMap } from '@blockchaincommons/dcbor';
 import { CborNumber } from '@blockchaincommons/dcbor';
 import { CborSummarizer } from '@blockchaincommons/dcbor';
+import { CborTagged } from '@blockchaincommons/dcbor';
 import { Compressed } from '@blockchaincommons/components';
 import { Decrypter } from '@blockchaincommons/components';
 import { Digest } from '@blockchaincommons/components';
@@ -22,6 +24,7 @@ import { Signature } from '@blockchaincommons/components';
 import { Signer } from '@blockchaincommons/components';
 import { SigningOptions } from '@blockchaincommons/components';
 import { Spec } from '@blockchaincommons/sskr';
+import { SshAgent } from '@blockchaincommons/components/kdf';
 import { SymmetricKey } from '@blockchaincommons/components';
 import { Tag } from '@blockchaincommons/dcbor';
 import { TagsStore } from '@blockchaincommons/dcbor';
@@ -53,19 +56,30 @@ export declare function addAttachment(envelope: Envelope, payload: EnvelopeInput
 export declare function addEdgeEnvelope(envelope: Envelope, edge: Envelope): Envelope;
 
 /**
- * Adds a recipient assertion to this envelope.
- *
- * This method adds a `hasRecipient` assertion containing a `SealedMessage`
- * that holds the content key encrypted to the recipient's public key.
+ * Adds a `hasRecipient` assertion holding `contentKey` sealed to the
+ * recipient's public key (the reference's `add_recipient` /
+ * `add_recipient_opt`): the plaintext is the key's tagged CBOR.
  *
  * @param recipient - The recipient's public key (implements Encrypter)
  * @param contentKey - The symmetric key used to encrypt the envelope's subject
- * @param options - A fixed `nonce` or an `rng` for the ephemeral key and nonce
+ * @param options - A fixed `nonce` for the sealed message, or an `rng` for
+ *   the ephemeral key and the nonce
  * @returns A new envelope with the recipient assertion added
+ * @throws EnvelopeError `Components` (`components error: <message>`, `cause`
+ *   the `ComponentsError`) when components cannot seal to the key (a
+ *   low-order X25519 public key)
  */
 export declare function addRecipient(envelope: Envelope, recipient: Encrypter, contentKey: SymmetricKey, options?: RecipientOptions): Envelope;
 
-/** Adds a `hasSecret` assertion holding `contentKey` locked by `secret` via `method`. */
+/**
+ * Adds a `hasSecret` assertion holding `contentKey` locked by `secret` via
+ * `method` (the reference's `add_secret`), for an envelope whose subject was
+ * encrypted with `contentKey`.
+ *
+ * @throws EnvelopeError `InvalidParameter` for a value outside
+ *   `KeyDerivationMethod`; `Components` when components cannot lock the key
+ *   (`KeyDerivationMethod.SSHAgent` needs an agent: see {@link lockSubjectWith})
+ */
 export declare function addSecret(envelope: Envelope, method: KeyDerivationMethod, secret: Uint8Array, contentKey: SymmetricKey): Envelope;
 
 /**
@@ -196,7 +210,9 @@ export declare class Assertion implements DigestProvider {
      *
      * @param cbor - The CBOR value to convert
      * @returns A new Assertion instance
-     * @throws {EnvelopeError} If the CBOR is not a valid assertion
+     * @throws EnvelopeError with code `InvalidAssertion` when the CBOR is not
+     *   a single-element map; `Cbor` (`dcbor error: <Display>`) when the key
+     *   or the value is not an envelope
      */
     static fromCbor(cbor: Cbor): Assertion;
     /**
@@ -208,7 +224,9 @@ export declare class Assertion implements DigestProvider {
      *
      * @param map - The CBOR map to convert
      * @returns A new Assertion instance
-     * @throws {EnvelopeError} If the map doesn't have exactly one entry
+     * @throws EnvelopeError with code `InvalidAssertion` when the map does not
+     *   have exactly one entry; `Cbor` (`dcbor error: <Display>`) when the key
+     *   or the value is not an envelope
      */
     static fromCborMap(map: CborMap): Assertion;
     /**
@@ -225,9 +243,12 @@ export declare class Assertion implements DigestProvider {
 export declare function attachment(payload: EnvelopeInput, vendor: string, conformsTo?: string): Envelope;
 
 /**
- * Returns the conformsTo of an attachment envelope.
+ * Returns the conformsTo of an attachment envelope, or `undefined` when it
+ * has none (the reference's `extract_optional_object_for_predicate`).
  *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError with code `InvalidAttachment` when the envelope is
+ *   not an assertion; `AmbiguousPredicate` when there are several; `Cbor`
+ *   when it is not text.
  */
 export declare function attachmentConformsTo(envelope: Envelope): string | undefined;
 
@@ -323,9 +344,15 @@ export declare class Attachments {
 export declare function attachments(envelope: Envelope, filter?: AttachmentFilter): Envelope[];
 
 /**
- * Returns the vendor of an attachment envelope.
+ * Returns the vendor of an attachment envelope: the object's `'vendor'`
+ * read by subject extraction (the reference's
+ * `extract_object_for_predicate`), so a salted or otherwise annotated vendor
+ * is read too; an empty vendor is a vendor.
  *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError with code `InvalidAttachment` when the envelope is
+ *   not an assertion; `NonexistentPredicate` / `AmbiguousPredicate` when
+ *   there is not exactly one vendor; `Cbor` (`dcbor error: <Display>`) when
+ *   it is not text.
  */
 export declare function attachmentVendor(envelope: Envelope): string;
 
@@ -335,18 +362,20 @@ export declare const BLANK: Parameter;
 /** Type for CBOR decoder functions */
 export declare type CborDecoder<T> = (cbor: Cbor) => T;
 
+/** Both absent, or both present and equal to the nanosecond. */
+export declare function datesEqual(a: CborDate | undefined, b: CborDate | undefined): boolean;
+
 /**
- * Decrypts the envelope's subject using the recipient's private key.
- *
- * This method:
- * 1. Finds all `hasRecipient` assertions
- * 2. Tries to decrypt each sealed message until one succeeds
- * 3. Uses the recovered content key to decrypt the subject
+ * Decrypts the envelope's subject with the content key the recipient's
+ * private key opens (the reference's `decrypt_subject_to_recipient`): the
+ * first sealed message the key opens yields the content key, which must
+ * decode as a `SymmetricKey`.
  *
  * @param recipient - The recipient's private key (implements Decrypter)
  * @returns A new envelope with decrypted subject
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `UnknownRecipient` when no sealed message opens;
+ *   `Cbor` (`dcbor error: <message>`) when the sealed plaintext is not a
+ *   symmetric key; the errors of `recipients` and `decryptSubject`
  */
 export declare function decryptSubjectToRecipient(envelope: Envelope, recipient: Decrypter): Envelope;
 
@@ -607,32 +636,37 @@ export declare interface EncryptOptions extends RngOptions {
 }
 
 /**
- * Encrypts the envelope's subject and adds a recipient assertion.
- *
- * This is a convenience method that:
- * 1. Generates a random content key
- * 2. Encrypts the subject with the content key
- * 3. Adds a recipient assertion with the sealed content key
+ * Encrypts the envelope's subject with a fresh content key and adds a
+ * `hasRecipient` assertion sealing that key to `recipient` (the reference's
+ * `encrypt_subject_to_recipient`).
  *
  * @param recipient - The recipient's public key (implements Encrypter)
+ * @param options - `rng` draws the content key, the subject's nonce and the
+ *   sealed message's ephemeral key; `nonce` pins the sealed message's nonce
  * @returns A new envelope with encrypted subject and recipient assertion
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `InvalidParameter` when `recipient` is not an
+ *   `Encrypter`; `Components` when components cannot seal to the key
  */
-export declare function encryptSubjectToRecipient(envelope: Envelope, recipient: Encrypter, options?: RngOptions): Envelope;
+export declare function encryptSubjectToRecipient(envelope: Envelope, recipient: Encrypter, options?: RecipientOptions): Envelope;
 
 /**
- * Encrypts the envelope's subject and adds recipient assertions for multiple recipients.
+ * Encrypts the envelope's subject with one fresh content key and adds a
+ * `hasRecipient` assertion for each of `recipients` (the reference's
+ * `encrypt_subject_to_recipients`); an empty list is accepted.
  *
- * @param recipients - Array of recipient public keys (each implements Encrypter)
+ * @param recipients - The recipients' public keys (each implements Encrypter)
  * @returns A new envelope with encrypted subject and recipient assertions
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `InvalidParameter` when a recipient is not an
+ *   `Encrypter`; `Components` when components cannot seal to a key
  */
 export declare function encryptSubjectToRecipients(envelope: Envelope, recipients: Encrypter[], options?: RngOptions): Envelope;
 
-/** Wraps the envelope and encrypts the wrapper's subject to `recipient`. */
-export declare function encryptToRecipient(envelope: Envelope, recipient: Encrypter, options?: RngOptions): Envelope;
+/**
+ * Wraps the envelope and encrypts the wrapper's subject to `recipient`
+ * (the reference's `encrypt_to_recipient`); `options` are those of
+ * `encryptSubjectToRecipient`.
+ */
+export declare function encryptToRecipient(envelope: Envelope, recipient: Encrypter, options?: RecipientOptions): Envelope;
 
 /**
  * Wraps and encrypts an envelope to multiple recipients.
@@ -905,37 +939,49 @@ export declare class Envelope implements DigestProvider {
      * @returns The tagged CBOR
      */
     toCbor(): Cbor;
-    /** Tagged-CBOR codec; `decode` also accepts the untagged form. */
+    /** Tagged-CBOR codec; `decode` requires tag 200 (`fromCbor`), like every codec in the stack. */
     static get codec(): CborCodec<Envelope>;
     /** The envelope tag (200). */
     cborTags(): Tag[];
     /** As `ur:envelope/…`. */
     toUR(): UR;
     /**
-     * Decodes an envelope from its tagged CBOR (tag 200).
+     * Decodes an envelope from its tagged CBOR (tag 200): the reference's
+     * `TryFrom<CBOR>` / `from_tagged_cbor`.
      *
-     * @throws {EnvelopeError} If the CBOR is not a tagged envelope
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor
+     *   Display and whose `cause` is the `CborError`: `WrongType` for an
+     *   untagged value, `WrongTag` for another tag (the expected tag named as
+     *   the global tags store names it), else what `fromUntaggedCbor` reports.
      */
     static fromCbor(cbor: Cbor): Envelope;
     /**
-     * Decodes an envelope from tagged CBOR bytes.
+     * Decodes an envelope from tagged CBOR bytes: the reference's
+     * `try_from_cbor_data`.
      *
-     * @throws {EnvelopeError} If the data is not valid CBOR or not an envelope
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+     *   of the byte-level failure (`early end of CBOR data`, `the decoded CBOR
+     *   had 1 extra bytes at the end`, `a CBOR numeric value was encoded in
+     *   non-canonical form`, …) and whose `cause` is the `CborError`; then as
+     *   `fromCbor`.
      */
     static fromBytes(data: Uint8Array): Envelope;
     /**
-     * Creates an envelope from untagged CBOR.
+     * Decodes an envelope from its untagged CBOR (the content of tag 200): the
+     * reference's `from_untagged_cbor`. A tag-24 or tag-201 value is a leaf, a
+     * tag-200 value a wrapped envelope, tag 40002 an encrypted message, tag
+     * 40003 a compressed value, a 32-byte string an elided envelope, an array
+     * a node, a single-element map an assertion and an unsigned integer a
+     * known value.
      *
-     * Every failure is `Cbor` (the reference decodes through `dcbor`, whose
-     * error is what `try_from_cbor_data` returns); the message names the
-     * structural fault (`node must have at least two elements`, `assertion
-     * must be a map with exactly one element`, …) and `cause` keeps the
-     * original.
-     *
-     * @param cbor - The untagged CBOR value
-     * @returns A new envelope
-     *
-     * @throws EnvelopeError with code `Cbor`.
+     * @throws EnvelopeError with code `Cbor` whose message is the dcbor Display
+     *   the reference returns and whose `cause` is the `CborError`: the dcbor
+     *   error of a malformed component as it is, else `Custom` with the
+     *   reference's text (`unknown envelope tag: <n>`, `invalid digest size:
+     *   expected 32, got <n>`, `node must have at least two elements`,
+     *   `invalid format`, `assertion must be a map with exactly one element`,
+     *   `a digest was expected but not found`, `invalid envelope`). A failure
+     *   inside an assertion's key or value nests as `dcbor error: <message>`.
      */
     static fromUntaggedCbor(cbor: Cbor): Envelope;
     private static decodeUntagged;
@@ -994,10 +1040,16 @@ export declare class Envelope implements DigestProvider {
      * cannot be correlated with another envelope of the same content.
      *
      * By default the salt length is proportional to the envelope's size
-     * (5–25 %, at least 8 bytes); give `length`, a `range`, or the exact
-     * `salt` instead. `rng` overrides the secure default.
+     * (5–25 %, at least 8 bytes; the reference's `add_salt_using`); give
+     * `length` (`add_salt_with_len_using`), a `range`
+     * (`add_salt_in_range_using`), or the exact `salt` (`add_salt_instance`)
+     * instead. `rng` overrides the secure default. The salt itself comes from
+     * components' `Salt`, whose checks the reference's `Salt::new_*` make.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `InvalidParameter` for a length or bound
+     *   that is not a non-negative integer; `Components` (the components
+     *   message, e.g. `data too short: salt expected at least 8, got 7`) for a
+     *   length below 8 or a bound the reference rejects.
      */
     addSalt({ salt, length, range, rng }?: SaltOptions): Envelope;
     /**
@@ -1021,11 +1073,13 @@ export declare class Envelope implements DigestProvider {
     replaceSubject(subject: Envelope): Envelope;
     /** The assertions of a node (a frozen array); empty for every other case. */
     assertions(): readonly Envelope[];
-    /** `true` when the envelope is the boolean leaf `false`. */
+    /** The subject extracted with `decoder` (`extract_subject`), or `undefined` when it cannot be. */
+    private trySubject;
+    /** `true` when the subject is the boolean `false` (the reference's `is_false`: subject extraction, so a node whose subject is `false` qualifies). */
     isFalse(): boolean;
-    /** `true` when the envelope is the boolean leaf `true`. */
+    /** `true` when the subject is the boolean `true` (the reference's `is_true`). */
     isTrue(): boolean;
-    /** `true` when the envelope is a boolean leaf. */
+    /** `true` when the subject is a boolean (the reference's `is_bool`). */
     isBool(): boolean;
     /** `true` when the envelope is a number leaf. */
     isNumber(): boolean;
@@ -1035,7 +1089,7 @@ export declare class Envelope implements DigestProvider {
     isNaN(): boolean;
     /** `true` when the envelope is a node whose subject is `NaN`. */
     isSubjectNaN(): boolean;
-    /** `true` when the envelope is the `null` leaf. */
+    /** `true` when the subject is `null` (the reference's `is_null`: subject extraction). */
     isNull(): boolean;
     /** A copy of the subject's bytes, or `undefined` when it is not a byte-string leaf. */
     asBytes(): Uint8Array<ArrayBuffer> | undefined;
@@ -1146,13 +1200,25 @@ export declare class Envelope implements DigestProvider {
     /** `true` when the envelope is elided or a node whose subject is (recursively). */
     isSubjectElided(): boolean;
     /**
-     * Adds a `'position'` assertion with the given ordinal.
+     * Adds a `'position'` assertion with the given ordinal (the reference's
+     * `set_position(usize)`): a non-negative safe integer `number`, or a
+     * `bigint` in `0 ..= 2⁶⁴ − 1` for the exact form.
      *
-     * @throws EnvelopeError with code `InvalidFormat`.
+     * @throws EnvelopeError with code `InvalidParameter` for any other value;
+     *   `InvalidFormat` when the envelope already has several positions.
      */
-    setPosition(position: number): Envelope;
-    /** The value of the `'position'` assertion, or `undefined`. */
-    position(): number;
+    setPosition(position: number | bigint): Envelope;
+    /**
+     * The value of the `'position'` assertion (the reference's `position()`,
+     * `extract_subject::<usize>()`): a `number` when at most `2⁵³ − 1`, a
+     * `bigint` otherwise. A negative integer wraps to `2⁶⁴ + n`, as the
+     * reference's `usize::try_from(CBOR)` wraps it.
+     *
+     * @throws EnvelopeError with code `NonexistentPredicate` /
+     *   `AmbiguousPredicate` when there is not exactly one position; `Cbor`
+     *   (`dcbor error: <Display>`) when its object is not an integer in range.
+     */
+    position(): number | bigint;
     /**
      * A copy without the `'position'` assertion.
      *
@@ -1219,8 +1285,6 @@ export declare class Envelope implements DigestProvider {
     private elideAll;
     /** Elides everything whose digest is in `target`, with `action` (elide, compress or encrypt). */
     private elideRemovingWith;
-    /** Elides everything whose digest is not in `target` (revealing mode) with `action`. */
-    elideSetWithAction(target: Set<Digest>, action: ObscureAction): Envelope;
     /** Elides everything whose digest is not in `target`, with `action` (elide, compress or encrypt). */
     private elideRevealingWith;
     /**
@@ -1275,26 +1339,56 @@ export declare class Envelope implements DigestProvider {
      */
     walkDecompress(targetDigests?: Set<Digest>): Envelope;
     /**
-     * Add the tryLeaf method to Envelope prototype.
+     * The leaf's CBOR: the reference's `try_leaf()`.
      *
-     * This extracts the leaf CBOR value from an envelope.
-     *
-     * @throws EnvelopeError with code `NotLeaf`.
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf.
      */
     expectLeaf(): Cbor;
-    /** The subject's text; `NotLeaf` / `Cbor` when it is not a text leaf. */
+    /**
+     * The leaf's text: the reference's `String::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+     *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+     *   is not text.
+     */
     expectString(): string;
-    /** The subject's number; `NotLeaf` / `Cbor` when it is not a number leaf. */
+    /**
+     * The leaf's number as dcbor's `expectFloat` reads it: the reference's
+     * `f64::try_from(envelope)`. An integer the `f64` cannot represent exactly
+     * is rejected (`OutOfRange`), as the reference rejects it.
+     *
+     * @throws EnvelopeError with code `NotLeaf` when the envelope is not a leaf;
+     *   `Cbor` (`dcbor error: <Display>`, cause the `CborError`) when the leaf
+     *   is not a representable number.
+     */
     expectNumber(): number;
-    /** The subject's boolean; `NotLeaf` / `Cbor` when it is not a boolean leaf. */
+    /**
+     * The leaf's boolean: the reference's `bool::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectBoolean(): boolean;
-    /** A copy of the subject's bytes; `NotLeaf` / `Cbor` when it is not a byte-string leaf. */
+    /**
+     * A copy of the leaf's bytes: the reference's `ByteString::try_from(envelope)`.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectBytes(): Uint8Array<ArrayBuffer>;
-    /** `null`; `NotLeaf` / `Cbor` when the subject is not the `null` leaf. */
+    /**
+     * `null` when the leaf is the `null` value.
+     *
+     * @throws EnvelopeError with code `NotLeaf` / `Cbor` as `expectString`.
+     */
     expectNull(): null;
-    /** The subject's tag-1 date as a `Date`; `NotLeaf` / `Cbor` when it is not a date leaf. */
+    /**
+     * The subject's tag-1 date as a `Date` (millisecond precision): the
+     * reference's `extract_subject::<Date>()` viewed as a `Date`; use
+     * `expectSubject(CborDate.fromTaggedCbor)` for the exact value.
+     *
+     * @throws EnvelopeError as `expectSubject`.
+     */
     expectDate(): Date;
-    /** `extractSubject` as a method. */
+    /** `extractSubject` as a method: the reference's `extract_subject::<T>()`. */
     expectSubject<T>(decoder: CborDecoder<T>): T;
     /**
      * Add tryObjectForPredicate method to Envelope prototype
@@ -1310,16 +1404,21 @@ export declare class Envelope implements DigestProvider {
     expectObjectsForPredicate<T>(predicate: EnvelopeInput, decoder: CborDecoder<T>): T[];
     /**
      * A copy with the subject encrypted by `key` (ChaCha20-Poly1305 over the
-     * subject's CBOR, the digest as AAD); `AlreadyEncrypted` / `AlreadyElided`
-     * when it cannot be.
+     * subject's CBOR, the digest as AAD): the reference's `encrypt_subject`.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `AlreadyEncrypted` when the subject is
+     *   encrypted or compressed; `AlreadyElided` when it is elided.
      */
     encryptSubject(key: SymmetricKey, options?: EncryptOptions): Envelope;
     /**
-     * A copy with the subject decrypted by `key`; `NotEncrypted` / `Components` on failure.
+     * A copy with the subject decrypted by `key` (the reference's
+     * `decrypt_subject`).
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `NotEncrypted` when the subject is not
+     *   encrypted; `Components` (`components error: <Display>`) when the key
+     *   does not open it; `Cbor` (`dcbor error: <Display>`) when the plaintext
+     *   is not an envelope; `MissingDigest` / `InvalidDigest` on a digest
+     *   mismatch.
      */
     decryptSubject(key: SymmetricKey): Envelope;
     /** Wraps this envelope and encrypts the wrapper's subject, so the whole envelope is hidden. */
@@ -1329,15 +1428,20 @@ export declare class Envelope implements DigestProvider {
     /** `true` when the envelope is encrypted. */
     isEncrypted(): boolean;
     /**
-     * A copy compressed (deflate over its CBOR); this envelope when already compressed.
+     * A copy compressed (deflate over its CBOR): the reference's `compress`;
+     * this envelope when already compressed.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `AlreadyEncrypted` when the envelope is
+     *   encrypted; `AlreadyElided` when it is elided.
      */
     compress(): Envelope;
     /**
-     * A copy decompressed; this envelope when it is not compressed.
+     * A copy decompressed (the reference's `decompress`).
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError with code `NotCompressed` when the envelope is not
+     *   compressed; `Components` (`components error: <Display>`) for a corrupt
+     *   stream; `Cbor` (`dcbor error: <Display>`) when the data is not an
+     *   envelope; `MissingDigest` / `InvalidDigest` on a digest mismatch.
      */
     decompress(): Envelope;
     /** A copy with the subject compressed; `AlreadyEncrypted` / `AlreadyElided` when it cannot be. */
@@ -1518,13 +1622,11 @@ export declare class EnvelopeError extends Error {
     /** Returned when assertion is invalid */
     static invalidAssertion(): EnvelopeError;
     /**
-     * Returned when an attachment's format is invalid.
-     *
-     * This error occurs when an envelope contains an attachment with an
-     * invalid structure according to the Envelope Attachment specification
-     * (BCR-2023-006).
+     * Returned when an attachment's structure is invalid according to the
+     * Envelope Attachment specification (BCR-2023-006): the envelope is not an
+     * assertion, or its parts do not rebuild an equivalent attachment.
      */
-    static invalidAttachment(message?: string): EnvelopeError;
+    static invalidAttachment(): EnvelopeError;
     /**
      * Returned when an attachment is requested but does not exist.
      *
@@ -1535,8 +1637,8 @@ export declare class EnvelopeError extends Error {
     /**
      * Returned when multiple attachments match a single query.
      *
-     * This error occurs when multiple attachments have the same ID, making
-     * it ambiguous which attachment should be returned.
+     * The message is the reference's `#[error]` text, misspelling included
+     * (`abiguous attachment`), so both implementations report the same text.
      */
     static ambiguousAttachment(): EnvelopeError;
     /** Returned when an edge is missing the required `'isA'` assertion. */
@@ -1668,8 +1770,18 @@ export declare class EnvelopeError extends Error {
     static unexpectedResponseId(): EnvelopeError;
     /** Returned when a response envelope is invalid. */
     static invalidResponse(): EnvelopeError;
-    /** dcbor error wrapper */
+    /**
+     * `Cbor` as an internal site reports it: `dcbor error: <message>`, the
+     * reference's `Error::Cbor` Display, with the dcbor error as `cause`.
+     */
     static cbor(message: string, cause?: Error): EnvelopeError;
+    /**
+     * `Cbor` as a decoder reports it: the message is the dcbor Display of
+     * `cause` with no prefix, because the reference's `try_from_cbor_data`,
+     * `TryFrom<CBOR>`, `from_untagged_cbor` and `Expression::try_from` return
+     * a `dcbor::Error`; `cause` is that `CborError`.
+     */
+    static cborDecode(cause: Error): EnvelopeError;
     /** Components error wrapper */
     static components(message: string, cause?: Error): EnvelopeError;
     /**
@@ -1840,9 +1952,11 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     withNote(note: string): Event_2<T>;
     /**
-     * Adds a date to the event.
+     * Adds a date to the event: a `CborDate` is kept as it is (the
+     * reference's `Date`, exact to the nanosecond); a JavaScript `Date`
+     * converts through `CborDate.fromDate`.
      */
-    withDate(date: Date): Event_2<T>;
+    withDate(date: Date | CborDate): Event_2<T>;
     /**
      * Returns the content of the event.
      */
@@ -1856,9 +1970,12 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     get note(): string;
     /**
-     * Returns the date attached to the event, if any.
+     * The date attached to the event as a JavaScript `Date` (millisecond
+     * precision), if any; `cborDate` is the exact value.
      */
     get date(): Date | undefined;
+    /** The date attached to the event, if any: the stored `CborDate`, exact as decoded or given. */
+    get cborDate(): CborDate | undefined;
     /**
      * Converts the event to an envelope.
      *
@@ -1868,11 +1985,17 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     toEnvelope(): Envelope;
     /**
-     * Creates an event from an envelope.
+     * Reads an event from an envelope (the reference's
+     * `Event::try_from(envelope)`): the `'content'` object through
+     * `contentExtractor`, the subject as `TAG_EVENT(ARID)`, the `'note'` and
+     * `'date'` objects by subject extraction.
      *
      * @typeParam T - The type to extract the content as
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError `NonexistentPredicate` when there is no content; `General`
+     *   (`Failed to parse content`) when the extractor fails; `NotLeaf` / `Cbor` when the
+     *   subject is not `TAG_EVENT(ARID)`; `Cbor` / `InvalidFormat` when a `'note'` is not
+     *   text or a `'date'` is not a tag-1 date
      */
     static fromEnvelope<T extends EnvelopeInput>(envelope: Envelope, contentExtractor: (env: Envelope) => T): Event_2<T>;
     /**
@@ -1880,7 +2003,9 @@ declare class Event_2<T extends EnvelopeInput> implements ToEnvelope {
      */
     toString(): string;
     /**
-     * Checks equality with another event.
+     * Checks equality with another event: the content (as envelopes), the id,
+     * the note and the exact date must all be equal (the reference's derived
+     * `PartialEq`).
      */
     equals(other: Event_2<T>): boolean;
 }
@@ -1914,59 +2039,70 @@ export declare function expectType(envelope: Envelope, t: EnvelopeInput): void;
 export declare function expectTypeValue(envelope: Envelope, t: KnownValue): void;
 
 /**
- * Represents a complete expression with function and parameters.
+ * A function with its parameters: the expression envelope whose subject is
+ * the function leaf and whose assertions are the parameters (`parameter:
+ * argument`), as the reference's `Expression` holds its function and
+ * envelope.
  *
- * Parameters are stored as an *append-only array*, mirroring the reference
- * `bc-envelope`'s `Expression` which adds each parameter as a fresh
- * envelope assertion (multiple values per parameter ID are valid —
- * e.g. GSTP DKG invites carry multiple `participant` parameters).
- * Earlier the TS port used `Map<string, Parameter>`, which silently
- * overwrote previous values with the same parameter ID. The
- * resulting envelope had only the last `participant`, breaking
- * `objectsForParameter("participant")` decoders downstream
- * (`frost-hubert/group-invite.ts:383`).
+ * Parameters are assertions, so the same parameter may appear several
+ * times (`objectsForParameter` returns every argument) and every
+ * assertion, parameter or not, survives a round trip through an envelope.
  */
 export declare class Expression implements ToEnvelope {
     private readonly _function;
-    private readonly _parameters;
     private _envelope;
+    /** The expression `func` with no parameters yet. */
     constructor(func: Function_2);
     /** Returns the function. */
     get function(): Function_2;
-    /** Returns all parameters. */
+    /**
+     * The parameters of the expression, each carrying its argument as
+     * `paramValue`: every assertion whose predicate decodes as a parameter
+     * (`#6.40007(id)`), in the envelope's order. An assertion whose predicate
+     * is not a parameter is skipped. A TypeScript convenience: the reference
+     * reads parameters one at a time through `object_for_parameter`.
+     */
     get parameters(): Parameter[];
-    /** Adds a parameter to the expression. */
-    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    /**
+     * A copy with the assertion `param: value` added (the reference's
+     * `with_parameter`); an assertion already present is not repeated.
+     */
+    withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Expression;
     /** Adds multiple parameters at once; returns a new expression. */
     withParameters(params: Record<string, EnvelopeInput>): Expression;
-    /** Returns true if the parameter ID matches the one stored on a Parameter. */
-    private static parameterIdMatches;
     /**
-     * Gets the first parameter value with the given ID.
+     * The argument of the single `param` assertion (the reference's
+     * `object_for_parameter`).
      *
-     * For multi-valued parameters (e.g. several `participant` assertions),
-     * use {@link objectsForParameter} to retrieve all matching values.
+     * @throws EnvelopeError `NonexistentPredicate` when there is none, `AmbiguousPredicate`
+     *   when there are several
      */
-    parameter(param: ParameterID): Envelope | undefined;
+    objectForParameter(param: ParameterID | Parameter): Envelope;
     /**
-     * Returns all parameter values matching the given ID.
+     * The argument of the single `param` assertion, or `undefined` when there
+     * is none (the reference's `optional_object_for_parameter`).
      *
-     * to `Envelope::objects_for_predicate` and returns a `Vec<Envelope>`.
+     * @throws EnvelopeError `AmbiguousPredicate` when there are several
      */
-    objectsForParameter(param: ParameterID): Envelope[];
-    /** Checks if a parameter exists. */
-    hasParameter(param: ParameterID): boolean;
-    /** Converts the expression to an envelope. */
+    parameter(param: ParameterID | Parameter): Envelope | undefined;
+    /** The arguments of every `param` assertion (the reference's `objects_for_parameter`). */
+    objectsForParameter(param: ParameterID | Parameter): Envelope[];
+    /** `true` when at least one `param` assertion is present. */
+    hasParameter(param: ParameterID | Parameter): boolean;
+    /** The expression envelope: the function leaf with the parameter assertions. */
     toEnvelope(): Envelope;
     /**
-     * Creates an expression from an envelope.
+     * Reads an expression from an envelope (the reference's
+     * `Expression::try_from((envelope, expected_function))`): the subject is
+     * extracted as a function and the envelope is kept as it is, so
+     * assertions that are not parameters survive a round trip.
      *
-     * The function and each parameter are read as **tagged CBOR**
-     * (tag 40006 / tag 40007). Earlier the TS port stored these as
-     * pre-formatted display strings (e.g. `«"test"»`, `❰"param1"❱`)
-     * and parsed them by string matching; that diverged from the reference
-     * (which stores tag-40006/40007 leaves) and prevented the
-     * TAG_FUNCTION / TAG_PARAMETER format summarizers from firing.
+     * @throws EnvelopeError `Cbor` with the reference's dcbor Display as its message:
+     *   `invalid format` when the subject is not a leaf, `dcbor error: <reason>` when the
+     *   leaf is not a function (`dcbor error: invalid function`, `dcbor error: expected
+     *   CBOR tag function, but got 40007`), and `Expected function <expected>, but found
+     *   <found>` (the reference's `Debug` renderings) when `expectedFunction` is given
+     *   and differs
      */
     static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Expression;
     /**
@@ -2017,6 +2153,12 @@ export declare class FormatContext implements ReadonlyTagsStore {
     private readonly _knownValues;
     private readonly _functions;
     private readonly _parameters;
+    /**
+     * A context over the given stores (empty ones by default). The stores are
+     * taken as they are: pass clones when the context must not follow later
+     * registrations, as the reference's `FormatContext::new` clones its
+     * arguments.
+     */
     constructor({ tags, knownValues, functions, parameters }?: {
         tags?: TagsStore;
         knownValues?: KnownValuesStore;
@@ -2037,7 +2179,11 @@ export declare class FormatContext implements ReadonlyTagsStore {
     tagForName(name: string): Tag | undefined;
     nameForValue(value: CborNumber): string;
     summarizer(tag: CborNumber): CborSummarizer | undefined;
-    /** Create a clone of this context */
+    /**
+     * An independent copy: every store is cloned (the reference's derived
+     * `Clone`), so a registration made in either context afterwards is not
+     * seen by the other.
+     */
     clone(): FormatContext;
 }
 
@@ -2069,26 +2215,41 @@ export declare interface FormatOptions {
  * 1. By a numeric ID (for well-known functions) - Known variant
  * 2. By a string name (for application-specific functions) - Named variant
  *
+ * A known function's id is the reference's `u64`: `value` is a `number`
+ * when it is a safe integer and a `bigint` otherwise, `valueBigInt` is
+ * always exact.
+ *
  * When encoded in CBOR, functions are tagged with #6.40006.
  */
-declare class Function_2 implements ToEnvelope {
+declare class Function_2 implements ToEnvelope, ToCbor, CborTagged {
     private readonly _variant;
     private readonly _value;
     private readonly _name;
     private constructor();
-    /** A function by known id (number) or name (string). */
+    /**
+     * A function by known id (a number or bigint) or name (a string).
+     *
+     * @throws EnvelopeError `InvalidParameter` as `known` does
+     */
     static from(id: FunctionID): Function_2;
-    /** A known function with a numeric id and an optional display name. */
-    static known(value: number, name?: string): Function_2;
+    /**
+     * A known function with a numeric id and an optional display name.
+     *
+     * @throws EnvelopeError `InvalidParameter` when `value` is not a non-negative safe
+     *   integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`
+     */
+    static known(value: number | bigint, name?: string): Function_2;
     /** Creates a new named function identified by a string. */
     static named(name: string): Function_2;
     /** Returns true if this is a known (numeric) function. */
     isKnown(): boolean;
     /** Returns true if this is a named (string) function. */
     isNamed(): boolean;
-    /** Returns the numeric value for known functions. */
-    get value(): number | undefined;
-    /** Returns the function identifier (number for known, string for named). */
+    /** The numeric id of a known function (a `number` when safe, else a `bigint`); `undefined` for a named one. */
+    get value(): number | bigint | undefined;
+    /** The exact numeric id of a known function; `undefined` for a named one. */
+    get valueBigInt(): bigint | undefined;
+    /** Returns the function identifier (the numeric id for known, the name for named). */
     get id(): FunctionID;
     /**
      * Returns the display name of the function.
@@ -2102,23 +2263,43 @@ declare class Function_2 implements ToEnvelope {
     get namedName(): string | undefined;
     /** Returns the assigned name if present (for known functions only). */
     get assignedName(): string | undefined;
+    /** The function tag (40006), named as the global tags store names it at the time. */
+    cborTags(): Tag[];
+    /** The bare id: the unsigned integer of a known function, the text of a named one. */
+    untaggedCbor(): Cbor;
+    /** `#6.40006(id)`, the tag named as the global tags store names it. */
+    toCbor(): Cbor;
     /**
-     * Creates an expression envelope with this function as the subject.
+     * Tagged-CBOR codec. `decode` requires `#6.40006(n)`: the tag is part of
+     * the type, as in the reference's `TryFrom<CBOR>`; use `fromUntaggedCbor`
+     * for the bare id. `tags` is named from the global tags store at each
+     * access, as the reference's `cbor_tags()` is.
+     */
+    static get codec(): CborCodec<Function_2>;
+    /**
+     * Decode `#6.40006(id)` (the reference's `TryFrom<CBOR>`).
      *
-     * which calls `Envelope::new_leaf(self)` — that goes through
-     * `From<Function> for CBOR = self.tagged_cbor()` which produces
-     * `tag(40006, untagged)` where untagged is `uint(N)` for Known
-     * or `text(name)` for Named.
+     * @throws CborError (dcbor's, with a code) — `WrongType` for an untagged value,
+     *   `WrongTag` for another tag (both tags named as the global tags store names
+     *   them), `Custom` `invalid function` for a content that is neither an unsigned
+     *   integer nor text
+     */
+    static fromCbor(cbor: Cbor): Function_2;
+    /**
+     * Decode the bare id — the content of tag 40006 (the reference's
+     * `from_untagged_cbor`): an unsigned integer is a known function, a text
+     * a named one.
      *
-     * The earlier TS port pre-formatted the display string into a
-     * text leaf (`Envelope.from("«\"name\"»")`), which breaks the
-     * TAG_FUNCTION summarizer (it never fires because the leaf is
-     * not tagged), so format() rendered the leaf as a quoted string
-     * instead of `«"name"»`.
+     * @throws CborError `Custom` `invalid function` for anything else
+     */
+    static fromUntaggedCbor(cbor: Cbor): Function_2;
+    /**
+     * Creates an expression envelope with this function as the subject: the
+     * leaf `#6.40006(id)`, as the reference's `Envelope::new_leaf(function)`.
      */
     toEnvelope(): Envelope;
     /** Creates an expression with a parameter. */
-    withParameter(param: ParameterID, value: EnvelopeInput): Expression;
+    withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Expression;
     /** Checks equality based on value (for known) or name (for named). */
     equals(other: Function_2): boolean;
     /**
@@ -2165,8 +2346,12 @@ export declare const FUNCTION_IDS: {
     readonly NOT: 15;
 };
 
-/** Type for function identifier (number or string) */
-export declare type FunctionID = number | string;
+/**
+ * A function identifier: a known function's numeric id (a `number` when it
+ * is a safe integer, a `bigint` for the rest of the reference's `u64`
+ * range) or a named function's name.
+ */
+export declare type FunctionID = number | bigint | string;
 
 /**
  * A store that maps functions to their assigned names.
@@ -2178,9 +2363,14 @@ export declare class FunctionsStore {
     private readonly _dict;
     /** Creates a new FunctionsStore with the given functions. */
     constructor(functions?: Iterable<Function_2>);
-    /** Inserts a function into the store. */
+    /** Inserts a function into the store, keyed by its id (known) or name (named). */
     register(func: Function_2): void;
-    /** Returns the assigned name for a function, if it exists in the store. */
+    /**
+     * The name the store assigned to `func`, if it is registered: the
+     * registered function's own name (its assigned name, or its number when
+     * it has none), as the reference's `assigned_name` returns the name it
+     * filed at insertion.
+     */
     assignedNameOf(func: Function_2): string | undefined;
     /** Returns the name for a function, either from this store or from the function itself. */
     nameOf(func: Function_2): string;
@@ -2188,7 +2378,7 @@ export declare class FunctionsStore {
     [Symbol.iterator](): IterableIterator<Function_2>;
     /** An independent copy (a format context takes one, as the reference does). */
     clone(): FunctionsStore;
-    /** The function's name in `store` when registered there, else its own name. */
+    /** The function's name in `store` when registered there, else its own name (`name_for_function`). */
     static nameForFunction(func: Function_2, store?: FunctionsStore): string;
 }
 
@@ -2198,7 +2388,24 @@ export declare const GE: Function_2;
 /** Creates a greater-than-or-equal expression: lhs >= rhs */
 export declare function ge(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 
-/** Get the global format context instance, initializing it if necessary. */
+/**
+ * The global format context, built on first call as the reference's
+ * `LazyFormatContext::get` builds it: dcbor's global tags store receives
+ * the standard tags, every Blockchain Commons tag name and the components
+ * summarisers (`bc_components::register_tags()`), then the context takes a
+ * snapshot of that store, of the global known-values registry and of the
+ * global functions and parameters stores (`FormatContext::new` clones its
+ * arguments). A tag or known value registered globally afterwards is not
+ * seen by the context.
+ *
+ * The envelope summarisers (known values as `'name'`, functions as `«…»`,
+ * parameters as `❰…❱`, requests, responses and events) are NOT installed
+ * here: call {@link registerTags} first, as the reference calls
+ * `bc_envelope::register_tags()`. Until then a leaf holding `40000(1)`
+ * formats as `40000(1)`.
+ *
+ * One context per process: the ESM and CommonJS builds share it.
+ */
 export declare const getGlobalFormatContext: () => FormatContext;
 
 /**
@@ -2258,7 +2465,13 @@ export declare function hasType(envelope: Envelope, t: EnvelopeInput): boolean;
  */
 export declare function hasTypeValue(envelope: Envelope, t: KnownValue): boolean;
 
-/** The envelope's CBOR as hex, annotated line by line unless `annotate` is false. */
+/**
+ * The envelope's CBOR as hex, annotated line by line unless `annotate` is
+ * false. With the global context the tag names come from dcbor's live
+ * global store (the reference's `hex()` resolves `FormatContextOpt::Global`
+ * to `TagsStoreOpt::Global`), not from the snapshot the global format
+ * context holds.
+ */
 export declare function hex(envelope: Envelope, { annotate, context }?: HexOptions): string;
 
 /** Options for `hex`. */
@@ -2307,14 +2520,56 @@ export declare function le(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
 /** Well-known parameter `lhs` ({@link PARAMETER_IDS}.LHS). */
 export declare const LHS: Parameter;
 
-/** Wraps the envelope and locks the wrapper's subject (see `lockSubject`). */
+/** Wraps the envelope and locks the wrapper's subject (the reference's `lock`; see `lockSubject`). */
 export declare function lock(envelope: Envelope, method: KeyDerivationMethod, secret: Uint8Array, options?: RngOptions): Envelope;
 
 /**
  * Encrypts the subject with a fresh content key and adds a `hasSecret`
- * assertion holding that key locked by `secret` via `method`.
+ * assertion holding that key locked by `secret` via `method` (the
+ * reference's `lock_subject`).
+ *
+ * `KeyDerivationMethod.SSHAgent` needs an agent, which this synchronous
+ * function does not take: it throws `Components` with components' message,
+ * where the reference connects to `SSH_AUTH_SOCK` itself. Use
+ * {@link lockSubjectWith}.
+ *
+ * @throws EnvelopeError `InvalidParameter` for a value outside
+ *   `KeyDerivationMethod`; `Components` (`components error: <message>`,
+ *   `cause` the `ComponentsError`) when components cannot lock the key
  */
 export declare function lockSubject(envelope: Envelope, method: KeyDerivationMethod, secret: Uint8Array, options?: RngOptions): Envelope;
+
+/**
+ * Encrypts the subject with a fresh content key and adds a `hasSecret`
+ * assertion holding that key locked through `agent`: the reference's
+ * `lock_subject(KeyDerivationMethod::SSHAgent, id)` under the `ssh-agent`
+ * feature, with the agent injected as `SSHAgentParams::new_opt(salt, id,
+ * Some(agent))` does.
+ *
+ * `id` names the Ed25519 identity by its comment; an empty `id` selects the
+ * agent's only Ed25519 identity. The agent signs the salt, the key is
+ * HKDF-HMAC-SHA256 of that signature with the salt, and the content key is
+ * encrypted under it with the `[4, Salt, id]` parameters as AAD.
+ *
+ * @throws EnvelopeError `Components` (`components error: <message>`, `cause`
+ *   the `ComponentsError`) when the agent has no Ed25519 identity, several
+ *   identities and no `id`, no identity with that comment, or refuses to sign
+ */
+export declare function lockSubjectWith(envelope: Envelope, agent: SshAgent, id: string, options?: LockWithOptions): Promise<Envelope>;
+
+/** Wraps the envelope and locks the wrapper's subject through `agent` (see `lockSubjectWith`). */
+export declare function lockWith(envelope: Envelope, agent: SshAgent, id: string, options?: LockWithOptions): Promise<Envelope>;
+
+/** Options for `lockWith` and `lockSubjectWith`. */
+export declare interface LockWithOptions extends RngOptions {
+    /**
+     * Use exactly this nonce for the locked content key (the `EncryptedKey`
+     * nonce); tests and vectors only. The subject's nonce is drawn from `rng`.
+     */
+    nonce?: Nonce | undefined;
+    /** The salt the agent signs (16 random bytes unless given); tests and vectors only. */
+    salt?: Salt | undefined;
+}
 
 /** Well-known function `lt` ({@link FUNCTION_IDS}.LT). */
 export declare const LT: Function_2;
@@ -2449,27 +2704,45 @@ export declare function or(lhs: EnvelopeInput, rhs: EnvelopeInput): Expression;
  * 1. By a numeric ID (for well-known parameters) - Known variant
  * 2. By a string name (for application-specific parameters) - Named variant
  *
+ * A known parameter's id is the reference's `u64`: `value` is a `number`
+ * when it is a safe integer and a `bigint` otherwise, `valueBigInt` is
+ * always exact. A parameter may carry the value envelope of its argument
+ * (`paramValue`), which the reference keeps in the expression envelope.
+ *
  * When encoded in CBOR, parameters are tagged with #6.40007.
  */
-export declare class Parameter implements ToEnvelope {
+export declare class Parameter implements ToEnvelope, ToCbor, CborTagged {
     private readonly _variant;
     private readonly _value;
     private readonly _name;
     private readonly _paramValue;
     private constructor();
-    /** Creates a new known parameter with a numeric ID and optional name. */
-    static known(value: number, name?: string): Parameter;
+    /**
+     * A known parameter with a numeric id and an optional display name.
+     *
+     * @throws EnvelopeError `InvalidParameter` when `value` is not a non-negative safe
+     *   integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`
+     */
+    static known(value: number | bigint, name?: string): Parameter;
     /** Creates a new named parameter identified by a string. */
     static named(name: string): Parameter;
-    /** A parameter by known id or name, carrying `value` when given. */
+    /**
+     * A parameter by known id (a number or bigint) or name (a string),
+     * carrying `value` when given.
+     *
+     * @throws EnvelopeError `InvalidParameter` when a numeric `id` is not a non-negative
+     *   safe integer `number` or a `bigint` in `0 ..= 2⁶⁴ − 1`
+     */
     static from(id: ParameterID, value?: EnvelopeInput): Parameter;
     /** Returns true if this is a known (numeric) parameter. */
     isKnown(): boolean;
     /** Returns true if this is a named (string) parameter. */
     isNamed(): boolean;
-    /** Returns the numeric value for known parameters. */
-    get value(): number | undefined;
-    /** Returns the parameter identifier (number for known, string for named). */
+    /** The numeric id of a known parameter (a `number` when safe, else a `bigint`); `undefined` for a named one. */
+    get value(): number | bigint | undefined;
+    /** The exact numeric id of a known parameter; `undefined` for a named one. */
+    get valueBigInt(): bigint | undefined;
+    /** Returns the parameter identifier (the numeric id for known, the name for named). */
     get id(): ParameterID;
     /**
      * Returns the display name of the parameter.
@@ -2485,12 +2758,39 @@ export declare class Parameter implements ToEnvelope {
     get assignedName(): string | undefined;
     /** Returns the parameter value as an envelope, if set. */
     get paramValue(): Envelope | undefined;
+    /** The parameter tag (40007), named as the global tags store names it at the time. */
+    cborTags(): Tag[];
+    /** The bare id: the unsigned integer of a known parameter, the text of a named one. */
+    untaggedCbor(): Cbor;
+    /** `#6.40007(id)`, the tag named as the global tags store names it. */
+    toCbor(): Cbor;
     /**
-     * Creates a parameter envelope.
+     * Tagged-CBOR codec. `decode` requires `#6.40007(n)`: the tag is part of
+     * the type, as in the reference's `TryFrom<CBOR>`; use `fromUntaggedCbor`
+     * for the bare id. `tags` is named from the global tags store at each
+     * access, as the reference's `cbor_tags()` is.
+     */
+    static get codec(): CborCodec<Parameter>;
+    /**
+     * Decode `#6.40007(id)` (the reference's `TryFrom<CBOR>`).
      *
-     * Same encoding as `Function.toEnvelope` above: the parameter is stored
-     * as `tag(40007, untagged)` where untagged is `uint(N)` (Known) or
-     * `text(name)` (Named).
+     * @throws CborError (dcbor's, with a code) — `WrongType` for an untagged value,
+     *   `WrongTag` for another tag (both tags named as the global tags store names
+     *   them), `Custom` `invalid parameter` for a content that is neither an unsigned
+     *   integer nor text
+     */
+    static fromCbor(cbor: Cbor): Parameter;
+    /**
+     * Decode the bare id — the content of tag 40007 (the reference's
+     * `from_untagged_cbor`): an unsigned integer is a known parameter, a text
+     * a named one.
+     *
+     * @throws CborError `Custom` `invalid parameter` for anything else
+     */
+    static fromUntaggedCbor(cbor: Cbor): Parameter;
+    /**
+     * The parameter as an envelope: the leaf `#6.40007(id)`, or the
+     * assertion `#6.40007(id): value` when the parameter carries a value.
      */
     toEnvelope(): Envelope;
     /** Checks equality based on value (for known) or name (for named). */
@@ -2520,8 +2820,12 @@ export declare const PARAMETER_IDS: {
     readonly RHS: 3;
 };
 
-/** Type for parameter identifier (number or string) */
-export declare type ParameterID = number | string;
+/**
+ * A parameter identifier: a known parameter's numeric id (a `number` when
+ * it is a safe integer, a `bigint` for the rest of the reference's `u64`
+ * range) or a named parameter's name.
+ */
+export declare type ParameterID = number | bigint | string;
 
 /**
  * A store that maps parameters to their assigned names.
@@ -2533,9 +2837,14 @@ export declare class ParametersStore {
     private readonly _dict;
     /** Creates a new ParametersStore with the given parameters. */
     constructor(parameters?: Iterable<Parameter>);
-    /** Inserts a parameter into the store. */
+    /** Inserts a parameter into the store, keyed by its id (known) or name (named). */
     register(param: Parameter): void;
-    /** Returns the assigned name for a parameter, if it exists in the store. */
+    /**
+     * The name the store assigned to `param`, if it is registered: the
+     * registered parameter's own name (its assigned name, or its number when
+     * it has none), as the reference's `assigned_name` returns the name it
+     * filed at insertion.
+     */
     assignedNameOf(param: Parameter): string | undefined;
     /** Returns the name for a parameter, either from this store or from the parameter itself. */
     nameOf(param: Parameter): string;
@@ -2543,7 +2852,7 @@ export declare class ParametersStore {
     [Symbol.iterator](): IterableIterator<Parameter>;
     /** An independent copy (a format context takes one, as the reference does). */
     clone(): ParametersStore;
-    /** The parameter's name in `store` when registered there, else its own name. */
+    /** The parameter's name in `store` when registered there, else its own name (`name_for_parameter`). */
     static nameForParameter(param: Parameter, store?: ParametersStore): string;
 }
 
@@ -2554,18 +2863,28 @@ export declare interface RecipientOptions extends RngOptions {
 }
 
 /**
- * Returns all SealedMessages from the envelope's `hasRecipient` assertions.
+ * The `SealedMessage` of every unobscured `hasRecipient` assertion (the
+ * reference's `recipients`).
  *
- * @returns Array of SealedMessage objects
- *
- * @throws EnvelopeError with code `General`.
+ * @throws EnvelopeError `Cbor` when a present object is not a `SealedMessage`
  */
 export declare function recipients(envelope: Envelope): SealedMessage[];
 
 /**
- * Registers dcbor's standard tags, every BC tag and the envelope
- * summarisers in `context` (a custom context; the global one is set up on
- * first use).
+ * Registers the envelope summarisers in the global format context (the
+ * reference's `bc_envelope::register_tags()`): after this call known
+ * values, functions, parameters, requests, responses and events print by
+ * name. Idempotent: the second call does nothing.
+ */
+export declare function registerTags(): void;
+
+/**
+ * Registers every tag name and summariser in `context` (the reference's
+ * `register_tags_in`): the standard and Blockchain Commons tag names, the
+ * components summarisers, then the envelope summarisers. Each envelope
+ * summariser captures a clone of the store it names through at this call,
+ * as the reference's closures do, so a value registered in the context
+ * afterwards is not seen by them.
  */
 export declare const registerTagsIn: (context: FormatContext) => void;
 
@@ -2596,7 +2915,7 @@ declare class Request_2 implements ToEnvelope {
     private readonly _date;
     private constructor();
     /**
-     * A request for `func` (a `Function`, a known-function number, a name, or
+     * A request for `func` (a `Function`, a known-function id, a name, or
      * a ready `Expression`) identified by `id`.
      */
     static from(func: Function_2 | Expression | FunctionID, id: ARID): Request_2;
@@ -2607,15 +2926,17 @@ declare class Request_2 implements ToEnvelope {
     /**
      * Adds a parameter to the request.
      */
-    withParameter(param: ParameterID, value: EnvelopeInput): Request_2;
+    withParameter(param: ParameterID | Parameter, value: EnvelopeInput): Request_2;
     /**
      * Adds a note to the request.
      */
     withNote(note: string): Request_2;
     /**
-     * Adds a date to the request.
+     * Adds a date to the request: a `CborDate` is kept as it is (the
+     * reference's `Date`, exact to the nanosecond); a JavaScript `Date`
+     * converts through `CborDate.fromDate`.
      */
-    withDate(date: Date): Request_2;
+    withDate(date: Date | CborDate): Request_2;
     /**
      * Returns the body of the request (the expression to be evaluated).
      */
@@ -2629,9 +2950,12 @@ declare class Request_2 implements ToEnvelope {
      */
     get note(): string;
     /**
-     * Returns the date attached to the request, if any.
+     * The date attached to the request as a JavaScript `Date` (millisecond
+     * precision), if any; `cborDate` is the exact value.
      */
     get date(): Date | undefined;
+    /** The date attached to the request, if any: the stored `CborDate`, exact as decoded or given. */
+    get cborDate(): CborDate | undefined;
     /**
      * Returns the function of the request.
      */
@@ -2648,9 +2972,16 @@ declare class Request_2 implements ToEnvelope {
      */
     toEnvelope(): Envelope;
     /**
-     * Creates a request from an envelope.
+     * Reads a request from an envelope (the reference's
+     * `Request::try_from((envelope, expected_function))`): the `'body'`
+     * object as an expression, the subject as `TAG_REQUEST(ARID)`, the
+     * `'note'` and `'date'` objects by subject extraction.
      *
-     * @throws EnvelopeError with code `General`.
+     * @throws EnvelopeError `NonexistentPredicate` / `AmbiguousPredicate` when the body is
+     *   not exactly one; `Cbor` (`dcbor error: <reason>`) when the body is not an
+     *   expression or is not `expectedFunction`; `NotLeaf` / `Cbor` when the subject is not
+     *   `TAG_REQUEST(ARID)`; `Cbor` / `InvalidFormat` when a `'note'` is not text or a
+     *   `'date'` is not a tag-1 date
      */
     static fromEnvelope(envelope: Envelope, expectedFunction?: Function_2): Request_2;
     /**
@@ -2658,7 +2989,9 @@ declare class Request_2 implements ToEnvelope {
      */
     toString(): string;
     /**
-     * Checks equality with another request.
+     * Checks equality with another request: the id, the note, the exact
+     * date and the body envelope must all be equal (the reference's derived
+     * `PartialEq`).
      */
     equals(other: Request_2): boolean;
 }
@@ -2751,7 +3084,8 @@ declare class Response_2 implements ToEnvelope {
      */
     get id(): ARID | undefined;
     /**
-     * The id; `General` when the response has none.
+     * The id; `General` (`Expected an ID`, the reference's panic text) when
+     * the response has none.
      *
      * @throws EnvelopeError with code `General`.
      */
@@ -2783,9 +3117,15 @@ declare class Response_2 implements ToEnvelope {
      */
     toEnvelope(): Envelope;
     /**
-     * Creates a response from an envelope.
+     * Reads a response from an envelope (the reference's
+     * `Response::try_from(envelope)`): exactly one of `'result'` and `'error'`
+     * must be present, then the subject is `TAG_RESPONSE(ARID)`, or
+     * `TAG_RESPONSE('Unknown')` for a failure without an id.
      *
-     * @throws EnvelopeError with code `InvalidResponse`, `General`.
+     * @throws EnvelopeError `InvalidResponse` when neither or both of `'result'` and
+     *   `'error'` are present (or either is present more than once), or a failure's
+     *   known-value id is not `'Unknown'`; `NotLeaf` / `Cbor` (`dcbor error: <Display>`)
+     *   when the subject is not the tagged id
      */
     static fromEnvelope(envelope: Envelope): Response_2;
     /**
@@ -2793,7 +3133,9 @@ declare class Response_2 implements ToEnvelope {
      */
     toString(): string;
     /**
-     * Checks equality with another response.
+     * Checks equality with another response: the same outcome, the same id
+     * (or none on both) and an equal result or error envelope (the
+     * reference's derived `PartialEq`).
      */
     equals(other: Response_2): boolean;
 }
@@ -2804,13 +3146,13 @@ export declare const RHS: Parameter;
 
 /** Options for `Envelope.addSalt`. */
 export declare interface SaltOptions {
-    /** Use exactly this salt (at least 8 bytes). */
+    /** Use exactly this salt, whatever its length. */
     salt?: Salt | Uint8Array;
-    /** Random salt of exactly this many bytes (at least 8). */
+    /** Random salt of exactly this many bytes (the reference requires at least 8). */
     length?: number;
-    /** Random salt of a length in this inclusive range. */
+    /** Random salt of a length in this inclusive range (the reference requires `min` of at least 8 and `max` of at least `min`). */
     range?: {
-        /** Smallest length (at least 8). */
+        /** Smallest length. */
         min: number;
         /** Largest length. */
         max: number;
@@ -2820,13 +3162,18 @@ export declare interface SaltOptions {
 }
 
 /**
- * `sign(sender)` already wraps the envelope before signing, so the seal
- * pipeline is `wrap → addSignature → wrap → encryptToRecipient`. Earlier
- * revisions of this port called `addSignature(sender)` directly (no inner
- * wrap), which produced sealed envelopes one wrap layer shallower than
- * the reference's and broke cross-impl unseal.
+ * `sign(sender)` wraps the envelope before signing, so the seal pipeline is
+ * `wrap → addSignature → wrap → encryptToRecipient`: the reference's
+ * `seal`, `self.sign(sender).encrypt_to_recipient(recipient)`.
  */
-export declare function seal(envelope: Envelope, sender: Signer, recipient: Encrypter, options?: SignOptions): Envelope;
+export declare function seal(envelope: Envelope, sender: Signer, recipient: Encrypter, { signing, metadata, nonce, rng }?: SealOptions): Envelope;
+
+/**
+ * Options for `seal`: the signing options (`signing`, `metadata`) and the
+ * recipient options (`rng` for the content key, the subject's nonce and the
+ * ephemeral key; `nonce` for the sealed message).
+ */
+export declare type SealOptions = SignOptions & RecipientOptions;
 
 /** The digest as `short` (8 hex chars), `full` (64) or `ur` (`ur:digest/…`). */
 export declare function shortId(envelope: Envelope, format?: "short" | "full" | "ur"): string;
@@ -2888,8 +3235,13 @@ export declare function sskrJoin(envelopes: Envelope[]): Envelope;
 /**
  * Splits `contentKey` into SSKR shares per `spec` and returns one copy of
  * the envelope per share, each carrying its share as an `sskrShare`
- * assertion, grouped as the spec groups them. `sskrJoin` recovers the
- * envelope from a quorum.
+ * assertion, grouped as the spec groups them (the reference's `sskr_split`
+ * / `sskr_split_using`). `sskrJoin` recovers the envelope from a quorum.
+ *
+ * @throws EnvelopeError `Sskr` (`sskr error: <message>`, `cause` the
+ *   `SskrError`) when sskr rejects the secret or the spec, as the reference's
+ *   `?` into `Error::SSKR` (a group with a zero member threshold:
+ *   `sskr error: SSKR Shamir error: invalid threshold`)
  */
 export declare function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey, { rng }?: RngOptions): Envelope[][];
 
@@ -2983,32 +3335,58 @@ export declare interface TreeFormatOptions {
 /** The objects of every `isA` assertion. */
 export declare function types(envelope: Envelope): Envelope[];
 
-/** Unlocks a subject locked with `lock` and unwraps it. */
+/** Unlocks a subject locked with `lock` and unwraps it (the reference's `unlock`; see `unlockSubject`). */
 export declare function unlock(envelope: Envelope, secret: Uint8Array): Envelope;
 
 /**
- * Decrypts the subject with the content key that `secret` unlocks; `UnknownSecret` when none does.
+ * Decrypts the subject with the content key that `secret` unlocks (the
+ * reference's `unlock_subject`): every unobscured `hasSecret` object must
+ * decode as an `EncryptedKey`; the first one `secret` opens decrypts the
+ * subject; a key it does not open is skipped, whatever the reason (an
+ * SSH-agent key, which needs {@link unlockSubjectWith}, is skipped too).
  *
- * @throws EnvelopeError with code `UnknownSecret`.
+ * @throws EnvelopeError `UnknownSecret` when no key opens; `Cbor` when a
+ *   `hasSecret` object is not an `EncryptedKey`; the errors of
+ *   `decryptSubject`
  */
 export declare function unlockSubject(envelope: Envelope, secret: Uint8Array): Envelope;
 
 /**
- * `decrypt_to_recipient(recipient)?.verify(sender)`. The `verify` step
- * performs `verifySignatureFrom(sender)` *and then* `tryUnwrap()` — the
- * extra unwrap undoes the inner wrap that `sign()` added during seal.
+ * Decrypts the subject with the content key `agent` unlocks: the
+ * reference's `unlock_subject(id)` under the `ssh-agent` feature. Every
+ * unobscured `hasSecret` object must decode as an `EncryptedKey`; a key
+ * locked through an agent is opened with the identity `id` names, else the
+ * identity stored in the key, else the agent's first Ed25519 identity; a key
+ * locked by a password is tried with `id` as the password. The first key
+ * that opens decrypts the subject; one that does not is skipped, whatever
+ * the reason.
+ *
+ * @throws EnvelopeError `UnknownSecret` when no key opens; `Cbor` when a
+ *   `hasSecret` object is not an `EncryptedKey`; the errors of
+ *   `decryptSubject`
+ */
+export declare function unlockSubjectWith(envelope: Envelope, agent: SshAgent, id?: string): Promise<Envelope>;
+
+/** Unlocks a subject locked with `lockWith` and unwraps it (see `unlockSubjectWith`). */
+export declare function unlockWith(envelope: Envelope, agent: SshAgent, id?: string): Promise<Envelope>;
+
+/**
+ * `decryptToRecipient(recipient)` then `verify(sender)`, the reference's
+ * `unseal`: `verify` checks the signature and unwraps the layer `sign`
+ * added, as `decryptToRecipient` unwrapped the one `encryptToRecipient` added.
  */
 export declare function unseal(envelope: Envelope, senderPublicKey: Verifier, recipient: Decrypter): Envelope;
 
 /**
- * Validates that this envelope is a valid attachment.
+ * Validates that this envelope is a valid attachment, in the reference's
+ * order (`validate_attachment`): the payload is read (`NotWrapped` when the
+ * object is not wrapped), then the vendor and the conformsTo, then the
+ * attachment is rebuilt from them and must be equivalent to this envelope
+ * (which also checks that the predicate is `'attachment'`).
  *
- * An attachment is valid if:
- * 1. The envelope is an assertion with 'attachment' as predicate
- * 2. The object contains a wrapped payload with vendor assertion
- * 3. Reconstructing the attachment yields an equivalent envelope
- *
- * @throws EnvelopeError if the envelope is not a valid attachment
+ * @throws EnvelopeError with code `InvalidAttachment` when the envelope is
+ *   not an assertion or does not rebuild; `NotWrapped`,
+ *   `NonexistentPredicate`, `AmbiguousPredicate` or `Cbor` from the parts.
  */
 export declare function validateAttachment(envelope: Envelope): void;
 

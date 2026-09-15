@@ -136,6 +136,6 @@ describe("immutability properties", () => {
     );
   });
   it.todo(
-    "every error thrown by the package is an EnvelopeError (B1's leaked ComponentsError, §3's RangeError/TypeError)",
+    "every error thrown by the package is an EnvelopeError (a throwing verifier, a components error escaping a decoder, and the JavaScript input domain's dcbor errors are the exceptions)",
   );
 });

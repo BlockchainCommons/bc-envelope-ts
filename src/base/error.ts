@@ -293,17 +293,12 @@ export class EnvelopeError extends Error {
   //
   // Attachments Extension
   /**
-   * Returned when an attachment's format is invalid.
-   *
-   * This error occurs when an envelope contains an attachment with an
-   * invalid structure according to the Envelope Attachment specification
-   * (BCR-2023-006).
+   * Returned when an attachment's structure is invalid according to the
+   * Envelope Attachment specification (BCR-2023-006): the envelope is not an
+   * assertion, or its parts do not rebuild an equivalent attachment.
    */
-  static invalidAttachment(message?: string): EnvelopeError {
-    return EnvelopeError.make(
-      "InvalidAttachment",
-      message !== undefined ? `invalid attachment: ${message}` : "invalid attachment",
-    );
+  static invalidAttachment(): EnvelopeError {
+    return EnvelopeError.make("InvalidAttachment", "invalid attachment");
   }
 
   /**
@@ -319,11 +314,11 @@ export class EnvelopeError extends Error {
   /**
    * Returned when multiple attachments match a single query.
    *
-   * This error occurs when multiple attachments have the same ID, making
-   * it ambiguous which attachment should be returned.
+   * The message is the reference's `#[error]` text, misspelling included
+   * (`abiguous attachment`), so both implementations report the same text.
    */
   static ambiguousAttachment(): EnvelopeError {
-    return EnvelopeError.make("AmbiguousAttachment", "ambiguous attachment");
+    return EnvelopeError.make("AmbiguousAttachment", "abiguous attachment");
   }
 
   //
@@ -556,7 +551,10 @@ export class EnvelopeError extends Error {
   // Known Value Extension
   /** Returned when the subject is expected to be the unit value but isn't. */
   static subjectNotUnit(): EnvelopeError {
-    return EnvelopeError.make("SubjectNotUnit", "subject is not the unit value");
+    return EnvelopeError.make(
+      "SubjectNotUnit",
+      "the subject of the envelope is not the unit value",
+    );
   }
 
   //
@@ -578,9 +576,22 @@ export class EnvelopeError extends Error {
 
   //
   // External errors
-  /** dcbor error wrapper */
+  /**
+   * `Cbor` as an internal site reports it: `dcbor error: <message>`, the
+   * reference's `Error::Cbor` Display, with the dcbor error as `cause`.
+   */
   static cbor(message: string, cause?: Error): EnvelopeError {
     return EnvelopeError.make("Cbor", `dcbor error: ${message}`, cause);
+  }
+
+  /**
+   * `Cbor` as a decoder reports it: the message is the dcbor Display of
+   * `cause` with no prefix, because the reference's `try_from_cbor_data`,
+   * `TryFrom<CBOR>`, `from_untagged_cbor` and `Expression::try_from` return
+   * a `dcbor::Error`; `cause` is that `CborError`.
+   */
+  static cborDecode(cause: Error): EnvelopeError {
+    return EnvelopeError.make("Cbor", cause.message, cause);
   }
 
   /** Components error wrapper */

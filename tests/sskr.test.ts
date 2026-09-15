@@ -1,6 +1,6 @@
-import { Envelope } from "../src/index.js";
+import { Envelope, EnvelopeError } from "../src/index.js";
 import { SymmetricKey } from "@blockchaincommons/components";
-import { Spec, GroupSpec } from "@blockchaincommons/sskr";
+import { Spec, GroupSpec, SskrError } from "@blockchaincommons/sskr";
 import { SeededRng } from "@blockchaincommons/rand";
 import "../src/all.js";
 
@@ -315,6 +315,29 @@ describe("SSKR Extension", () => {
       );
 
       expect(recovered.asText()).toBe("Recoverable deterministic");
+    });
+  });
+
+  describe("sskr failures", () => {
+    it("are wrapped as Sskr with sskr's message, as the reference's Error::SSKR", () => {
+      const zeroOfThree = Spec.from({
+        groupThreshold: 1,
+        groups: [GroupSpec.from({ memberThreshold: 0, memberCount: 3 })],
+      });
+      const contentKey = SymmetricKey.random();
+      const encrypted = Envelope.from("Secret data").encryptSubject(contentKey);
+      let error: unknown;
+      try {
+        encrypted.sskrSplit(zeroOfThree, contentKey);
+      } catch (e) {
+        error = e;
+      }
+      expect(EnvelopeError.isEnvelopeError(error)).toBe(true);
+      if (EnvelopeError.isEnvelopeError(error)) {
+        expect(error.code).toBe("Sskr");
+        expect(error.message).toBe("sskr error: SSKR Shamir error: invalid threshold");
+        expect(SskrError.isSskrError(error.cause)).toBe(true);
+      }
     });
   });
 });

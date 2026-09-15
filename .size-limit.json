@@ -2,7 +2,7 @@
   {
     "name": "ESM root entry (import *), minified + gzipped",
     "path": "dist/index.mjs",
-    "limit": "68 kB"
+    "limit": "67 kB"
   },
   {
     "name": "root entry, package's own code (siblings external)",
@@ -17,32 +17,32 @@
       "@blockchaincommons/tags",
       "@blockchaincommons/uniform-resources"
     ],
-    "limit": "10 kB"
+    "limit": "9 kB"
   },
   {
     "name": "all subpath, minified + gzipped",
     "path": "dist/all.mjs",
-    "limit": "156 kB"
+    "limit": "144 kB"
   },
   {
     "name": "format subpath, minified + gzipped",
     "path": "dist/format.mjs",
-    "limit": "147 kB"
+    "limit": "135 kB"
   },
   {
     "name": "expression subpath, minified + gzipped",
     "path": "dist/expression.mjs",
-    "limit": "146 kB"
+    "limit": "133 kB"
   },
   {
     "name": "attachment subpath, minified + gzipped",
     "path": "dist/attachment.mjs",
-    "limit": "68 kB"
+    "limit": "67 kB"
   },
   {
     "name": "edge subpath, minified + gzipped",
     "path": "dist/edge.mjs",
-    "limit": "51 kB"
+    "limit": "52 kB"
   },
   {
     "name": "proof subpath, minified + gzipped",
@@ -52,22 +52,22 @@
   {
     "name": "recipient subpath, minified + gzipped",
     "path": "dist/recipient.mjs",
-    "limit": "51 kB"
+    "limit": "52 kB"
   },
   {
     "name": "secret subpath, minified + gzipped",
     "path": "dist/secret.mjs",
-    "limit": "60 kB"
+    "limit": "63 kB"
   },
   {
     "name": "signature subpath, minified + gzipped",
     "path": "dist/signature.mjs",
-    "limit": "81 kB"
+    "limit": "80 kB"
   },
   {
     "name": "sskr subpath, minified + gzipped",
     "path": "dist/sskr.mjs",
-    "limit": "53 kB"
+    "limit": "56 kB"
   },
   {
     "name": "types subpath, minified + gzipped",
@@ -77,6 +77,6 @@
   {
     "name": "seal subpath, minified + gzipped",
     "path": "dist/seal.mjs",
-    "limit": "82 kB"
+    "limit": "81 kB"
   }
 ]

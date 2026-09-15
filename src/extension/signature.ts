@@ -14,6 +14,7 @@
 import { Envelope } from "../base/envelope";
 import type { EnvelopeInput } from "../base/envelope-encodable";
 import { EnvelopeError } from "../base/error";
+import { viaComponents } from "../base/foreign-errors.js";
 import { SIGNED, NOTE } from "@blockchaincommons/known-values";
 import {
   Signature,
@@ -102,13 +103,10 @@ export function addSignature(
   { signing: options, metadata }: SignOptions = {},
 ): Envelope {
   const digest = envelope.subject().digest();
-  const sign = (message: Uint8Array): Signature => {
-    try {
-      return signer.signWithOptions(message, options);
-    } catch (error) {
-      throw EnvelopeError.components("signing failed", error instanceof Error ? error : undefined);
-    }
-  };
+  // A components failure (an SSH key without signing options) is `Components`
+  // with components' message, where the reference's `add_signature_opt` unwraps.
+  const sign = (message: Uint8Array): Signature =>
+    viaComponents(() => signer.signWithOptions(message, options));
   let signatureEnvelope = Envelope.from(sign(digest.bytes));
 
   if (metadata?.hasAssertions() === true) {
@@ -209,31 +207,30 @@ export function hasSignatureFromReturningMetadata(
     const signatureObjectSubject = signatureObject.subject();
 
     if (signatureObjectSubject.isWrapped()) {
-      // Wrapped case: signature with metadata
-      // The structure is:
-      //   {Signature ['note': "..."]} ['signed': OuterSignature]
-
-      // Step 1: Verify outer signature if present
-      let outerSigFound = false;
+      // A signature with metadata: `{Signature [metadata]} ['signed': OuterSignature]`.
+      // Only the extractions map to the signature-type codes; a verifier's
+      // own failure propagates, as the reference's `key.verify` is never
+      // wrapped.
+      let outerSignatureObject: Envelope | undefined;
       try {
-        const outerSignatureObject = signatureObject.objectForPredicate(SIGNED);
-        outerSigFound = true;
-        const outerSignature = outerSignatureObject.expectSubject((cbor) =>
-          Signature.fromCbor(cbor),
-        );
-        if (!verifier.verify(outerSignature, signatureObjectSubject.digest().bytes)) {
-          continue; // Outer signature doesn't match key, try next
-        }
-      } catch (_e) {
-        if (outerSigFound) {
-          // Found 'signed' assertion but couldn't extract Signature
+        outerSignatureObject = signatureObject.objectForPredicate(SIGNED);
+      } catch {
+        // No single outer `signed` assertion: the outer check is skipped,
+        // as the reference's `if let Ok(...)` does.
+        outerSignatureObject = undefined;
+      }
+      if (outerSignatureObject !== undefined) {
+        let outerSignature: Signature;
+        try {
+          outerSignature = outerSignatureObject.expectSubject((cbor) => Signature.fromCbor(cbor));
+        } catch {
           throw EnvelopeError.invalidOuterSignatureType();
         }
-        // No 'signed' assertion on the signature object — skip outer check
-        // (object_for_predicate failed with NONEXISTENT_PREDICATE)
+        if (!verifier.verify(outerSignature, signatureObjectSubject.digest().bytes)) {
+          continue; // The outer signature is not this key's: try the next object.
+        }
       }
 
-      // Step 2: Unwrap and verify inner signature
       const signatureMetadataEnvelope = signatureObjectSubject.unwrap();
       let innerSignature: Signature;
       try {
@@ -247,16 +244,17 @@ export function hasSignatureFromReturningMetadata(
         throw EnvelopeError.unverifiedInnerSignature();
       }
       return signatureMetadataEnvelope;
-    } else {
-      // Simple case: no metadata
-      try {
-        const signature = signatureObject.expectSubject((cbor) => Signature.fromCbor(cbor));
-        if (verifier.verify(signature, envelope.subject().digest().bytes)) {
-          return signatureObject;
-        }
-      } catch {
-        throw EnvelopeError.invalidSignatureType();
-      }
+    }
+
+    // A bare signature.
+    let signature: Signature;
+    try {
+      signature = signatureObject.expectSubject((cbor) => Signature.fromCbor(cbor));
+    } catch {
+      throw EnvelopeError.invalidSignatureType();
+    }
+    if (verifier.verify(signature, envelope.subject().digest().bytes)) {
+      return signatureObject;
     }
   }
 
