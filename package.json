@@ -1,6 +1,6 @@
 {
   "name": "@blockchaincommons/envelope",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "type": "module",
   "sideEffects": [
     "./dist/all.mjs",
