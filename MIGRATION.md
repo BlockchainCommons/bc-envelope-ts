@@ -359,28 +359,6 @@ thin re-export of this package, so nothing breaks the moment you update.
   }
 ```
 
-### 2. Version numbering restarts
-
-`@bcts/envelope` versions moved in lockstep with every other package in the
-repository, which is why it reached `1.0.0-beta.6`. Each extracted package now
-versions independently and starts again at `1.0.0-beta.1`. A lower version
-number here does **not** mean older code.
-
-### 3. Node and TypeScript floors moved up
-
-| | `@bcts/envelope` | `@blockchaincommons/envelope` |
-|---|---|---|
-| Node | `>= 18` | `>= 22.12` |
-| TypeScript (consumers) | 6.x | `>= 5.7` |
-
-### 4. The IIFE / global-script build is gone
-
-`@bcts/envelope` shipped an additional IIFE bundle exposed through the `browser`
-field. That build is dropped: IIFE entry points cannot share chunks, which forks
-module-level singletons across entry points. Use the ESM entry (`import`) or the
-CJS entry (`require`); both are declared in `exports` and validated in CI by
-`publint` and `@arethetypeswrong/cli`.
-
 ## 1.0.0-beta.3
 
 If you are coming from 1.0.0-beta.2:
