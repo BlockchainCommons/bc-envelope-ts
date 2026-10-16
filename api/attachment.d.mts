@@ -1249,10 +1249,6 @@ declare interface SaltOptions {
     rng?: RandomNumberGenerator;
 }
 
-export declare namespace t {
-    export { AttachmentFilter, Attachments, addAttachment, attachment, attachmentConformsTo, attachmentPayload, attachmentVendor, attachments, expectAttachment, validateAttachment };
-}
-
 /**
  * A trait for types that can be encoded as a Gordian Envelope.
  *

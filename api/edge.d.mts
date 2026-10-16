@@ -1252,10 +1252,6 @@ declare interface SaltOptions {
     rng?: RandomNumberGenerator;
 }
 
-export declare namespace t {
-    export { EdgeFilter, Edgeable, Edges, addEdgeEnvelope, edgeIsA, edgeSource, edgeSubject, edgeTarget, edges, edgesMatching, validateEdge };
-}
-
 /**
  * A trait for types that can be encoded as a Gordian Envelope.
  *

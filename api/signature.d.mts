@@ -1207,10 +1207,6 @@ export declare interface SignOptions {
     metadata?: SignatureMetadata;
 }
 
-export declare namespace t {
-    export { SignOptions, SignatureMetadata, addSignature, addSignatures, hasSignatureFrom, hasSignatureFromReturningMetadata, hasSignaturesFrom, hasSignaturesFromThreshold, isVerifiedSignature, makeSignedAssertion, sign, signatures, verify, verifyReturningMetadata, verifySignature, verifySignatureFrom, verifySignatureFromReturningMetadata, verifySignaturesFrom, verifySignaturesFromThreshold };
-}
-
 /**
  * A trait for types that can be encoded as a Gordian Envelope.
  *

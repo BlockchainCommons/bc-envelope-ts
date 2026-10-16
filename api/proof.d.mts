@@ -1125,10 +1125,6 @@ declare interface SaltOptions {
     rng?: RandomNumberGenerator;
 }
 
-export declare namespace t {
-    export { confirmContainsSet, confirmContainsTarget, proofContainsSet, proofContainsTarget };
-}
-
 /**
  * A trait for types that can be encoded as a Gordian Envelope.
  *
