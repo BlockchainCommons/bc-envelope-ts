@@ -1134,10 +1134,6 @@ export declare function sskrJoin(envelopes: Envelope[]): Envelope;
  */
 export declare function sskrSplit(envelope: Envelope, spec: Spec, contentKey: SymmetricKey, { rng }?: RngOptions): Envelope[][];
 
-export declare namespace t {
-    export { sskrJoin, sskrSplit };
-}
-
 /**
  * A trait for types that can be encoded as a Gordian Envelope.
  *

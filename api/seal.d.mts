@@ -1186,10 +1186,6 @@ declare interface SignOptions {
     metadata?: SignatureMetadata;
 }
 
-export declare namespace t {
-    export { SealOptions, encryptToRecipient, seal, unseal };
-}
-
 /**
  * A trait for types that can be encoded as a Gordian Envelope.
  *
