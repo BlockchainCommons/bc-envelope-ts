@@ -73,6 +73,7 @@ Runnable examples live in the [`examples/`](https://github.com/BlockchainCommons
 
 ### Version History
 
+- **1.0.0-beta.5 (October 19, 2026)** - Installs with npm on a host without Bun: the TypeScript 6 pin for the lint tools runs from `prepare`, not `postinstall` ([bc-components-ts#11](https://github.com/BlockchainCommons/bc-components-ts/issues/11)).
 - **1.0.0-beta.3 (September 15, 2026)** - Validated against `bc-envelope-rust` 0.43.0, error messages included: format-context registration (`registerTags()`), byte-order sorts, decode error identity, subject extraction, `u64` ids and positions, exact request and event dates, SSH-agent locking (`lockWith` / `unlockWith`).
 - **1.0.0-beta.2 (September 12, 2026)** - Text summaries truncate as the reference does (UTF-8 length decides, whole characters kept); `Function`/`Parameter`/`Expression` `toString()` and `Response.summary()` print the reference's `Display` text.
 - **1.0.0-beta.1 (September 9, 2026)** - Initial beta implementation.
